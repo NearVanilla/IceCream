@@ -1,0 +1,4 @@
+name: IceCream
+version: '1.0-SNAPSHOT'
+main: com.nearvanilla.iceCream.IceCream
+api-version: '1.21'

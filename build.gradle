@@ -1,5 +1,8 @@
 plugins {
     id 'java'
+    id 'xyz.jpenilla.run-paper' version '2.3.1'
+    id 'com.gradleup.shadow' version '9.0.0'
+    id 'com.diffplug.spotless' version '7.2.1'
 }
 
 group = 'com.nearvanilla'
@@ -18,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
 }
 
 def targetJavaVersion = 21
@@ -45,5 +48,27 @@ processResources {
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
+    }
+}
+
+runServer {
+    minecraftVersion("1.21.8")
+    jvmArgs("-Dcom.mojang.eula.agree=true")
+}
+
+shadowJar {
+    enableAutoRelocation = true
+    relocationPrefix = "${rootProject.property("group")}.${rootProject.property("name").toString().toLowerCase()}.lib"
+    minimize()
+    archiveClassifier.set("")
+}
+
+spotless{
+    java{
+        importOrder()
+        removeUnusedImports()
+        removeWildcardImports()
+        cleanthat()
+        googleJavaFormat()
     }
 }

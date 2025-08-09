@@ -17,6 +17,12 @@ import org.incendo.cloud.paper.PaperCommandManager;
  * @author 105hua
  * @version 1.0
  * @since 2025-08-08
+ * @see JavaPlugin
+ * @see PaperCommandManager
+ * @see AnnotationParser
+ * @see ExampleModule
+ * @see Logger
+ * @see FileConfiguration
  */
 public final class IceCream extends JavaPlugin {
   // General plugin instance, config, logger and command management.

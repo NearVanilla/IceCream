@@ -12,6 +12,9 @@ import com.nearvanilla.iceCream.modules.example.events.ExampleEvent;
  * @author 105hua
  * @version 1.0
  * @since 2025-08-09
+ * @see Module
+ * @see ExampleCommand
+ * @see ExampleEvent
  */
 public class ExampleModule implements Module {
   protected boolean isEnabled = false;

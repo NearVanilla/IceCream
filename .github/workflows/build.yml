@@ -3,7 +3,18 @@ name: Build Check
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/build.yml'
   pull_request:
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
 
 jobs:
   build:

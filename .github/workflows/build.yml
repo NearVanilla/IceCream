@@ -38,6 +38,19 @@ jobs:
       - name: Build plugin
         run: ./gradlew build --no-daemon
 
+      - name: Comment on PR Failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ❌ Build Check Failed
+
+            The plugin has failed to build with the changes in this pull request.
+            Please check the logs for details.
+
+            📝 [Check the workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

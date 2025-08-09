@@ -56,9 +56,12 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## ❌ Build Failed
+            ## ❌ Code Quality Check Failed
             
-            The automated checks have failed. Please review the errors and fix them.
+            Your changes have failed to pass the Code Quality check. Please ensure you have ran the `spotlessApply`
+            task locally to format your code before pushing any changes.
+            
+            Please ping a repo admin if your code is formatted and you still see this error.
             
             📝 [Check the workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 

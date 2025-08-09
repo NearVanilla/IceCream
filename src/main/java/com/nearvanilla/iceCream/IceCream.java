@@ -37,7 +37,7 @@ public final class IceCream extends JavaPlugin {
   public void onEnable() {
     // Setup logic
     instance = this;
-    logger = getLogger();
+      logger = getLogger();
     commandManager =
         PaperCommandManager.builder()
             .executionCoordinator(ExecutionCoordinator.simpleCoordinator())

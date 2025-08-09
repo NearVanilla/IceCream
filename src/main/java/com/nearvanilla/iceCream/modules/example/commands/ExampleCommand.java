@@ -9,8 +9,8 @@ import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
 
 /**
- * ExampleCommand is a simple command that demonstrates how to create a command through Cloud Command Framework.
- * It simply sends a message to the player who executes it.
+ * ExampleCommand is a simple command that demonstrates how to create a command through Cloud
+ * Command Framework. It simply sends a message to the player who executes it.
  *
  * @author 105hua
  * @version 1.0

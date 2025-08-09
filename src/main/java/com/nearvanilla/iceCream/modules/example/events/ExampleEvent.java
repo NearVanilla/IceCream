@@ -8,14 +8,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 public class ExampleEvent implements Listener {
 
-    protected final Component joinedComponent =
-            MiniMessage.miniMessage().deserialize(
-                    "<rainbow>Welcome to the server! This is an example event.</rainbow>"
-            );
+  protected final Component joinedComponent =
+      MiniMessage.miniMessage()
+          .deserialize("<rainbow>Welcome to the server! This is an example event.</rainbow>");
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().sendMessage(joinedComponent);
-    }
-
+  @EventHandler
+  public void onPlayerJoin(PlayerJoinEvent event) {
+    event.getPlayer().sendMessage(joinedComponent);
+  }
 }

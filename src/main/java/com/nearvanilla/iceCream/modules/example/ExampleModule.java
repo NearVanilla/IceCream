@@ -6,8 +6,8 @@ import com.nearvanilla.iceCream.modules.example.commands.ExampleCommand;
 import com.nearvanilla.iceCream.modules.example.events.ExampleEvent;
 
 /**
- * ExampleModule is a demonstration of how to create a module in the IceCream plugin.
- * It registers a simple command and an event listener that welcomes players when they join the server.
+ * ExampleModule is a demonstration of how to create a module in the IceCream plugin. It registers a
+ * simple command and an event listener that welcomes players when they join the server.
  *
  * @author 105hua
  * @version 1.0
@@ -33,13 +33,16 @@ public class ExampleModule implements Module {
 
   @Override
   public void registerEvents() {
-    IceCream.instance.getServer().getPluginManager().registerEvents(new ExampleEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new ExampleEvent(), IceCream.instance);
   }
 
   @Override
   public void register() {
     if (shouldEnable()) {
-      try{
+      try {
         registerCommands();
         registerEvents();
       } catch (Exception e) {

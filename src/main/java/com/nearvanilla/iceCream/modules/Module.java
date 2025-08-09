@@ -10,6 +10,7 @@ package com.nearvanilla.iceCream.modules;
  */
 public interface Module {
   boolean shouldEnable();
+
   boolean isEnabled();
 
   void registerCommands();

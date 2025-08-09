@@ -2,17 +2,17 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.incendo.cloud.annotations.AnnotationParser;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.PaperCommandManager;
 
-import java.util.logging.Logger;
-
 /**
- * The main class for the IceCream plugin. It sets up important components for itself and its modules, including
- * the instance, configuration, logger, and command management. All modules are also registered here.
+ * The main class for the IceCream plugin. It sets up important components for itself and its
+ * modules, including the instance, configuration, logger, and command management. All modules are
+ * also registered here.
  *
  * @author 105hua
  * @version 1.0

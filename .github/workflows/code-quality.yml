@@ -55,7 +55,7 @@ jobs:
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: context.payload.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: '❌ **Code Quality Check Failed**\n\nThe Spotless check has failed. Please run `./gradlew spotlessApply` locally to fix formatting issues, then commit and push the changes.'

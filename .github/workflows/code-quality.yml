@@ -50,6 +50,18 @@ jobs:
       - name: Run Spotless Check
         run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
+      - name: Comment on PR Failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ❌ Build Failed
+            
+            The automated checks have failed. Please review the errors and fix them.
+            
+            📝 [Check the workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
       - name: Upload Spotless reports (if failed)
         uses: actions/upload-artifact@v4
         if: failure()

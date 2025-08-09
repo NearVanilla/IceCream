@@ -50,16 +50,14 @@ jobs:
         run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
       - name: Comment PR on failure
-        uses: actions/github-script@v7
+        uses: thollander/actions-comment-pull-request@v3
         if: failure() && github.event_name == 'pull_request'
         with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.payload.pull_request.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '❌ **Code Quality Check Failed**\n\nThe Spotless check has failed. Please run `./gradlew spotlessApply` locally to fix formatting issues, then commit and push the changes.'
-            })
+          message: |
+            :warning: Spotless check failed. Please fix the formatting issues.
+            You can run `./gradlew spotlessApply` to automatically format the code.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          reactions: 'eyes'
 
       - name: Upload Spotless reports (if failed)
         uses: actions/upload-artifact@v4

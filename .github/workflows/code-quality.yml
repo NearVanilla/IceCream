@@ -50,16 +50,6 @@ jobs:
       - name: Run Spotless Check
         run: ./gradlew spotlessCheck --no-daemon --stacktrace
 
-      - name: Comment PR on failure
-        uses: thollander/actions-comment-pull-request@v3
-        if: failure() && github.event_name == 'pull_request'
-        with:
-          message: |
-            :warning: Spotless check failed. Please fix the formatting issues.
-            You can run `./gradlew spotlessApply` to automatically format the code.
-          reactions: 'eyes'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload Spotless reports (if failed)
         uses: actions/upload-artifact@v4
         if: failure()

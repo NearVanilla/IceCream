@@ -56,7 +56,6 @@ jobs:
           message: |
             :warning: Spotless check failed. Please fix the formatting issues.
             You can run `./gradlew spotlessApply` to automatically format the code.
-          token: ${{ secrets.GITHUB_TOKEN }}
           reactions: 'eyes'
 
       - name: Upload Spotless reports (if failed)

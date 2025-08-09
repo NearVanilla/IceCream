@@ -1,0 +1,66 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/code-quality.yml'
+  pull_request:
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Spotless Code Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: 'gradle'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Spotless Check
+        run: ./gradlew spotlessCheck --no-daemon --stacktrace
+
+      - name: Comment PR on failure
+        uses: actions/github-script@v7
+        if: failure() && github.event_name == 'pull_request'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Code Quality Check Failed**\n\nThe Spotless check has failed. Please run `./gradlew spotlessApply` locally to fix formatting issues, then commit and push the changes.'
+            })
+
+      - name: Upload Spotless reports (if failed)
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: spotless-reports
+          path: build/reports/spotless/
+          retention-days: 7

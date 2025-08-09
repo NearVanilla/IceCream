@@ -10,9 +10,8 @@ import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.PaperCommandManager;
 
 /**
- * The main class for the IceCream plugin. It sets up important components for itself and its
- * modules, including the instance, configuration, logger, and command management. All modules are
- * also registered here.
+ * The main class for the IceCream plugin. It sets up important components for use across the plugin,
+ * including the instance, configuration, logger, and command management. Modules are also registered here.
  *
  * @author 105hua
  * @version 1.0

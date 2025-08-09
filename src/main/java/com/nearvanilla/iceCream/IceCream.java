@@ -10,6 +10,14 @@ import org.incendo.cloud.paper.PaperCommandManager;
 
 import java.util.logging.Logger;
 
+/**
+ * The main class for the IceCream plugin. It sets up important components for itself and its modules, including
+ * the instance, configuration, logger, and command management. All modules are also registered here.
+ *
+ * @author 105hua
+ * @version 1.0
+ * @since 2025-08-08
+ */
 public final class IceCream extends JavaPlugin {
   // General plugin instance, config, logger and command management.
   public static IceCream instance;
@@ -19,7 +27,6 @@ public final class IceCream extends JavaPlugin {
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
   private final ExampleModule exampleModule = new ExampleModule();
-
 
   @Override
   public void onEnable() {

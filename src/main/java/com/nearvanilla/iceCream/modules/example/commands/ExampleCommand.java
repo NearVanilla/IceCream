@@ -8,6 +8,14 @@ import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
 
+/**
+ * ExampleCommand is a simple command that demonstrates how to create a command through Cloud Command Framework.
+ * It simply sends a message to the player who executes it.
+ *
+ * @author 105hua
+ * @version 1.0
+ * @since 2025-08-09
+ */
 public class ExampleCommand {
   protected final Component exampleComponent =
       MiniMessage.miniMessage().deserialize("<green>This is an example command!</green>");

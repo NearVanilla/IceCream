@@ -12,7 +12,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 /**
  * MuteDeathsPlayerJoinEvent is a simple event listener that reminds the player their death messages
- * are muted It listens for the PlayerJoinEvent and sends a welcome message to the player when they
+ * are muted. It listens for the PlayerJoinEvent and sends a welcome message to the player when they
  * join the server.
  *
  * @author 105hua

@@ -4,3 +4,5 @@ modules:
   lightning:
     enabled: true
     chance: 0.5
+  mutedeaths:
+    enabled: true

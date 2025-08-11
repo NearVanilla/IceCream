@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
+import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -34,6 +35,7 @@ public final class IceCream extends JavaPlugin {
   // Modules
   private final ExampleModule exampleModule = new ExampleModule();
   private final LightningModule lightningModule = new LightningModule();
+  private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
 
   @Override
   public void onEnable() {
@@ -50,6 +52,7 @@ public final class IceCream extends JavaPlugin {
     // Register modules
     exampleModule.register();
     lightningModule.register();
+    muteDeathsModule.register();
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
+import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -32,6 +33,7 @@ public final class IceCream extends JavaPlugin {
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
   private final ExampleModule exampleModule = new ExampleModule();
+  private final LightningModule lightningModule = new LightningModule();
 
   @Override
   public void onEnable() {
@@ -47,6 +49,7 @@ public final class IceCream extends JavaPlugin {
     config = this.getConfig();
     // Register modules
     exampleModule.register();
+    lightningModule.register();
   }
 
   @Override

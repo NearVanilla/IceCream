@@ -48,6 +48,7 @@ public class ExampleModule implements Module {
       try {
         registerCommands();
         registerEvents();
+        isEnabled = true;
       } catch (Exception e) {
         IceCream.logger.severe("Failed to register Example module: " + e.getMessage());
         return;

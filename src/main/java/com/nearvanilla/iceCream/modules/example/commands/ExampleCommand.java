@@ -29,6 +29,7 @@ public class ExampleCommand {
   @Command("example")
   @CommandDescription("This is an example command.")
   @Permission("icecream.modules.example.example")
+  @SuppressWarnings("unused")
   public void exampleCommand(CommandSourceStack commandSourceStack) {
     if (!(commandSourceStack.getSender() instanceof Player)) {
       commandSourceStack.getSender().sendMessage("This command can only be used by players.");

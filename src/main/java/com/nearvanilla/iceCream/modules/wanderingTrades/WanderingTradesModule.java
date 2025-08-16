@@ -56,8 +56,7 @@ public class WanderingTradesModule implements Module {
         registerEvents();
         try (InputStream in = IceCream.instance.getResource("data/wandering_trades.json")) {
           if (in == null)
-            throw new FileNotFoundException(
-                "Failed to copy Wandering Trades config from JAR.");
+            throw new FileNotFoundException("Failed to copy Wandering Trades config from JAR.");
           HeadUtils.loadHeadTrades(in);
         }
         isEnabled = true;

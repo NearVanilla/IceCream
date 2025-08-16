@@ -6,6 +6,4 @@ public class HeadTradeData {
   public int headCount;
   public String name;
   public String texture;
-
-  public HeadTradeData() {}
 }

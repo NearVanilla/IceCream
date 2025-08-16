@@ -28,8 +28,7 @@ public final class HeadUtils {
       ItemStack head = createCustomHead(data.name, data.texture, data.headCount);
       MerchantRecipe recipe = new MerchantRecipe(head, data.maxUses);
       recipe.addIngredient(new ItemStack(Material.EMERALD, 1));
-      Material secondary =
-          Material.matchMaterial(data.secondaryCost.replace("minecraft:", "").toUpperCase());
+      Material secondary = Material.matchMaterial(data.secondaryCost);
       if (secondary != null) recipe.addIngredient(new ItemStack(secondary, 1));
       headTradePool.add(recipe);
     }

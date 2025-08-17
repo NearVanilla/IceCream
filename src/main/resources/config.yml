@@ -6,3 +6,5 @@ modules:
     chance: 0.5
   mutedeaths:
     enabled: true
+  isslimechunk:
+    enabled: true

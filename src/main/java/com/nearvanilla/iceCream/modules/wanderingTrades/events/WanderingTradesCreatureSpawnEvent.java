@@ -16,8 +16,8 @@ public class WanderingTradesCreatureSpawnEvent implements Listener {
   @EventHandler
   public void onCreatureSpawn(CreatureSpawnEvent event) {
     if (!(event.getEntity() instanceof WanderingTrader trader)) return;
-    if (IceCream.config.getInt("modules.wanderingtrades.min-heads")
-        > IceCream.config.getInt("modules.wanderingtrades.max-heads")) {
+    if (IceCream.config.getInt("modules.wanderingtrades.min-heads", 5)
+        > IceCream.config.getInt("modules.wanderingtrades.max-heads", 10)) {
       IceCream.logger.warning(
           "The minimum number of heads is greater than the maximum number of heads. Please check your configuration.");
       return;
@@ -25,8 +25,8 @@ public class WanderingTradesCreatureSpawnEvent implements Listener {
     final int headTrades =
         ThreadLocalRandom.current()
             .nextInt(
-                IceCream.config.getInt("modules.wanderingtrades.min-heads"),
-                IceCream.config.getInt("modules.wanderingtrades.max-heads") + 1);
+                IceCream.config.getInt("modules.wanderingtrades.min-heads", 5),
+                IceCream.config.getInt("modules.wanderingtrades.max-heads", 10) + 1);
     final List<MerchantRecipe> trades = new ArrayList<>(trader.getRecipes());
     List<MerchantRecipe> pool = HeadUtils.getHeadTradePool();
     if (pool.isEmpty()) {

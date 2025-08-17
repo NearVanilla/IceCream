@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
+import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
@@ -37,6 +38,7 @@ public final class IceCream extends JavaPlugin {
   private final ExampleModule exampleModule = new ExampleModule();
   private final LightningModule lightningModule = new LightningModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
+  private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
 
   @Override
@@ -55,6 +57,7 @@ public final class IceCream extends JavaPlugin {
     exampleModule.register();
     lightningModule.register();
     muteDeathsModule.register();
+    isSlimeChunkModule.register();
     wanderingTradesModule.register();
   }
 

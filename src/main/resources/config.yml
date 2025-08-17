@@ -6,6 +6,8 @@ modules:
     chance: 0.5
   mutedeaths:
     enabled: true
+  isslimechunk:
+    enabled: true
   wanderingtrades:
     enabled: true
     min-heads: 5

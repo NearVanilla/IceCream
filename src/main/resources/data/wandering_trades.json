@@ -1328,5 +1328,61 @@
     "headCount": 8,
     "name": "\"Mini Cherry Leaves\"",
     "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjk4YjM4YWViZTdjNGVkNWM4MTllZTQyM2YzYjQ2YzYwNjg0Y2JkM2VkMGZhNGE5ZmQ1OTNhY2E2M2MwYWM4NSJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:pale_oak_leaves",
+    "headCount": 8,
+    "name": "\"Mini Pale Oak Leaves\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzYzOTJkMDQxNmZiNGE2YTk0N2JkMzYyMzkwOGMyMjU4MTI3NWZjY2YyYzczNmYwNjkyZjFiMGQ2MGU2ODY4In19fQ=="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:pale_moss_block",
+    "headCount": 8,
+    "name": "\"Mini Pale Oak Moss\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmExNDg4Y2ZlYmMyYTg0ZTRkODUwY2Q4ZGJkNTc0ZDM4MTg3ZDI3MGEwYmVkNzA2N2JkYTc4NTI2MDg3MmQ2MyJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:pale_oak_planks",
+    "headCount": 8,
+    "name": "\"Mini Pale Oak Planks\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjYxMmMxOWQyNmMwYTdkNWNhYWY0YWRmYTI1M2Q5MGEzMjBkOTkwYWFkOTFiZGUwMTVjZGNmYWM4NWNhNjk0NCJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:pale_oak_log",
+    "headCount": 8,
+    "name": "\"Mini Pale Oak Log\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvN2YxOGU2ZjlmMzAxNGQyOWE0MDlmYThjZjhlYjFmMGE2ZjU5Y2MwN2MzNmE1Y2Q0Nzg2ZTgxNzBiNjJhNWY2NiJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:creaking_heart",
+    "headCount": 8,
+    "name": "\"Mini Creaking Heart\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjc2ZTA2NjY1ZjFjN2UxZjhlOWVhZDc1ZDkwNThlZDQ0MDcxZjhkMGJhMzliOTYwMDFjN2I5MDk0ZDMxM2JjMiJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:chiseled_resin_bricks",
+    "headCount": 8,
+    "name": "\"Mini Chiseled Resin Bricks\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTVjZTkzODliZjU0ZDgwY2FiMjRhZTljNzhlNmMyZTlmOWNlNzc3YzNiNzYwZGZlZWRjMWJlODc4ZmZlMDAyNiJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:resin_block",
+    "headCount": 8,
+    "name": "\"Mini Resin Block\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGZlY2MzMWUxNmE2ZTY5NjE5YWY0ODM0MmI1Njg2Y2JjN2ExMDE5NTU0Yzg5MGI2MmViZTlhYjA3MmFiNjFiOSJ9fX0="
+  },
+  {
+    "maxUses": 1,
+    "secondaryCost": "minecraft:resin_bricks",
+    "headCount": 8,
+    "name": "\"Mini Resin Bricks\"",
+    "texture": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjhlYzlhZWZmOWQxZWEyNWM4MjhkNTliZjQ1NTY3ZTM2YzEzMGIxYmE1NjQxNTU1NTNjYzEwZjQ3Mzc2NDAxNSJ9fX0="
   }
 ]

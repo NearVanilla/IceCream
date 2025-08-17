@@ -1,0 +1,81 @@
+package com.nearvanilla.iceCream.modules.wanderingTrades;
+
+import static com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule.headTradePool;
+
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.nearvanilla.iceCream.libs.JsonLoader;
+import java.io.InputStream;
+import java.util.List;
+import java.util.UUID;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.meta.SkullMeta;
+
+/**
+ * HeadUtils is a utility class for managing custom player heads. It provides methods to load head
+ * trades and create custom heads with specified properties such as display name, texture, and
+ * amount.
+ *
+ * @author Demonstrations
+ * @version 1.0
+ * @since 2025-08-17
+ */
+public final class HeadUtils {
+  private HeadUtils() {}
+
+  /**
+   * Loads head trades from the input stream and populates the head trade pool.
+   *
+   * @param input The input stream containing head trade data in JSON format.
+   * @throws Exception If an error occurs while loading the head trades.
+   */
+  public static void loadHeadTrades(InputStream input) throws Exception {
+    List<HeadTradeData> trades = JsonLoader.load(input, new TypeReference<>() {});
+    headTradePool.clear();
+    for (HeadTradeData data : trades) {
+      ItemStack head = createCustomHead(data.name, data.texture, data.headCount);
+      MerchantRecipe recipe = new MerchantRecipe(head, data.maxUses);
+      recipe.addIngredient(new ItemStack(Material.EMERALD, 1));
+      Material secondary = Material.matchMaterial(data.secondaryCost);
+      if (secondary != null) recipe.addIngredient(new ItemStack(secondary, 1));
+      headTradePool.add(recipe);
+    }
+  }
+
+  /**
+   * Retrieves the list of head trades available in the head trade pool.
+   *
+   * @return A list of MerchantRecipe objects representing the head trades.
+   */
+  public static List<MerchantRecipe> getHeadTradePool() {
+    return headTradePool;
+  }
+
+  /**
+   * Creates a custom player head with the specified display name, texture, and amount.
+   *
+   * @param displayName The display name for the head.
+   * @param textureBase64 The base64 encoded texture string for the head.
+   * @param amount The amount of heads to create.
+   * @return An ItemStack representing the custom player head.
+   */
+  public static ItemStack createCustomHead(String displayName, String textureBase64, int amount) {
+    ItemStack head = new ItemStack(Material.PLAYER_HEAD, amount);
+    SkullMeta meta = (SkullMeta) head.getItemMeta();
+    TextComponent headName =
+        Component.text(displayName.replace("\"", "")).decoration(TextDecoration.ITALIC, false);
+    meta.customName(headName);
+    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+    profile.setProperty(new ProfileProperty("textures", textureBase64));
+    meta.setPlayerProfile(profile);
+    head.setItemMeta(meta);
+    return head;
+  }
+}

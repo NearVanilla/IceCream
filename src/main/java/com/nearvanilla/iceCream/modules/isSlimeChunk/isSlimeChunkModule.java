@@ -5,12 +5,11 @@ import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.commands.isSlimeChunkCommand;
 
 /**
- * ExampleModule is a demonstration of how to create a module in the IceCream plugin. It registers a
- * simple command and an event listener that welcomes players when they join the server.
+ * isSlimeChunkModule adds a command to check if the chunk the player is currently standing in is a slime chunk or not.
  *
- * @author 105hua
+ * @author Demonstrations
  * @version 1.0
- * @since 2025-08-09
+ * @since 2025-08-17
  * @see Module
  * @see isSlimeChunkCommand
  */

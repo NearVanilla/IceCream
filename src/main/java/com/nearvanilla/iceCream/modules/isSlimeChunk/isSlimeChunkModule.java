@@ -5,7 +5,8 @@ import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.commands.isSlimeChunkCommand;
 
 /**
- * isSlimeChunkModule adds a command to check if the chunk the player is currently standing in is a slime chunk or not.
+ * isSlimeChunkModule adds a command to check if the chunk the player is currently standing in is a
+ * slime chunk or not.
  *
  * @author Demonstrations
  * @version 1.0

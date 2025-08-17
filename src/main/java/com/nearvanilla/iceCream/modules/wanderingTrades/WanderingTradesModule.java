@@ -10,12 +10,13 @@ import java.util.List;
 import org.bukkit.inventory.MerchantRecipe;
 
 /**
- * ExampleModule is a demonstration of how to create a module in the IceCream plugin. It registers a
- * simple command and an event listener that welcomes players when they join the server.
+ * WanderingTradesModule is a module that adds "Mini Blocks" to wandering traders upon spawning. It
+ * registers the event "WanderingTradesCreatureSpawnEvent" to handle the spawning of wandering
+ * traders and populates their trades with custom heads.
  *
  * @author Demonstrations
  * @version 1.0
- * @since 2025-08-09
+ * @since 2025-08-17
  * @see WanderingTradesModule
  * @see WanderingTradesCreatureSpawnEvent
  * @see HeadUtils
@@ -54,11 +55,14 @@ public class WanderingTradesModule implements Module {
       try {
         registerCommands();
         registerEvents();
+
+        // Load head trades from the JSON file in the JAR.
         try (InputStream in = IceCream.instance.getResource("data/wandering_trades.json")) {
           if (in == null)
             throw new FileNotFoundException("Failed to copy Wandering Trades config from JAR.");
           HeadUtils.loadHeadTrades(in);
         }
+
         isEnabled = true;
       } catch (Exception e) {
         IceCream.logger.severe("Failed to register Wandering Trades module: " + e.getMessage());

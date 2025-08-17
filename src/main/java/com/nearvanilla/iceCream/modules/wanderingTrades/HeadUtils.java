@@ -18,9 +18,24 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.SkullMeta;
 
+/**
+ * HeadUtils is a utility class for managing custom player heads. It provides methods to load head
+ * trades and create custom heads with specified properties such as display name, texture, and
+ * amount.
+ *
+ * @author Demonstrations
+ * @version 1.0
+ * @since 2025-08-17
+ */
 public final class HeadUtils {
   private HeadUtils() {}
 
+  /**
+   * Loads head trades from the input stream and populates the head trade pool.
+   *
+   * @param input The input stream containing head trade data in JSON format.
+   * @throws Exception If an error occurs while loading the head trades.
+   */
   public static void loadHeadTrades(InputStream input) throws Exception {
     List<HeadTradeData> trades = JsonLoader.load(input, new TypeReference<>() {});
     headTradePool.clear();
@@ -34,10 +49,23 @@ public final class HeadUtils {
     }
   }
 
+  /**
+   * Retrieves the list of head trades available in the head trade pool.
+   *
+   * @return A list of MerchantRecipe objects representing the head trades.
+   */
   public static List<MerchantRecipe> getHeadTradePool() {
     return headTradePool;
   }
 
+  /**
+   * Creates a custom player head with the specified display name, texture, and amount.
+   *
+   * @param displayName The display name for the head.
+   * @param textureBase64 The base64 encoded texture string for the head.
+   * @param amount The amount of heads to create.
+   * @return An ItemStack representing the custom player head.
+   */
   public static ItemStack createCustomHead(String displayName, String textureBase64, int amount) {
     ItemStack head = new ItemStack(Material.PLAYER_HEAD, amount);
     SkullMeta meta = (SkullMeta) head.getItemMeta();

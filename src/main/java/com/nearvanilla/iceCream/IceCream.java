@@ -4,6 +4,7 @@ import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
+import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
@@ -40,6 +41,7 @@ public final class IceCream extends JavaPlugin {
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
+  private final StaffModeModule staffModeModule = new StaffModeModule();
 
   @Override
   public void onEnable() {
@@ -59,6 +61,7 @@ public final class IceCream extends JavaPlugin {
     muteDeathsModule.register();
     isSlimeChunkModule.register();
     wanderingTradesModule.register();
+    staffModeModule.register();
   }
 
   @Override

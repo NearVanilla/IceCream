@@ -12,3 +12,5 @@ modules:
     enabled: true
     min-heads: 5
     max-heads: 10
+  staffmode:
+    enabled: true

@@ -6,6 +6,18 @@ import com.nearvanilla.iceCream.modules.wanderful.commands.WanderfulCommand;
 import com.nearvanilla.iceCream.modules.wanderful.events.WanderfulEntityDamageEvent;
 import com.nearvanilla.iceCream.modules.wanderful.events.WanderfulPlayerInteractEntityEvent;
 
+/**
+ * WanderfulModule adds wands that allow players to interact with item frames and armor stands (via
+ * the ArmorStandEditor Plugin)
+ *
+ * @author Dynant
+ * @version 1.0
+ * @since 2025-09-21
+ * @see Module
+ * @see WanderfulCommand
+ * @see WanderfulEntityDamageEvent
+ * @see WanderfulPlayerInteractEntityEvent
+ */
 public class WanderfulModule implements Module {
   protected boolean isEnabled = false;
 

@@ -1,5 +1,15 @@
 package com.nearvanilla.iceCream.modules.staffMode.commands;
 
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_CONFIRM_KEY;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_INVENTORY_KEY;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_PITCH;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_WORLD;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_X;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_Y;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_YAW;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_Z;
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_TOGGLE_KEY;
+
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -14,12 +24,10 @@ import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
 
-import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.*;
-
 /**
  * StaffMode is a command that adds a staff mode. It saves the location and inventory of the player,
  * clears their inventory and puts the player into god mode and fly mode. When the command is run
- * again, it restores the players inventory and location, and takes them out of god mode and fly
+ * again, it restores the player's inventory and location, and takes them out of god mode and fly
  * mode.
  *
  * @author Demonstrations
@@ -76,35 +84,12 @@ public class StaffModeCommand {
 
     Location playerLocation = player.getLocation();
     pdc.set(
-            STAFF_MODE_LOCATION_WORLD,
-            PersistentDataType.STRING,
-            playerLocation.getWorld().getName()
-    );
-    pdc.set(
-            STAFF_MODE_LOCATION_X,
-            PersistentDataType.DOUBLE,
-            playerLocation.getX()
-    );
-    pdc.set(
-            STAFF_MODE_LOCATION_Y,
-            PersistentDataType.DOUBLE,
-            playerLocation.getY()
-    );
-    pdc.set(
-            STAFF_MODE_LOCATION_Z,
-            PersistentDataType.DOUBLE,
-            playerLocation.getZ()
-    );
-    pdc.set(
-            STAFF_MODE_LOCATION_YAW,
-            PersistentDataType.FLOAT,
-            playerLocation.getYaw()
-    );
-    pdc.set(
-            STAFF_MODE_LOCATION_PITCH,
-            PersistentDataType.FLOAT,
-            playerLocation.getPitch()
-    );
+        STAFF_MODE_LOCATION_WORLD, PersistentDataType.STRING, playerLocation.getWorld().getName());
+    pdc.set(STAFF_MODE_LOCATION_X, PersistentDataType.DOUBLE, playerLocation.getX());
+    pdc.set(STAFF_MODE_LOCATION_Y, PersistentDataType.DOUBLE, playerLocation.getY());
+    pdc.set(STAFF_MODE_LOCATION_Z, PersistentDataType.DOUBLE, playerLocation.getZ());
+    pdc.set(STAFF_MODE_LOCATION_YAW, PersistentDataType.FLOAT, playerLocation.getYaw());
+    pdc.set(STAFF_MODE_LOCATION_PITCH, PersistentDataType.FLOAT, playerLocation.getPitch());
 
     player.getInventory().clear();
     player.setInvulnerable(true);

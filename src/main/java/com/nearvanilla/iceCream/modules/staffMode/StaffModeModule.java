@@ -18,15 +18,24 @@ import org.bukkit.NamespacedKey;
  */
 public class StaffModeModule implements Module {
   protected boolean isEnabled = false;
-  public static NamespacedKey STAFF_MODE_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "staff_mode.enabled");
-  public static NamespacedKey STAFF_MODE_INVENTORY_KEY = new NamespacedKey(IceCream.instance, "staff_mode.inventory");
-  public static NamespacedKey STAFF_MODE_LOCATION_WORLD = new NamespacedKey(IceCream.instance, "staff_mode.location.world");
-  public static NamespacedKey STAFF_MODE_LOCATION_X = new NamespacedKey(IceCream.instance, "staff_mode.location.x");
-  public static NamespacedKey STAFF_MODE_LOCATION_Y = new NamespacedKey(IceCream.instance, "staff_mode.location.y");
-  public static NamespacedKey STAFF_MODE_LOCATION_Z = new NamespacedKey(IceCream.instance, "staff_mode.location.z");
-  public static NamespacedKey STAFF_MODE_LOCATION_YAW = new NamespacedKey(IceCream.instance, "staff_mode.location.yaw");
-  public static NamespacedKey STAFF_MODE_LOCATION_PITCH = new NamespacedKey(IceCream.instance, "staff_mode.location.pitch");
-  public static NamespacedKey STAFF_MODE_CONFIRM_KEY = new NamespacedKey(IceCream.instance, "staff_mode.confirm_disable");
+  public static NamespacedKey STAFF_MODE_TOGGLE_KEY =
+      new NamespacedKey(IceCream.instance, "staff_mode.enabled");
+  public static NamespacedKey STAFF_MODE_INVENTORY_KEY =
+      new NamespacedKey(IceCream.instance, "staff_mode.inventory");
+  public static NamespacedKey STAFF_MODE_LOCATION_WORLD =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.world");
+  public static NamespacedKey STAFF_MODE_LOCATION_X =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.x");
+  public static NamespacedKey STAFF_MODE_LOCATION_Y =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.y");
+  public static NamespacedKey STAFF_MODE_LOCATION_Z =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.z");
+  public static NamespacedKey STAFF_MODE_LOCATION_YAW =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.yaw");
+  public static NamespacedKey STAFF_MODE_LOCATION_PITCH =
+      new NamespacedKey(IceCream.instance, "staff_mode.location.pitch");
+  public static NamespacedKey STAFF_MODE_CONFIRM_KEY =
+      new NamespacedKey(IceCream.instance, "staff_mode.confirm_disable");
 
   @Override
   public boolean shouldEnable() {

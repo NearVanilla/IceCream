@@ -5,9 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -92,5 +90,4 @@ public class StaffModeUtils {
       throw new RuntimeException("Failed to deserialize inventory", e);
     }
   }
-
 }

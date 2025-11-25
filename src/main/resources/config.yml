@@ -14,3 +14,34 @@ modules:
     max-heads: 10
   staffmode:
     enabled: true
+  wanderful:
+    enabled: true
+    item_frame:
+      type: WOODEN_SWORD
+      name: '<gold>Item Frame Wand</gold>'
+      lore:
+        - '<dark_green>Now you see me,</dark_green>'
+        - '<dark_red>now you don''t</dark_red>'
+      crafting:
+        shape:
+          - D
+          - I
+          - S
+        ingredients:
+          D: DIAMOND
+          I: ITEM_FRAME
+          S: STICK
+    armor_stand:
+      type: WOODEN_HOE
+      name: '<gold>Armor Stand Wand</gold>'
+      lore:
+        - Controlling the moves!
+      crafting:
+        shape:
+          - D
+          - A
+          - H
+        ingredients:
+          D: DIAMOND
+          A: ARMOR_STAND
+          H: STICK

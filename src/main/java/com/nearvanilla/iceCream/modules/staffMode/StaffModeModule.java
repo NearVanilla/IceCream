@@ -18,10 +18,10 @@ import org.bukkit.NamespacedKey;
  */
 public class StaffModeModule implements Module {
   protected boolean isEnabled = false;
-  public static NamespacedKey STAFF_MODE_TOGGLE_KEY;
-  public static NamespacedKey STAFF_MODE_INVENTORY_KEY;
-  public static NamespacedKey STAFF_MODE_LOCATION_KEY;
-  public static NamespacedKey STAFF_MODE_CONFIRM_KEY;
+  public static NamespacedKey STAFF_MODE_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "staff_mode.enabled");
+  public static NamespacedKey STAFF_MODE_INVENTORY_KEY = new NamespacedKey(IceCream.instance, "staff_mode.inventory");
+  public static NamespacedKey STAFF_MODE_LOCATION_KEY = new NamespacedKey(IceCream.instance, "staff_mode.location");
+  public static NamespacedKey STAFF_MODE_CONFIRM_KEY = new NamespacedKey(IceCream.instance, "staff_mode.confirm_disable");
 
   @Override
   public boolean shouldEnable() {
@@ -46,18 +46,10 @@ public class StaffModeModule implements Module {
         .registerEvents(new StaffModePlayerJoinEvent(), IceCream.instance);
   }
 
-  private void initKeys() {
-    STAFF_MODE_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "staff_mode.enabled");
-    STAFF_MODE_INVENTORY_KEY = new NamespacedKey(IceCream.instance, "staff_mode.inventory");
-    STAFF_MODE_LOCATION_KEY = new NamespacedKey(IceCream.instance, "staff_mode.location");
-    STAFF_MODE_CONFIRM_KEY = new NamespacedKey(IceCream.instance, "staff_mode.confirm_disable");
-  }
-
   @Override
   public void register() {
     if (shouldEnable()) {
       try {
-        initKeys();
         registerCommands();
         registerEvents();
         isEnabled = true;

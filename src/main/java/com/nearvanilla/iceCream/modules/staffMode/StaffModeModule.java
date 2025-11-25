@@ -32,7 +32,6 @@ public class StaffModeModule implements Module {
     if (STAFF_MODE_TOGGLE_KEY != null) {
       return;
     }
-    // NamespacedKeys need a plugin instance; ensure we only create them after IceCream.instance is set
     STAFF_MODE_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "staff_mode.enabled");
     STAFF_MODE_INVENTORY_KEY = new NamespacedKey(IceCream.instance, "staff_mode.inventory");
     STAFF_MODE_LOCATION_WORLD = new NamespacedKey(IceCream.instance, "staff_mode.location.world");

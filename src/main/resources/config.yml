@@ -12,6 +12,8 @@ modules:
     enabled: true
     min-heads: 5
     max-heads: 10
+  staffmode:
+    enabled: true
   wanderful:
     enabled: true
     item_frame:

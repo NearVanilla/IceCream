@@ -57,9 +57,9 @@ public class StaffModeCommand {
         Boolean.TRUE.equals(pdc.get(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN));
 
     if (!pdc.has(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN) || !isStaffModeEnabled) {
-      enableStaffMode(player, pdc);
+      enableStaffMode(player);
     } else {
-      disableStaffMode(player, pdc);
+      disableStaffMode(player);
     }
   }
 
@@ -68,9 +68,9 @@ public class StaffModeCommand {
    * clearing their inventory, and setting them to invulnerable and allowing flight.
    *
    * @param player the player to enable staff mode for
-   * @param pdc the player's PersistentDataContainer
    */
-  private void enableStaffMode(Player player, PersistentDataContainer pdc) {
+  private void enableStaffMode(Player player) {
+    PersistentDataContainer pdc = player.getPersistentDataContainer();
     pdc.set(
         STAFF_MODE_INVENTORY_KEY,
         PersistentDataType.BYTE_ARRAY,
@@ -96,10 +96,11 @@ public class StaffModeCommand {
    * their current inventory, and setting them to vulnerable and disabling flight.
    *
    * @param player the player to disable staff mode for
-   * @param pdc the player's PersistentDataContainer
    */
-  private void disableStaffMode(Player player, PersistentDataContainer pdc) {
+  private void disableStaffMode(Player player) {
     boolean hasItems = false;
+    PersistentDataContainer pdc = player.getPersistentDataContainer();
+
     for (ItemStack item : player.getInventory().getContents()) {
       if (item != null && !item.getType().isAir()) {
         hasItems = true;

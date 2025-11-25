@@ -1,15 +1,11 @@
 package com.nearvanilla.iceCream.modules.staffMode.commands;
 
-import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_CONFIRM_KEY;
-import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_INVENTORY_KEY;
-import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_LOCATION_KEY;
-import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_TOGGLE_KEY;
-
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -17,6 +13,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
+
+import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.*;
 
 /**
  * StaffMode is a command that adds a staff mode. It saves the location and inventory of the player,
@@ -71,15 +69,42 @@ public class StaffModeCommand {
    */
   private void enableStaffMode(Player player) {
     PersistentDataContainer pdc = player.getPersistentDataContainer();
-    pdc.set(
+    pdc.set( // Set serialized inventory.
         STAFF_MODE_INVENTORY_KEY,
         PersistentDataType.BYTE_ARRAY,
         StaffModeUtils.serializeInventory(player.getInventory().getContents()));
 
+    Location playerLocation = player.getLocation();
     pdc.set(
-        STAFF_MODE_LOCATION_KEY,
-        PersistentDataType.BYTE_ARRAY,
-        StaffModeUtils.serializeLocation(player));
+            STAFF_MODE_LOCATION_WORLD,
+            PersistentDataType.STRING,
+            playerLocation.getWorld().getName()
+    );
+    pdc.set(
+            STAFF_MODE_LOCATION_X,
+            PersistentDataType.DOUBLE,
+            playerLocation.getX()
+    );
+    pdc.set(
+            STAFF_MODE_LOCATION_Y,
+            PersistentDataType.DOUBLE,
+            playerLocation.getY()
+    );
+    pdc.set(
+            STAFF_MODE_LOCATION_Z,
+            PersistentDataType.DOUBLE,
+            playerLocation.getZ()
+    );
+    pdc.set(
+            STAFF_MODE_LOCATION_YAW,
+            PersistentDataType.FLOAT,
+            playerLocation.getYaw()
+    );
+    pdc.set(
+            STAFF_MODE_LOCATION_PITCH,
+            PersistentDataType.FLOAT,
+            playerLocation.getPitch()
+    );
 
     player.getInventory().clear();
     player.setInvulnerable(true);
@@ -137,13 +162,19 @@ public class StaffModeCommand {
     player.setFlying(false);
     player.setAllowFlight(false);
 
-    byte[] serializedLocation = pdc.get(STAFF_MODE_LOCATION_KEY, PersistentDataType.BYTE_ARRAY);
-    if (serializedLocation != null) {
-      player.teleport(
-          StaffModeUtils.deserializeLocation(serializedLocation, IceCream.instance.getServer()));
+    String world = pdc.get(STAFF_MODE_LOCATION_WORLD, PersistentDataType.STRING);
+    Double x = pdc.get(STAFF_MODE_LOCATION_X, PersistentDataType.DOUBLE);
+    Double y = pdc.get(STAFF_MODE_LOCATION_Y, PersistentDataType.DOUBLE);
+    Double z = pdc.get(STAFF_MODE_LOCATION_Z, PersistentDataType.DOUBLE);
+    Float yaw = pdc.get(STAFF_MODE_LOCATION_YAW, PersistentDataType.FLOAT);
+    Float pitch = pdc.get(STAFF_MODE_LOCATION_PITCH, PersistentDataType.FLOAT);
+
+    if (world != null && x != null && y != null && z != null && yaw != null && pitch != null) {
+      Location savedLocation =
+          new Location(IceCream.instance.getServer().getWorld(world), x, y, z, yaw, pitch);
+      player.teleport(savedLocation);
     }
 
-    pdc.remove(STAFF_MODE_LOCATION_KEY);
     pdc.remove(STAFF_MODE_INVENTORY_KEY);
     pdc.set(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
 

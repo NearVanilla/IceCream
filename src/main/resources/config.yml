@@ -14,6 +14,21 @@ modules:
     max-heads: 10
   staffmode:
     enabled: true
+  vanish:
+    enabled: true
+    bossbar:
+      text: '<red>You are currently vanished</red>'
+      color: RED
+    messages:
+      join: '<yellow><player> joined the game</yellow>'
+      leave: '<yellow><player> left the game</yellow>'
+      discord-join: '%player% joined the server'
+      discord-leave: '%player% left the server'
+    carbon-chat:
+      allowed-channels:
+        - staff
+        - staffchat
+        - sc
   wanderful:
     enabled: true
     item_frame:

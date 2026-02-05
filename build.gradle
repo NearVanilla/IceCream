@@ -18,6 +18,14 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        name = "dynmap-repo"
+        url = "https://repo.mikeprimm.com/"
+    }
+    maven {
+        name = "scarsz-nexus"
+        url = "https://nexus.scarsz.me/content/groups/public/"
+    }
 }
 
 dependencies {
@@ -26,6 +34,10 @@ dependencies {
     implementation("org.incendo:cloud-annotations:2.0.0")
     implementation("com.fasterxml.jackson.core:jackson-core:2.20.0-rc1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.20.0-rc1")
+
+    compileOnly("us.dynmap:DynmapCoreAPI:3.7-beta-6")
+    compileOnly("com.discordsrv:discordsrv:1.28.0")
+    compileOnly("de.hexaoxi:carbonchat-api:3.0.0-beta.36")
 }
 
 def targetJavaVersion = 21

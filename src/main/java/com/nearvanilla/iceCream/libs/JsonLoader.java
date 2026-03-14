@@ -1,10 +1,10 @@
 package com.nearvanilla.iceCream.libs;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 public final class JsonLoader {
   private static final ObjectMapper MAPPER = new ObjectMapper();

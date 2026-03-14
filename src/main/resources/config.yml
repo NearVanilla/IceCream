@@ -29,6 +29,11 @@ modules:
         - staff
         - staffchat
         - sc
+  desertmobs:
+    enabled: true
+    spawn:
+      zombie-to-husk-chance: 0.33
+      skeleton-to-parched-chance: 0.33
   wanderful:
     enabled: true
     item_frame:

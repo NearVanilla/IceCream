@@ -4,7 +4,6 @@ import static com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesMo
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.nearvanilla.iceCream.libs.JsonLoader;
 import java.io.InputStream;
 import java.util.List;
@@ -17,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.SkullMeta;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * HeadUtils is a utility class for managing custom player heads. It provides methods to load head

@@ -22,11 +22,23 @@ import org.bukkit.NamespacedKey;
 public class VanishModule implements Module {
   protected boolean isEnabled = false;
   public static NamespacedKey VANISH_TOGGLE_KEY;
+  public static NamespacedKey VANISH_LOCATION_WORLD;
+  public static NamespacedKey VANISH_LOCATION_X;
+  public static NamespacedKey VANISH_LOCATION_Y;
+  public static NamespacedKey VANISH_LOCATION_Z;
+  public static NamespacedKey VANISH_LOCATION_YAW;
+  public static NamespacedKey VANISH_LOCATION_PITCH;
 
   private static void initKeys() {
     if (VANISH_TOGGLE_KEY != null) return;
 
     VANISH_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "vanish.enabled");
+    VANISH_LOCATION_WORLD = new NamespacedKey(IceCream.instance, "vanish.location.world");
+    VANISH_LOCATION_X = new NamespacedKey(IceCream.instance, "vanish.location.x");
+    VANISH_LOCATION_Y = new NamespacedKey(IceCream.instance, "vanish.location.y");
+    VANISH_LOCATION_Z = new NamespacedKey(IceCream.instance, "vanish.location.z");
+    VANISH_LOCATION_YAW = new NamespacedKey(IceCream.instance, "vanish.location.yaw");
+    VANISH_LOCATION_PITCH = new NamespacedKey(IceCream.instance, "vanish.location.pitch");
   }
 
   @Override

@@ -1,10 +1,15 @@
 package com.nearvanilla.iceCream.modules.vanish.commands;
 
+import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.modules.vanish.VanishModule;
 import com.nearvanilla.iceCream.modules.vanish.VanishUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
@@ -55,6 +60,16 @@ public class VanishCommand {
    * @param player the player to vanish
    */
   private void enableVanish(Player player) {
+    PersistentDataContainer pdc = player.getPersistentDataContainer();
+    Location loc = player.getLocation();
+    pdc.set(
+        VanishModule.VANISH_LOCATION_WORLD, PersistentDataType.STRING, loc.getWorld().getName());
+    pdc.set(VanishModule.VANISH_LOCATION_X, PersistentDataType.DOUBLE, loc.getX());
+    pdc.set(VanishModule.VANISH_LOCATION_Y, PersistentDataType.DOUBLE, loc.getY());
+    pdc.set(VanishModule.VANISH_LOCATION_Z, PersistentDataType.DOUBLE, loc.getZ());
+    pdc.set(VanishModule.VANISH_LOCATION_YAW, PersistentDataType.FLOAT, loc.getYaw());
+    pdc.set(VanishModule.VANISH_LOCATION_PITCH, PersistentDataType.FLOAT, loc.getPitch());
+
     VanishUtils.hidePlayer(player);
 
     player.sendMessage(vanishEnabled);
@@ -67,6 +82,20 @@ public class VanishCommand {
    */
   private void disableVanish(Player player) {
     VanishUtils.showPlayer(player);
+
+    PersistentDataContainer pdc = player.getPersistentDataContainer();
+    String world = pdc.get(VanishModule.VANISH_LOCATION_WORLD, PersistentDataType.STRING);
+    Double x = pdc.get(VanishModule.VANISH_LOCATION_X, PersistentDataType.DOUBLE);
+    Double y = pdc.get(VanishModule.VANISH_LOCATION_Y, PersistentDataType.DOUBLE);
+    Double z = pdc.get(VanishModule.VANISH_LOCATION_Z, PersistentDataType.DOUBLE);
+    Float yaw = pdc.get(VanishModule.VANISH_LOCATION_YAW, PersistentDataType.FLOAT);
+    Float pitch = pdc.get(VanishModule.VANISH_LOCATION_PITCH, PersistentDataType.FLOAT);
+
+    if (world != null && x != null && y != null && z != null && yaw != null && pitch != null) {
+      Location savedLocation =
+          new Location(IceCream.instance.getServer().getWorld(world), x, y, z, yaw, pitch);
+      player.teleport(savedLocation);
+    }
 
     player.sendMessage(vanishDisabled);
   }

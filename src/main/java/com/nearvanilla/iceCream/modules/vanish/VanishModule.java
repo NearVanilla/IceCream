@@ -3,6 +3,7 @@ package com.nearvanilla.iceCream.modules.vanish;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.vanish.commands.VanishCommand;
+import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerQuitEvent;
 import com.nearvanilla.iceCream.modules.vanish.integrations.CarbonChatIntegration;
@@ -54,6 +55,10 @@ public class VanishModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new VanishPlayerQuitEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new VanishPlayerAdvancementDoneEvent(), IceCream.instance);
   }
 
   @Override

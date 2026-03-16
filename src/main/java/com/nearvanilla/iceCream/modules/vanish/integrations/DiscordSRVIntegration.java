@@ -19,7 +19,8 @@ import org.bukkit.metadata.FixedMetadataValue;
 public class DiscordSRVIntegration {
   private static final Component DISCORD_ERROR_MESSAGE =
       MiniMessage.miniMessage()
-          .deserialize("<yellow>Heads up! The Discord leave/join message couldn't be sent.</yellow>");
+          .deserialize(
+              "<yellow>Heads up! The Discord leave/join message couldn't be sent.</yellow>");
 
   private static String joinMessage;
   private static String leaveMessage;

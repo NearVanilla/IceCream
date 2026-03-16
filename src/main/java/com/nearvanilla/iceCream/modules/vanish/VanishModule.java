@@ -22,11 +22,14 @@ import org.bukkit.NamespacedKey;
 public class VanishModule implements Module {
   protected boolean isEnabled = false;
   public static NamespacedKey VANISH_TOGGLE_KEY;
+  public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
 
   private static void initKeys() {
     if (VANISH_TOGGLE_KEY != null) return;
 
     VANISH_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "vanish.enabled");
+    DYNMAP_WAS_HIDDEN_KEY =
+        new NamespacedKey(IceCream.instance, "vanish.dynmap_hidden_before_vanish");
   }
 
   @Override

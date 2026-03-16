@@ -2,6 +2,8 @@ package com.nearvanilla.iceCream.modules.vanish.integrations;
 
 import com.nearvanilla.iceCream.IceCream;
 import github.scarsz.discordsrv.DiscordSRV;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -15,6 +17,11 @@ import org.bukkit.metadata.FixedMetadataValue;
  * @since 2025-01-27
  */
 public class DiscordSRVIntegration {
+  private static final Component DISCORD_ERROR_MESSAGE =
+      MiniMessage.miniMessage()
+          .deserialize(
+              "<yellow>Heads up! The Discord leave/join message couldn't be sent.</yellow>");
+
   private static String joinMessage;
   private static String leaveMessage;
   private static DiscordSRV discordSrv;
@@ -62,7 +69,12 @@ public class DiscordSRVIntegration {
   public static void sendFakeLeave(Player player) {
     if (discordSrv == null) return;
 
-    discordSrv.sendLeaveMessage(player, leaveMessage);
+    try {
+      discordSrv.sendLeaveMessage(player, leaveMessage);
+    } catch (Exception e) {
+      IceCream.logger.warning("Failed to send fake leave message to DiscordSRV: " + e.getMessage());
+      player.sendMessage(DISCORD_ERROR_MESSAGE);
+    }
   }
 
   /**
@@ -73,6 +85,11 @@ public class DiscordSRVIntegration {
   public static void sendFakeJoin(Player player) {
     if (discordSrv == null) return;
 
-    discordSrv.sendJoinMessage(player, joinMessage);
+    try {
+      discordSrv.sendJoinMessage(player, joinMessage);
+    } catch (Exception e) {
+      IceCream.logger.warning("Failed to send fake join message to DiscordSRV: " + e.getMessage());
+      player.sendMessage(DISCORD_ERROR_MESSAGE);
+    }
   }
 }

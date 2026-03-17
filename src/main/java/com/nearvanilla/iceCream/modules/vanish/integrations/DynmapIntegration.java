@@ -53,4 +53,16 @@ public class DynmapIntegration {
 
     dynmapApi.setPlayerVisiblity(player.getName(), true);
   }
+
+  /**
+   * Returns whether a player is currently visible on the Dynmap.
+   *
+   * @param player the player to check
+   * @return true if the player is visible, false if hidden
+   */
+  public static boolean isPlayerVisible(Player player) {
+    if (dynmapApi == null) return true;
+
+    return dynmapApi.getPlayerVisbility(player.getName());
+  }
 }

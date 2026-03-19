@@ -12,9 +12,13 @@ import org.bukkit.entity.Player;
 /**
  * Shared utilities for broadcasting fake join/quit messages and sending player state to Velocity.
  *
+ * <p>Originally implemented by Dynant as part of {@link
+ * com.nearvanilla.iceCream.modules.vanish.VanishUtils}, extracted here for reuse across modules.
+ *
  * @author Dynant
+ * @author 105hua
  * @version 1.0
- * @since 2026-03-18
+ * @since 2025-01-27
  */
 public class FakeMessageUtils {
 

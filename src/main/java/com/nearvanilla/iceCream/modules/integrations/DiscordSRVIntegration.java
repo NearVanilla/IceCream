@@ -15,7 +15,7 @@ import org.bukkit.metadata.FixedMetadataValue;
  *
  * @author Dynant
  * @version 1.0
- * @since 2026-03-18
+ * @since 2025-01-27
  */
 public class DiscordSRVIntegration {
   private static final Component DISCORD_ERROR_MESSAGE =

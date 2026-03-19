@@ -10,7 +10,7 @@ import org.dynmap.DynmapCommonAPI;
  *
  * @author Dynant
  * @version 1.0
- * @since 2026-03-18
+ * @since 2025-01-27
  */
 public class DynmapIntegration {
   private static DynmapCommonAPI dynmapApi = null;

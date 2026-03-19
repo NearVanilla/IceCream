@@ -22,8 +22,7 @@ import org.bukkit.entity.Player;
  * prefix, hidden-state check, and display name for error messages.
  *
  * <p>Originally implemented by Dynant as part of {@link
- * com.nearvanilla.iceCream.modules.vanish.integrations}, generalized here for reuse across
- * modules.
+ * com.nearvanilla.iceCream.modules.vanish.integrations}, generalized here for reuse across modules.
  *
  * @author Dynant
  * @author 105hua

@@ -16,7 +16,7 @@ import org.bukkit.NamespacedKey;
  * players are set to SPECTATOR gamemode, hidden from other players, removed from Dynmap, and
  * DiscordSRV broadcasts fake leave/join messages.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  * @see Module

@@ -17,6 +17,7 @@ import org.bukkit.NamespacedKey;
  * from other players, the tab list, Dynmap, and DiscordSRV. They can only chat in staff channels.
  *
  * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2025-01-27
  * @see Module

@@ -17,6 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
  * join/quit messages, and communicate vanish state to Velocity.
  *
  * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2025-01-27
  */

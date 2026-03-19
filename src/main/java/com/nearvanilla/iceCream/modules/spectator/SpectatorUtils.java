@@ -17,7 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
  * Utility class for spectator mode functionality. Provides methods to enable/disable spectator
  * mode, broadcast fake join/quit messages, and communicate spectator state to Velocity.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

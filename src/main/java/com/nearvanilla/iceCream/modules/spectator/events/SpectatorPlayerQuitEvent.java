@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
  * Handles player quit events for spectator mode. If the player is in spectator mode, suppresses the
  * quit message.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
  * prefix, hidden-state check, and display name for error messages.
  *
  * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

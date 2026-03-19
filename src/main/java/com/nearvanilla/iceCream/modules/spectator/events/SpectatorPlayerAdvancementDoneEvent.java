@@ -9,7 +9,7 @@ import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 /**
  * Suppresses advancement broadcast messages for players in spectator mode.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

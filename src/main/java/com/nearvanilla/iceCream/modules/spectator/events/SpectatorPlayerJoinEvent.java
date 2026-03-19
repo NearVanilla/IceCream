@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
  * player, and if the joining player is in spectator mode, hides them from others and suppresses the
  * join message.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

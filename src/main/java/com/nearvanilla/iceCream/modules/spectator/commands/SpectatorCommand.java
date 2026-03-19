@@ -14,7 +14,7 @@ import org.incendo.cloud.annotations.Permission;
  * set to SPECTATOR gamemode, hidden from other players, and a fake leave message is broadcast. When
  * exiting, the player's previous gamemode is restored and a fake join message is broadcast.
  *
- * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2026-03-18
  */

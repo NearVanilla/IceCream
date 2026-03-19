@@ -21,10 +21,14 @@ import org.bukkit.entity.Player;
  * chat channels only. Each module holds its own instance configured with the appropriate config
  * prefix, hidden-state check, and display name for error messages.
  *
+ * <p>Originally implemented by Dynant as part of {@link
+ * com.nearvanilla.iceCream.modules.vanish.integrations}, generalized here for reuse across
+ * modules.
+ *
  * @author Dynant
  * @author 105hua
  * @version 1.0
- * @since 2026-03-18
+ * @since 2025-01-27
  */
 public class CarbonChatIntegration {
 

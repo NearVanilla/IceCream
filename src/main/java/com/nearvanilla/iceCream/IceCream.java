@@ -25,7 +25,7 @@ import org.incendo.cloud.paper.PaperCommandManager;
  *
  * @author 105hua
  * @version 1.0
- * @since 2025-08-08
+ * @since 2024-09-15
  * @see JavaPlugin
  * @see PaperCommandManager
  * @see AnnotationParser

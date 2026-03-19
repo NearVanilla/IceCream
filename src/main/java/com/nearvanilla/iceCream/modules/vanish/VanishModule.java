@@ -2,13 +2,14 @@ package com.nearvanilla.iceCream.modules.vanish;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
+import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
 import com.nearvanilla.iceCream.modules.vanish.commands.VanishCommand;
+import com.nearvanilla.iceCream.modules.vanish.events.VanishEntityTargetEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerQuitEvent;
-import com.nearvanilla.iceCream.modules.vanish.integrations.CarbonChatIntegration;
-import com.nearvanilla.iceCream.modules.vanish.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.vanish.integrations.DynmapIntegration;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -24,6 +25,9 @@ public class VanishModule implements Module {
   protected boolean isEnabled = false;
   public static NamespacedKey VANISH_TOGGLE_KEY;
   public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
+
+  private DiscordSRVIntegration discordSRV;
+  private CarbonChatIntegration carbonChat;
 
   private static void initKeys() {
     if (VANISH_TOGGLE_KEY != null) return;
@@ -62,6 +66,10 @@ public class VanishModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new VanishPlayerAdvancementDoneEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new VanishEntityTargetEvent(), IceCream.instance);
   }
 
   @Override
@@ -73,9 +81,14 @@ public class VanishModule implements Module {
         registerEvents();
 
         DynmapIntegration.init();
-        DiscordSRVIntegration.init();
-        CarbonChatIntegration.init();
-        VanishUtils.init();
+
+        discordSRV = new DiscordSRVIntegration();
+        discordSRV.init("modules.vanish.messages");
+
+        carbonChat = new CarbonChatIntegration();
+        carbonChat.init("modules.vanish", VanishUtils::isVanished, "vanished");
+
+        VanishUtils.init(discordSRV, carbonChat);
 
         isEnabled = true;
       } catch (Exception e) {

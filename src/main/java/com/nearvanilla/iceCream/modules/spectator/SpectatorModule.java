@@ -2,13 +2,13 @@ package com.nearvanilla.iceCream.modules.spectator;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
+import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
 import com.nearvanilla.iceCream.modules.spectator.commands.SpectatorCommand;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerQuitEvent;
-import com.nearvanilla.iceCream.modules.spectator.integrations.CarbonChatIntegration;
-import com.nearvanilla.iceCream.modules.spectator.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.spectator.integrations.DynmapIntegration;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -26,6 +26,9 @@ public class SpectatorModule implements Module {
   public static NamespacedKey SPECTATOR_TOGGLE_KEY;
   public static NamespacedKey PREVIOUS_GAMEMODE_KEY;
   public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
+
+  private DiscordSRVIntegration discordSRV;
+  private CarbonChatIntegration carbonChat;
 
   private static void initKeys() {
     if (SPECTATOR_TOGGLE_KEY != null) return;
@@ -76,9 +79,15 @@ public class SpectatorModule implements Module {
         registerEvents();
 
         DynmapIntegration.init();
-        DiscordSRVIntegration.init();
-        CarbonChatIntegration.init();
-        SpectatorUtils.init();
+
+        discordSRV = new DiscordSRVIntegration();
+        discordSRV.init("modules.spectator.messages");
+
+        carbonChat = new CarbonChatIntegration();
+        carbonChat.init(
+            "modules.spectator", SpectatorUtils::isInSpectatorMode, "in spectator mode");
+
+        SpectatorUtils.init(discordSRV, carbonChat);
 
         isEnabled = true;
       } catch (Exception e) {

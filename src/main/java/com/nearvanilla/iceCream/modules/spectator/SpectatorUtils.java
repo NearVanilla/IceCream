@@ -1,15 +1,13 @@
 package com.nearvanilla.iceCream.modules.spectator;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import com.nearvanilla.iceCream.IceCream;
-import com.nearvanilla.iceCream.modules.spectator.integrations.CarbonChatIntegration;
-import com.nearvanilla.iceCream.modules.spectator.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.spectator.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.utils.FakeMessageUtils;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -36,7 +34,14 @@ public class SpectatorUtils {
 
   private static String leaveMessageFormat;
 
-  public static void init() {
+  private static DiscordSRVIntegration discordSRV;
+  private static CarbonChatIntegration carbonChat;
+
+  public static void init(
+      DiscordSRVIntegration discordSRVIntegration, CarbonChatIntegration carbonChatIntegration) {
+    discordSRV = discordSRVIntegration;
+    carbonChat = carbonChatIntegration;
+
     // Load message formats
     joinMessageFormat =
         IceCream.config.getString(
@@ -79,12 +84,12 @@ public class SpectatorUtils {
 
     // Clean up player state
     for (Player player : Bukkit.getOnlinePlayers()) {
-      DiscordSRVIntegration.setVanishedMetadata(player, false);
+      discordSRV.setVanishedMetadata(player, false);
 
       // Restore spectating players
       if (isInSpectatorMode(player)) disableSpectator(player);
     }
-    CarbonChatIntegration.cleanup();
+    carbonChat.cleanup();
   }
 
   /** Registers the plugin messaging channel for Velocity communication. */
@@ -129,22 +134,23 @@ public class SpectatorUtils {
             PersistentDataType.STRING,
             player.getGameMode().name());
 
-    // Switch to spectator gamemode
-    player.setGameMode(GameMode.SPECTATOR);
-
     // Set spectator state in PDC
     player
         .getPersistentDataContainer()
         .set(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN, true);
 
     // Mark as vanished for DiscordSRV (suppresses real join/leave messages)
-    DiscordSRVIntegration.setVanishedMetadata(player, true);
+    discordSRV.setVanishedMetadata(player, true);
 
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (onlinePlayer.equals(player)) continue;
 
       onlinePlayer.hidePlayer(IceCream.instance, player);
     }
+
+    // Switch to spectator gamemode after hiding — setGameMode triggers a tab list refresh packet
+    // on the next tick, so the player must already be hidden before that fires.
+    player.setGameMode(GameMode.SPECTATOR);
 
     // Save pre-spectator Dynmap visibility so it can be restored on exit
     boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
@@ -161,11 +167,11 @@ public class SpectatorUtils {
 
     // Broadcast fake quit messages
     if (broadcastMessages) {
-      broadcastFakeQuit(player);
-      DiscordSRVIntegration.sendFakeLeave(player);
+      FakeMessageUtils.broadcastFakeMessage(player, leaveMessageFormat);
+      discordSRV.sendFakeLeave(player);
     }
 
-    sendSpectatorStateToVelocity(player, true);
+    FakeMessageUtils.sendStateToVelocity(player, SPECTATOR_CHANNEL, true);
     showSpectatorBossbar(player);
   }
 
@@ -198,7 +204,7 @@ public class SpectatorUtils {
     player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_GAMEMODE_KEY);
 
     // Clear vanished metadata for DiscordSRV
-    DiscordSRVIntegration.setVanishedMetadata(player, false);
+    discordSRV.setVanishedMetadata(player, false);
 
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (onlinePlayer.equals(player)) continue;
@@ -218,10 +224,10 @@ public class SpectatorUtils {
     }
 
     // Broadcast fake join messages
-    broadcastFakeJoin(player);
-    DiscordSRVIntegration.sendFakeJoin(player);
+    FakeMessageUtils.broadcastFakeMessage(player, joinMessageFormat);
+    discordSRV.sendFakeJoin(player);
 
-    sendSpectatorStateToVelocity(player, false);
+    FakeMessageUtils.sendStateToVelocity(player, SPECTATOR_CHANNEL, false);
     hideSpectatorBossbar(player);
   }
 
@@ -238,53 +244,6 @@ public class SpectatorUtils {
         player.hidePlayer(IceCream.instance, onlinePlayer);
       }
     }
-  }
-
-  /**
-   * Broadcasts a fake quit message for the given player to simulate them leaving.
-   *
-   * @param player the player to broadcast the fake quit for
-   */
-  public static void broadcastFakeQuit(Player player) {
-    Component quitMessage =
-        MiniMessage.miniMessage()
-            .deserialize(leaveMessageFormat, Placeholder.component("player", player.displayName()));
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (!onlinePlayer.equals(player)) {
-        onlinePlayer.sendMessage(quitMessage);
-      }
-    }
-  }
-
-  /**
-   * Broadcasts a fake join message for the given player to simulate them joining.
-   *
-   * @param player the player to broadcast the fake join for
-   */
-  public static void broadcastFakeJoin(Player player) {
-    Component joinMessage =
-        MiniMessage.miniMessage()
-            .deserialize(joinMessageFormat, Placeholder.component("player", player.displayName()));
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (!onlinePlayer.equals(player)) {
-        onlinePlayer.sendMessage(joinMessage);
-      }
-    }
-  }
-
-  /**
-   * Sends the spectator state to Velocity via plugin messaging. The message format is: - Player
-   * UUID (String) - Spectator state (Boolean)
-   *
-   * @param player the player whose spectator state changed
-   * @param spectating true if the player is now in spectator mode, false otherwise
-   */
-  public static void sendSpectatorStateToVelocity(Player player, boolean spectating) {
-    ByteArrayDataOutput out = ByteStreams.newDataOutput();
-    out.writeUTF(player.getUniqueId().toString());
-    out.writeBoolean(spectating);
-
-    player.sendPluginMessage(IceCream.instance, SPECTATOR_CHANNEL, out.toByteArray());
   }
 
   /**

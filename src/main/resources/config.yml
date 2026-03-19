@@ -29,6 +29,21 @@ modules:
         - staff
         - staffchat
         - sc
+  spectator:
+    enabled: true
+    bossbar:
+      text: '<aqua>You are currently in spectator mode</aqua>'
+      color: BLUE
+    messages:
+      join: '<yellow><player> joined the game</yellow>'
+      leave: '<yellow><player> left the game</yellow>'
+      discord-join: '%player% joined the server'
+      discord-leave: '%player% left the server'
+    carbon-chat:
+      allowed-channels:
+        - staff
+        - staffchat
+        - sc
   desertmobs:
     enabled: true
     spawn:

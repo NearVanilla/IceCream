@@ -1,4 +1,4 @@
-package com.nearvanilla.iceCream.modules.vanish.integrations;
+package com.nearvanilla.iceCream.modules.integrations;
 
 import com.nearvanilla.iceCream.IceCream;
 import org.bukkit.Bukkit;
@@ -6,11 +6,11 @@ import org.bukkit.entity.Player;
 import org.dynmap.DynmapCommonAPI;
 
 /**
- * Integration with Dynmap to hide vanished players from the map.
+ * Shared integration with Dynmap to hide players from the map.
  *
  * @author Dynant
  * @version 1.0
- * @since 2025-01-27
+ * @since 2026-03-18
  */
 public class DynmapIntegration {
   private static DynmapCommonAPI dynmapApi = null;

@@ -133,6 +133,16 @@ public class VanishUtils {
       onlinePlayer.hidePlayer(IceCream.instance, player);
     }
 
+    // Save pre-vanish Dynmap visibility so it can be restored on unvanish
+    boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
+    if (wasHiddenOnDynmap) {
+      player
+          .getPersistentDataContainer()
+          .set(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
+    } else {
+      player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+    }
+
     // Hide from Dynmap
     DynmapIntegration.hidePlayer(player);
 
@@ -166,8 +176,16 @@ public class VanishUtils {
       }
       onlinePlayer.showPlayer(IceCream.instance, player);
     }
-    // Show on Dynmap
-    DynmapIntegration.showPlayer(player);
+    // Restore pre-vanish Dynmap visibility; only show if they were visible before vanishing
+    boolean wasHiddenOnDynmap =
+        Boolean.TRUE.equals(
+            player
+                .getPersistentDataContainer()
+                .get(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN));
+    player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+    if (!wasHiddenOnDynmap) {
+      DynmapIntegration.showPlayer(player);
+    }
 
     // Broadcast fake join messages
     broadcastFakeJoin(player);

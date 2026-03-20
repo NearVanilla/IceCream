@@ -3,6 +3,7 @@ package com.nearvanilla.iceCream.modules.vanish;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.vanish.commands.VanishCommand;
+import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.vanish.events.VanishPlayerQuitEvent;
 import com.nearvanilla.iceCream.modules.vanish.integrations.CarbonChatIntegration;
@@ -28,6 +29,7 @@ public class VanishModule implements Module {
   public static NamespacedKey VANISH_LOCATION_Z;
   public static NamespacedKey VANISH_LOCATION_YAW;
   public static NamespacedKey VANISH_LOCATION_PITCH;
+  public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
 
   private static void initKeys() {
     if (VANISH_TOGGLE_KEY != null) return;
@@ -39,6 +41,8 @@ public class VanishModule implements Module {
     VANISH_LOCATION_Z = new NamespacedKey(IceCream.instance, "vanish.location.z");
     VANISH_LOCATION_YAW = new NamespacedKey(IceCream.instance, "vanish.location.yaw");
     VANISH_LOCATION_PITCH = new NamespacedKey(IceCream.instance, "vanish.location.pitch");
+    DYNMAP_WAS_HIDDEN_KEY =
+        new NamespacedKey(IceCream.instance, "vanish.dynmap_hidden_before_vanish");
   }
 
   @Override
@@ -66,6 +70,10 @@ public class VanishModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new VanishPlayerQuitEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new VanishPlayerAdvancementDoneEvent(), IceCream.instance);
   }
 
   @Override

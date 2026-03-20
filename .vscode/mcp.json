@@ -1,0 +1,35 @@
+{
+  "servers": {
+    "gradle": {
+      "type": "stdio",
+      "command": "jbang",
+      "args": ["run", "--quiet", "--fresh", "gradle-mcp@rnett"],
+      "env": {
+        "GRADLE_MCP_PROJECT_ROOT": "${workspaceFolder}"
+      }
+    },
+    "maven-tools": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "arvindand/maven-tools-mcp:latest"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"]
+    },
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "${workspaceFolder}"]
+    }
+  }
+}

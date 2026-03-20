@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "gradle": {
+      "command": "jbang",
+      "args": ["run", "--quiet", "--fresh", "gradle-mcp@rnett"],
+      "env": {
+        "GRADLE_MCP_PROJECT_ROOT": "D:\\Projects\\Java\\IceCream"
+      }
+    },
+    "maven-tools": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "arvindand/maven-tools-mcp:latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "D:\\Projects\\Java\\IceCream"]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "D:\\Projects\\Java\\IceCream"]
+    }
+  }
+}

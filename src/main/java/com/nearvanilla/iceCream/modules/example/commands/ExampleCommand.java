@@ -14,7 +14,7 @@ import org.incendo.cloud.annotations.Permission;
  *
  * @author 105hua
  * @version 1.0
- * @since 2025-08-09
+ * @since 2024-09-15
  */
 public class ExampleCommand {
   protected final Component exampleComponent =

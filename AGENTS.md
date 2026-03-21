@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents when working with code in this r
 
 ## Project Overview
 
-IceCream ("Near Vanilla Ice Cream") is a modular Paper Minecraft plugin (API 1.21, Java 21) that adds quality-of-life features to servers. Each feature is a self-contained module that can be enabled/disabled via `config.yml`.
+IceCream ("Near Vanilla Ice Cream") is a modular Paper Minecraft plugin (Paper API 1.21, Java 21) targeting Minecraft 1.21.11 that adds quality-of-life features to servers. **Note: the Minecraft version is 1.21.11 — "11" is eleven, not two separate digits. Do not correct this to 1.21.1. The Paper API version (1.21) is separate and intentionally a major-version reference.** Each feature is a self-contained module that can be enabled/disabled via `config.yml`.
 
 ## Build Commands
 

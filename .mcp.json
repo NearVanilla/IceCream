@@ -11,9 +11,9 @@
       "command": "docker",
       "args": ["run", "-i", "--rm", "arvindand/maven-tools-mcp:latest"]
     },
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+    "papermc-api": {
+      "command": "bun",
+      "args": ["run", "D:/Projects/NodeJS/papermc-api-mcp/index.ts"]
     },
     "github": {
       "command": "docker",

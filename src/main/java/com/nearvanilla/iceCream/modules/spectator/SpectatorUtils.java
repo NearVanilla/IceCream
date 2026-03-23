@@ -126,13 +126,34 @@ public class SpectatorUtils {
    * @param broadcastMessages whether to broadcast fake quit messages (in-game and Discord)
    */
   public static void enableSpectator(Player player, boolean broadcastMessages) {
-    // Save current gamemode before switching
-    player
-        .getPersistentDataContainer()
-        .set(
-            SpectatorModule.PREVIOUS_GAMEMODE_KEY,
-            PersistentDataType.STRING,
-            player.getGameMode().name());
+    // Save current gamemode and location before switching, but only if we're not already in
+    // spectator mode. On rejoin, the player's gamemode is restored as SPECTATOR by Paper, so
+    // re-saving here would overwrite the originals stored in the PDC.
+    if (player.getGameMode() != GameMode.SPECTATOR) {
+      player
+          .getPersistentDataContainer()
+          .set(
+              SpectatorModule.PREVIOUS_GAMEMODE_KEY,
+              PersistentDataType.STRING,
+              player.getGameMode().name());
+
+      org.bukkit.Location loc = player.getLocation();
+      String serialized =
+          loc.getWorld().getName()
+              + ","
+              + loc.getX()
+              + ","
+              + loc.getY()
+              + ","
+              + loc.getZ()
+              + ","
+              + loc.getYaw()
+              + ","
+              + loc.getPitch();
+      player
+          .getPersistentDataContainer()
+          .set(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING, serialized);
+    }
 
     // Set spectator state in PDC
     player
@@ -202,6 +223,35 @@ public class SpectatorUtils {
     }
     player.setGameMode(previousGamemode);
     player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_GAMEMODE_KEY);
+
+    // Restore pre-spectator location
+    String serializedLocation =
+        player
+            .getPersistentDataContainer()
+            .get(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING);
+    player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_LOCATION_KEY);
+    if (serializedLocation != null) {
+      String[] parts = serializedLocation.split(",", 6);
+      if (parts.length == 6) {
+        try {
+          org.bukkit.World world = Bukkit.getWorld(parts[0]);
+          if (world != null) {
+            double x = Double.parseDouble(parts[1]);
+            double y = Double.parseDouble(parts[2]);
+            double z = Double.parseDouble(parts[3]);
+            float yaw = Float.parseFloat(parts[4]);
+            float pitch = Float.parseFloat(parts[5]);
+            player.teleport(new org.bukkit.Location(world, x, y, z, yaw, pitch));
+          }
+        } catch (NumberFormatException e) {
+          IceCream.logger.warning(
+              "Failed to parse stored spectator location for "
+                  + player.getName()
+                  + ": "
+                  + serializedLocation);
+        }
+      }
+    }
 
     // Clear vanished metadata for DiscordSRV
     discordSRV.setVanishedMetadata(player, false);

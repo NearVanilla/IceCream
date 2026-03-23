@@ -125,6 +125,9 @@ public class VanishUtils {
    * @param broadcastMessages whether to broadcast fake quit messages (in-game and Discord)
    */
   public static void hidePlayer(Player player, boolean broadcastMessages) {
+    // Capture current vanish state before mutating PDC — used below to guard the dynmap save.
+    boolean alreadyVanished = isVanished(player);
+
     // Set vanished state in PDC
     player
         .getPersistentDataContainer()
@@ -139,14 +142,18 @@ public class VanishUtils {
       onlinePlayer.hidePlayer(IceCream.instance, player);
     }
 
-    // Save pre-vanish Dynmap visibility so it can be restored on unvanish
-    boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
-    if (wasHiddenOnDynmap) {
-      player
-          .getPersistentDataContainer()
-          .set(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
-    } else {
-      player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+    // Save pre-vanish Dynmap visibility so it can be restored on unvanish.
+    // Guard: skip on rejoin — the player is already vanished and still hidden on Dynmap,
+    // so re-sampling here would corrupt the stored pre-vanish state.
+    if (!alreadyVanished) {
+      boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
+      if (wasHiddenOnDynmap) {
+        player
+            .getPersistentDataContainer()
+            .set(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
+      } else {
+        player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+      }
     }
 
     // Hide from Dynmap

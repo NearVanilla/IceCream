@@ -2,7 +2,7 @@
 
 ## Overview
 
-IceCream is a Paper Minecraft plugin built around a module system. Each module is an independently toggleable feature. The plugin has no runtime module loading — all modules are compiled in and registered at startup, but can be disabled via configuration.
+IceCream is a Paper Minecraft plugin built around a module system. Each module is an independently toggleable feature. The plugin has no runtime module loading; all modules are compiled in and registered at startup, but can be disabled via configuration.
 
 ## Entry Point
 
@@ -37,7 +37,7 @@ The standard `register()` implementation:
 3. Sets an `isEnabled` boolean field.
 4. Logs success or failure.
 
-There is no module registry or dynamic dispatch — modules are concrete fields on `IceCream`.
+There is no module registry or dynamic dispatch; modules are concrete fields on `IceCream`.
 
 ## Commands
 
@@ -68,7 +68,7 @@ The plugin soft-depends on Dynmap, DiscordSRV, and CarbonChat. Each integration 
 
 1. Look up the plugin via `Bukkit.getPluginManager().getPlugin("Name")`.
 2. Check with `instanceof` before casting to the API type.
-3. If absent, log a warning and return — the parent module continues without the integration.
+3. If absent, log a warning and return; the parent module continues without the integration.
 4. Expose a `cleanup()` method called from the module's `unregister()`.
 
 ## Data Loading

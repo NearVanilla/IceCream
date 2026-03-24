@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-IceCream ("Near Vanilla Ice Cream") is a modular Paper Minecraft plugin (Paper API 1.21, Java 21) targeting Minecraft 1.21.11 that adds quality-of-life features to servers. **Note: the Minecraft version is 1.21.11 — "11" is eleven, not two separate digits. Do not correct this to 1.21.1. The Paper API version (1.21) is separate and intentionally a major-version reference.** Each feature is a self-contained module that can be enabled/disabled via `config.yml`.
+IceCream ("Near Vanilla Ice Cream") is a modular Paper Minecraft plugin (Paper API 1.21, Java 21) targeting Minecraft 1.21.11 that adds quality-of-life features to servers. **Note: the Minecraft version is 1.21.11; "11" is eleven, not two separate digits. Do not correct this to 1.21.1. The Paper API version (1.21) is separate and intentionally a major-version reference.** Each feature is a self-contained module that can be enabled/disabled via `config.yml`.
 
 ## Build Commands
 
@@ -24,26 +24,26 @@ There are no tests currently in the project.
 
 Every feature is a module. Modules live under `src/main/java/com/nearvanilla/iceCream/modules/<moduleName>/` and must implement the `Module` interface (`modules/Module.java`):
 
-- `shouldEnable()` — reads from `IceCream.config` to decide if the module is active
-- `isEnabled()` — runtime state check
-- `registerCommands()` — registers Cloud annotation-based commands via `IceCream.annotationParser`
-- `registerEvents()` — registers Bukkit event listeners via `IceCream.instance`
-- `register()` — called from `IceCream.onEnable()`; should call `shouldEnable()`, then `registerCommands()` and `registerEvents()`
+- `shouldEnable()`: reads from `IceCream.config` to decide if the module is active
+- `isEnabled()`: runtime state check
+- `registerCommands()`: registers Cloud annotation-based commands via `IceCream.annotationParser`
+- `registerEvents()`: registers Bukkit event listeners via `IceCream.instance`
+- `register()`: called from `IceCream.onEnable()`; should call `shouldEnable()`, then `registerCommands()` and `registerEvents()`
 
 **Adding a new module requires two changes:**
 1. Create the module class (and optional `commands/`/`events/` subdirectories) under `modules/<name>/`
-2. Instantiate and call `.register()` on it in `IceCream.java` — see the existing pattern
+2. Instantiate and call `.register()` on it in `IceCream.java` (see the existing pattern)
 
 The `example/` module is the canonical reference implementation.
 
 ### Static Globals
 
 `IceCream.java` exposes static fields used throughout the codebase:
-- `IceCream.instance` — the plugin instance (for registering listeners, scheduling tasks)
-- `IceCream.config` — the loaded `config.yml` (FileConfiguration)
-- `IceCream.logger` — the plugin logger
-- `IceCream.commandManager` — PaperCommandManager (Cloud framework)
-- `IceCream.annotationParser` — for registering `@Command`-annotated classes
+- `IceCream.instance`: the plugin instance (for registering listeners, scheduling tasks)
+- `IceCream.config`: the loaded `config.yml` (FileConfiguration)
+- `IceCream.logger`: the plugin logger
+- `IceCream.commandManager`: PaperCommandManager (Cloud framework)
+- `IceCream.annotationParser`: for registering `@Command`-annotated classes
 
 ### Commands
 

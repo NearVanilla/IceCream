@@ -18,7 +18,7 @@ Each module lives in `modules/<name>/` and contains:
 
 ### Error Isolation
 
-`register()` wraps its body in a `try/catch (Exception e)`. A broken module logs a `SEVERE` message and returns early — it must not crash the whole plugin. Other modules are unaffected.
+`register()` wraps its body in a `try/catch (Exception e)`. A broken module logs a `SEVERE` message and returns early; it must not crash the whole plugin. Other modules are unaffected.
 
 ### Registering a New Module
 
@@ -41,7 +41,7 @@ Permission nodes always start with `icecream.modules.`.
 
 ### Player-Only Commands
 
-Cast `commandSourceStack.getSender()` and check with `instanceof Player`. Send an error component if the sender is not a player — do not throw.
+Cast `commandSourceStack.getSender()` and check with `instanceof Player`. Send an error component if the sender is not a player; do not throw.
 
 ### Suggestions
 
@@ -126,5 +126,5 @@ Vanish is the most complex module and serves as the reference for integration-he
 ## WanderingTrades Module Specifics
 
 - Trade definitions live in `src/main/resources/data/wandering_trades.json` and are loaded once at startup into a static pool.
-- Each head item uses a random UUID profile with a custom `"textures"` `ProfileProperty` — this is the standard way to set custom skull textures without a real player account.
+- Each head item uses a random UUID profile with a custom `"textures"` `ProfileProperty`; this is the standard way to set custom skull textures without a real player account.
 - The number of custom trades added per wandering trader spawn is randomised between `min-heads` and `max-heads` from config.

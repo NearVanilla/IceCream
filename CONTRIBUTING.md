@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Java 21
-- A Paper 1.21 server for manual testing (optional but recommended — use `./gradlew runServer`)
+- A Paper 1.21 server for manual testing (optional but recommended; use `./gradlew runServer`)
 
 ## Workflow
 
@@ -11,11 +11,11 @@
 2. Make your changes.
 3. Run `./gradlew spotlessApply` before pushing. The CI code-quality check will fail the PR if formatting is wrong.
 4. Run `./gradlew build` to confirm the plugin compiles cleanly.
-5. Open a pull request against `main`. Fill out the PR template — only include sections that apply to your change, remove the rest.
+5. Open a pull request against `main`. Fill out the PR template; only include sections that apply to your change, remove the rest.
 
 ## Adding a Module
 
-See `docs/creating_a_module.md` for the step-by-step guide and `DESIGN.md` for the conventions to follow. The `example/` module is the canonical reference implementation.
+See `DESIGN.md` for the conventions to follow. The `example/` module is the canonical reference implementation.
 
 The short version:
 
@@ -26,7 +26,7 @@ The short version:
 
 ## Code Style
 
-Formatting is enforced by Spotless with Google Java Format. Always run `./gradlew spotlessApply` before committing — the CI will reject PRs that fail `spotlessCheck`.
+Formatting is enforced by Spotless with Google Java Format. Always run `./gradlew spotlessApply` before committing; the CI will reject PRs that fail `spotlessCheck`.
 
 Specific conventions:
 - User-facing strings must use MiniMessage components, never raw string concatenation.
@@ -38,7 +38,7 @@ Specific conventions:
 
 Two checks run on every PR that touches `.java` or Gradle files:
 
-- **Build Check** — runs `./gradlew build`. A failure posts a comment on the PR with a link to the logs.
-- **Code Quality Check** — runs `./gradlew spotlessCheck`. A failure posts a comment pointing to the Spotless report artifact.
+- **Build Check**: runs `./gradlew build`. A failure posts a comment on the PR with a link to the logs.
+- **Code Quality Check**: runs `./gradlew spotlessCheck`. A failure posts a comment pointing to the Spotless report artifact.
 
 Both must pass before a PR can be merged.

@@ -20,7 +20,7 @@ The built JAR is output to `build/libs/`.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. In short: run `./gradlew spotlessApply` before pushing — the CI will reject PRs that fail the Google Java Format check.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. In short: run `./gradlew spotlessApply` before pushing; the CI will reject PRs that fail the Google Java Format check.
 
 ## AI Development
 
@@ -32,15 +32,11 @@ This repository is set up for AI-assisted development. Context files are provide
 | [`AGENTS.md`](AGENTS.md) | OpenAI Codex / other agents |
 | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | GitHub Copilot |
 
-MCP servers are pre-configured to give AI assistants access to Gradle, Maven, library documentation, GitHub, the filesystem, and git:
+MCP servers are pre-configured to give AI assistants access to the Paper API and git:
 
 | Server | Purpose |
 |---|---|
-| `gradle` | Interact with the Gradle build via [gradle-mcp](https://github.com/rnett/gradle-mcp) — requires [JBang](https://www.jbang.dev/) |
-| `maven-tools` | Look up JVM dependencies on Maven Central via [maven-tools-mcp](https://github.com/arvindand/maven-tools-mcp) — requires Docker |
-| `context7` | Fetch up-to-date library documentation via [Context7](https://context7.com/) — a `CONTEXT7_API_KEY` is optional but required beyond the free tier |
-| `github` | Read and manage GitHub issues and PRs via the [GitHub MCP Server](https://github.com/github/github-mcp-server) |
-| `filesystem` | Scoped file access via the [MCP filesystem server](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem) |
-| `git` | Repository history and operations via [mcp-server-git](https://github.com/modelcontextprotocol/servers/tree/main/src/git) — requires [uv](https://github.com/astral-sh/uv) |
+| `papermc-api` | Look up Paper API documentation and javadocs |
+| `git` | Repository history and operations via [mcp-server-git](https://github.com/modelcontextprotocol/servers/tree/main/src/git); requires [uv](https://github.com/astral-sh/uv) |
 
-Configuration lives in `.mcp.json` (Claude Code / agents) and `.vscode/mcp.json` (VS Code / Copilot). You will need to set a `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable for the GitHub MCP server.
+Configuration lives in `.mcp.json` (Claude Code / agents) and `.vscode/mcp.json` (VS Code / Copilot).

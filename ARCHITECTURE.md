@@ -1,4 +1,4 @@
-## ARCHITECTURE.md
+# ARCHITECTURE.md
 
 IceCream is built as a modular plugin, meaning that each module is an independently togglable feature. All modules are
 compiled together and registered according to the configuration when the plugin starts up.

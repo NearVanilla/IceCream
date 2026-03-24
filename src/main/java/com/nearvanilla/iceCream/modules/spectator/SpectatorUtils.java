@@ -153,6 +153,18 @@ public class SpectatorUtils {
       player
           .getPersistentDataContainer()
           .set(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING, serialized);
+
+      // Save pre-spectator Dynmap visibility so it can be restored on exit.
+      // Kept inside this guard: on rejoin the player is already hidden on Dynmap, so
+      // re-sampling outside the guard would corrupt the stored pre-spectator state.
+      boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
+      if (wasHiddenOnDynmap) {
+        player
+            .getPersistentDataContainer()
+            .set(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
+      } else {
+        player.getPersistentDataContainer().remove(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY);
+      }
     }
 
     // Set spectator state in PDC
@@ -172,16 +184,6 @@ public class SpectatorUtils {
     // Switch to spectator gamemode after hiding — setGameMode triggers a tab list refresh packet
     // on the next tick, so the player must already be hidden before that fires.
     player.setGameMode(GameMode.SPECTATOR);
-
-    // Save pre-spectator Dynmap visibility so it can be restored on exit
-    boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
-    if (wasHiddenOnDynmap) {
-      player
-          .getPersistentDataContainer()
-          .set(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
-    } else {
-      player.getPersistentDataContainer().remove(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY);
-    }
 
     // Hide from Dynmap
     DynmapIntegration.hidePlayer(player);

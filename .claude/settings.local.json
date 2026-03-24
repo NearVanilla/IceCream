@@ -1,7 +1,5 @@
 {
   "enabledMcpjsonServers": [
-    "gradle",
-    "maven-tools",
     "papermc-api",
     "git"
   ]

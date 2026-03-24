@@ -18,10 +18,6 @@ Requires Java 21 and Gradle (wrapper included).
 
 The built JAR is output to `build/libs/`.
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. In short: run `./gradlew spotlessApply` before pushing; the CI will reject PRs that fail the Google Java Format check.
-
 ## AI Development
 
 This repository is set up for AI-assisted development. Context files are provided for all major AI coding tools:

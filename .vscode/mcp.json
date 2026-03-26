@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "papermc-api": {
+      "type": "http",
+      "url": "https://papermcp.105huadev.com/mcp"
+    },
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "${workspaceFolder}"]
+    }
+  }
+}

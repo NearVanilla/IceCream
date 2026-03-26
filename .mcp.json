@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "papermc-api": {
+      "type": "http",
+      "url": "https://papermcp.105huadev.com/mcp"
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "D:\\Projects\\Java\\IceCream"]
+    }
+  }
+}

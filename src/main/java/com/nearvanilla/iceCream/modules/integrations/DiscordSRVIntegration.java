@@ -1,4 +1,4 @@
-package com.nearvanilla.iceCream.modules.vanish.integrations;
+package com.nearvanilla.iceCream.modules.integrations;
 
 import com.nearvanilla.iceCream.IceCream;
 import github.scarsz.discordsrv.DiscordSRV;
@@ -9,8 +9,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 
 /**
- * Integration with DiscordSRV for vanished players. Sends fake join/leave messages to Discord when
- * players vanish or unvanish.
+ * Shared integration with DiscordSRV. Sends fake join/leave messages to Discord when players enter
+ * or exit a hidden state (spectator or vanish). Each module holds its own instance so that
+ * join/leave message formats are loaded from the correct config prefix.
  *
  * @author Dynant
  * @version 1.0
@@ -22,12 +23,17 @@ public class DiscordSRVIntegration {
           .deserialize(
               "<yellow>Heads up! The Discord leave/join message couldn't be sent.</yellow>");
 
-  private static String joinMessage;
-  private static String leaveMessage;
-  private static DiscordSRV discordSrv;
+  private String joinMessage;
+  private String leaveMessage;
+  private DiscordSRV discordSrv;
 
-  /** Initializes the DiscordSRV integration if DiscordSRV is present. */
-  public static void init() {
+  /**
+   * Initializes the DiscordSRV integration if DiscordSRV is present.
+   *
+   * @param configPrefix the config path prefix for message keys, e.g. {@code
+   *     "modules.spectator.messages"}
+   */
+  public void init(String configPrefix) {
     if (Bukkit.getPluginManager().getPlugin("DiscordSRV") == null) {
       IceCream.logger.info("DiscordSRV not found, skipping integration.");
       return;
@@ -36,11 +42,9 @@ public class DiscordSRVIntegration {
     discordSrv = DiscordSRV.getPlugin();
 
     joinMessage =
-        IceCream.config.getString(
-            "modules.vanish.messages.discord-join", "%player% joined the server");
+        IceCream.config.getString(configPrefix + ".discord-join", "%player% joined the server");
     leaveMessage =
-        IceCream.config.getString(
-            "modules.vanish.messages.discord-leave", "%player% left the server");
+        IceCream.config.getString(configPrefix + ".discord-leave", "%player% left the server");
 
     IceCream.logger.info("DiscordSRV integration enabled.");
   }
@@ -53,7 +57,7 @@ public class DiscordSRVIntegration {
    * @param vanished true to mark as vanished, false to clear
    */
   @SuppressWarnings("deprecation") // Standard metadata API for DiscordSRV compatibility
-  public static void setVanishedMetadata(Player player, boolean vanished) {
+  public void setVanishedMetadata(Player player, boolean vanished) {
     if (vanished) {
       player.setMetadata("vanished", new FixedMetadataValue(IceCream.instance, true));
     } else {
@@ -62,11 +66,11 @@ public class DiscordSRVIntegration {
   }
 
   /**
-   * Sends a fake leave message to Discord when a player vanishes.
+   * Sends a fake leave message to Discord when a player enters a hidden state.
    *
-   * @param player the player who vanished
+   * @param player the player who entered the hidden state
    */
-  public static void sendFakeLeave(Player player) {
+  public void sendFakeLeave(Player player) {
     if (discordSrv == null) return;
 
     try {
@@ -78,11 +82,11 @@ public class DiscordSRVIntegration {
   }
 
   /**
-   * Sends a fake join message to Discord when a player unvanishes.
+   * Sends a fake join message to Discord when a player exits a hidden state.
    *
-   * @param player the player who unvanished
+   * @param player the player who exited the hidden state
    */
-  public static void sendFakeJoin(Player player) {
+  public void sendFakeJoin(Player player) {
     if (discordSrv == null) return;
 
     try {

@@ -1,15 +1,13 @@
 package com.nearvanilla.iceCream.modules.vanish;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import com.nearvanilla.iceCream.IceCream;
-import com.nearvanilla.iceCream.modules.vanish.integrations.CarbonChatIntegration;
-import com.nearvanilla.iceCream.modules.vanish.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.vanish.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
+import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.utils.FakeMessageUtils;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -19,6 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
  * join/quit messages, and communicate vanish state to Velocity.
  *
  * @author Dynant
+ * @author 105hua
  * @version 1.0
  * @since 2025-01-27
  */
@@ -35,7 +34,14 @@ public class VanishUtils {
 
   private static String leaveMessageFormat;
 
-  public static void init() {
+  private static DiscordSRVIntegration discordSRV;
+  private static CarbonChatIntegration carbonChat;
+
+  public static void init(
+      DiscordSRVIntegration discordSRVIntegration, CarbonChatIntegration carbonChatIntegration) {
+    discordSRV = discordSRVIntegration;
+    carbonChat = carbonChatIntegration;
+
     // Load message formats
     joinMessageFormat =
         IceCream.config.getString(
@@ -77,12 +83,12 @@ public class VanishUtils {
 
     // Clean up player state
     for (Player player : Bukkit.getOnlinePlayers()) {
-      DiscordSRVIntegration.setVanishedMetadata(player, false);
+      discordSRV.setVanishedMetadata(player, false);
 
       // Show vanished players again
       if (isVanished(player)) showPlayer(player);
     }
-    CarbonChatIntegration.cleanup();
+    carbonChat.cleanup();
   }
 
   /** Registers the plugin messaging channel for Velocity communication. */
@@ -119,13 +125,16 @@ public class VanishUtils {
    * @param broadcastMessages whether to broadcast fake quit messages (in-game and Discord)
    */
   public static void hidePlayer(Player player, boolean broadcastMessages) {
+    // Capture current vanish state before mutating PDC — used below to guard the dynmap save.
+    boolean alreadyVanished = isVanished(player);
+
     // Set vanished state in PDC
     player
         .getPersistentDataContainer()
         .set(VanishModule.VANISH_TOGGLE_KEY, PersistentDataType.BOOLEAN, true);
 
     // Mark as vanished for DiscordSRV (suppresses real join/leave messages)
-    DiscordSRVIntegration.setVanishedMetadata(player, true);
+    discordSRV.setVanishedMetadata(player, true);
 
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (onlinePlayer.equals(player)) continue;
@@ -133,14 +142,18 @@ public class VanishUtils {
       onlinePlayer.hidePlayer(IceCream.instance, player);
     }
 
-    // Save pre-vanish Dynmap visibility so it can be restored on unvanish
-    boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
-    if (wasHiddenOnDynmap) {
-      player
-          .getPersistentDataContainer()
-          .set(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
-    } else {
-      player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+    // Save pre-vanish Dynmap visibility so it can be restored on unvanish.
+    // Guard: skip on rejoin — the player is already vanished and still hidden on Dynmap,
+    // so re-sampling here would corrupt the stored pre-vanish state.
+    if (!alreadyVanished) {
+      boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
+      if (wasHiddenOnDynmap) {
+        player
+            .getPersistentDataContainer()
+            .set(VanishModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
+      } else {
+        player.getPersistentDataContainer().remove(VanishModule.DYNMAP_WAS_HIDDEN_KEY);
+      }
     }
 
     // Hide from Dynmap
@@ -148,11 +161,12 @@ public class VanishUtils {
 
     // Broadcast fake quit messages
     if (broadcastMessages) {
-      broadcastFakeQuit(player);
-      DiscordSRVIntegration.sendFakeLeave(player);
+      FakeMessageUtils.broadcastFakeMessage(player, leaveMessageFormat);
+      discordSRV.sendFakeLeave(player);
     }
 
-    sendVanishStateToVelocity(player, true);
+    player.setInvulnerable(true);
+    FakeMessageUtils.sendStateToVelocity(player, VANISH_CHANNEL, true);
     showVanishBossbar(player);
   }
 
@@ -168,7 +182,7 @@ public class VanishUtils {
         .set(VanishModule.VANISH_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
 
     // Clear vanished metadata for DiscordSRV
-    DiscordSRVIntegration.setVanishedMetadata(player, false);
+    discordSRV.setVanishedMetadata(player, false);
 
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (onlinePlayer.equals(player)) {
@@ -188,10 +202,11 @@ public class VanishUtils {
     }
 
     // Broadcast fake join messages
-    broadcastFakeJoin(player);
-    DiscordSRVIntegration.sendFakeJoin(player);
+    FakeMessageUtils.broadcastFakeMessage(player, joinMessageFormat);
+    discordSRV.sendFakeJoin(player);
 
-    sendVanishStateToVelocity(player, false);
+    player.setInvulnerable(false);
+    FakeMessageUtils.sendStateToVelocity(player, VANISH_CHANNEL, false);
     hideVanishBossbar(player);
   }
 
@@ -208,53 +223,6 @@ public class VanishUtils {
         player.hidePlayer(IceCream.instance, onlinePlayer);
       }
     }
-  }
-
-  /**
-   * Broadcasts a fake quit message for the given player to simulate them leaving.
-   *
-   * @param player the player to broadcast the fake quit for
-   */
-  public static void broadcastFakeQuit(Player player) {
-    Component quitMessage =
-        MiniMessage.miniMessage()
-            .deserialize(leaveMessageFormat, Placeholder.component("player", player.displayName()));
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (!onlinePlayer.equals(player)) {
-        onlinePlayer.sendMessage(quitMessage);
-      }
-    }
-  }
-
-  /**
-   * Broadcasts a fake join message for the given player to simulate them joining.
-   *
-   * @param player the player to broadcast the fake join for
-   */
-  public static void broadcastFakeJoin(Player player) {
-    Component joinMessage =
-        MiniMessage.miniMessage()
-            .deserialize(joinMessageFormat, Placeholder.component("player", player.displayName()));
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (!onlinePlayer.equals(player)) {
-        onlinePlayer.sendMessage(joinMessage);
-      }
-    }
-  }
-
-  /**
-   * Sends the vanish state to Velocity via plugin messaging. The message format is: - Player UUID
-   * (String) - Vanish state (Boolean)
-   *
-   * @param player the player whose vanish state changed
-   * @param vanished true if the player is now vanished, false otherwise
-   */
-  public static void sendVanishStateToVelocity(Player player, boolean vanished) {
-    ByteArrayDataOutput out = ByteStreams.newDataOutput();
-    out.writeUTF(player.getUniqueId().toString());
-    out.writeBoolean(vanished);
-
-    player.sendPluginMessage(IceCream.instance, VANISH_CHANNEL, out.toByteArray());
   }
 
   /**

@@ -32,7 +32,7 @@ import org.incendo.cloud.annotations.Permission;
  *
  * @author Demonstrations
  * @version 1.0
- * @since 2025-08-23
+ * @since 2025-11-25
  */
 public class StaffModeCommand {
   protected final Component staffModeEnabled =

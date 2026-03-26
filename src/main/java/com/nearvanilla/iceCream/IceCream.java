@@ -5,6 +5,7 @@ import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
+import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.vanish.VanishModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
@@ -24,7 +25,7 @@ import org.incendo.cloud.paper.PaperCommandManager;
  *
  * @author 105hua
  * @version 1.0
- * @since 2025-08-08
+ * @since 2024-09-15
  * @see JavaPlugin
  * @see PaperCommandManager
  * @see AnnotationParser
@@ -48,6 +49,7 @@ public final class IceCream extends JavaPlugin {
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
   private final StaffModeModule staffModeModule = new StaffModeModule();
   private final VanishModule vanishModule = new VanishModule();
+  private final SpectatorModule spectatorModule = new SpectatorModule();
 
   @Override
   public void onEnable() {
@@ -71,10 +73,12 @@ public final class IceCream extends JavaPlugin {
     wanderingTradesModule.register();
     staffModeModule.register();
     vanishModule.register();
+    spectatorModule.register();
   }
 
   @Override
   public void onDisable() {
     vanishModule.unregister();
+    spectatorModule.unregister();
   }
 }

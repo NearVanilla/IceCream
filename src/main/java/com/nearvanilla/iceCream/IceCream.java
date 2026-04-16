@@ -10,6 +10,7 @@ import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.vanish.VanishModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
+import com.nearvanilla.iceCream.modules.windcharge.WindchargeModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -50,6 +51,7 @@ public final class IceCream extends JavaPlugin {
   private final StaffModeModule staffModeModule = new StaffModeModule();
   private final VanishModule vanishModule = new VanishModule();
   private final SpectatorModule spectatorModule = new SpectatorModule();
+  private final WindchargeModule windchargeModule = new WindchargeModule();
 
   @Override
   public void onEnable() {
@@ -74,6 +76,7 @@ public final class IceCream extends JavaPlugin {
     staffModeModule.register();
     vanishModule.register();
     spectatorModule.register();
+    windchargeModule.register();
   }
 
   @Override

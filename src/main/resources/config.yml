@@ -46,6 +46,8 @@ modules:
         - sc
   desertmobs:
     enabled: true
+  windcharge:
+    enabled: true
     spawn:
       zombie-to-husk-chance: 0.33
       skeleton-to-parched-chance: 0.33

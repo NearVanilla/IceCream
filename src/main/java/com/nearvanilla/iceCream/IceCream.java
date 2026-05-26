@@ -7,7 +7,6 @@ import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
-import com.nearvanilla.iceCream.modules.vanish.VanishModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -48,7 +47,6 @@ public final class IceCream extends JavaPlugin {
   private final WanderfulModule wanderfulModule = new WanderfulModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
   private final StaffModeModule staffModeModule = new StaffModeModule();
-  private final VanishModule vanishModule = new VanishModule();
   private final SpectatorModule spectatorModule = new SpectatorModule();
 
   @Override
@@ -63,6 +61,11 @@ public final class IceCream extends JavaPlugin {
     annotationParser = new AnnotationParser<>(commandManager, CommandSourceStack.class);
     this.saveDefaultConfig();
     config = this.getConfig();
+    if (config.contains("modules.vanish")) {
+      logger.warning(
+          "Detected deprecated 'modules.vanish' config section. This module has been"
+              + " removed. Please remove this section from your config.");
+    }
     // Register modules
     desertMobsModule.register();
     exampleModule.register();
@@ -72,13 +75,12 @@ public final class IceCream extends JavaPlugin {
     wanderfulModule.register();
     wanderingTradesModule.register();
     staffModeModule.register();
-    vanishModule.register();
+
     spectatorModule.register();
   }
 
   @Override
   public void onDisable() {
-    vanishModule.unregister();
     spectatorModule.unregister();
   }
 }

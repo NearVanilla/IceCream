@@ -5,6 +5,7 @@ import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
+import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.vanish.VanishModule;
@@ -50,6 +51,7 @@ public final class IceCream extends JavaPlugin {
   private final StaffModeModule staffModeModule = new StaffModeModule();
   private final VanishModule vanishModule = new VanishModule();
   private final SpectatorModule spectatorModule = new SpectatorModule();
+  private final ReadOnlyLecternModule readOnlyLecternModule = new ReadOnlyLecternModule();
 
   @Override
   public void onEnable() {
@@ -74,6 +76,7 @@ public final class IceCream extends JavaPlugin {
     staffModeModule.register();
     vanishModule.register();
     spectatorModule.register();
+    readOnlyLecternModule.register();
   }
 
   @Override

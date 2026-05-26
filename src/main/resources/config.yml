@@ -49,6 +49,9 @@ modules:
     spawn:
       zombie-to-husk-chance: 0.33
       skeleton-to-parched-chance: 0.33
+  readonlylectern:
+    enabled: true
+    max-distance: 5
   wanderful:
     enabled: true
     item_frame:

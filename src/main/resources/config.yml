@@ -20,8 +20,10 @@ modules:
       text: '<aqua>You are currently in spectator mode</aqua>'
       color: BLUE
     messages:
-      join: '<yellow><player> joined the game</yellow>'
-      leave: '<yellow><player> left the game</yellow>'
+      # The 'join' and 'leave' keys have been removed. Fake spectator broadcasts now use the
+      # vanilla translation keys 'multiplayer.player.joined' / 'multiplayer.player.left' so that
+      # the "No Join Leave Messages" mod can cancel them. Existing configs still containing
+      # 'modules.spectator.messages.join' / '.leave' will log a one-time deprecation warning.
       discord-join: '%player% joined the server'
       discord-leave: '%player% left the server'
     carbon-chat:

@@ -29,10 +29,14 @@ public class SpectatorUtils {
   /** Bossbar shown to all players in spectator mode. */
   private static BossBar spectatorBossbar;
 
-  /** Message format for fake messages. */
-  private static String joinMessageFormat;
-
-  private static String leaveMessageFormat;
+  /**
+   * Config keys whose presence triggers a one-time deprecation warning. Spectator mode now uses the
+   * vanilla translation keys for fake join/leave broadcasts so that the "No Join Leave Messages"
+   * mod (and any other mixin into {@code PlayerList.broadcastMessage}) can intercept them; the
+   * custom MiniMessage format keys are no longer honored.
+   */
+  private static final java.util.Set<String> warnedConfigKeys =
+      java.util.concurrent.ConcurrentHashMap.newKeySet();
 
   private static DiscordSRVIntegration discordSRV;
   private static CarbonChatIntegration carbonChat;
@@ -42,13 +46,8 @@ public class SpectatorUtils {
     discordSRV = discordSRVIntegration;
     carbonChat = carbonChatIntegration;
 
-    // Load message formats
-    joinMessageFormat =
-        IceCream.config.getString(
-            "modules.spectator.messages.join", "<yellow><player> joined the game</yellow>");
-    leaveMessageFormat =
-        IceCream.config.getString(
-            "modules.spectator.messages.leave", "<yellow><player> left the game</yellow>");
+    warnIfDeprecatedConfigKey("modules.spectator.messages.join");
+    warnIfDeprecatedConfigKey("modules.spectator.messages.leave");
 
     // Load config and create bossbar
     String text =
@@ -190,7 +189,7 @@ public class SpectatorUtils {
 
     // Broadcast fake quit messages
     if (broadcastMessages) {
-      FakeMessageUtils.broadcastFakeMessage(player, leaveMessageFormat);
+      FakeMessageUtils.broadcastFakeMessage(player, false);
       discordSRV.sendFakeLeave(player);
     }
 
@@ -276,7 +275,7 @@ public class SpectatorUtils {
     }
 
     // Broadcast fake join messages
-    FakeMessageUtils.broadcastFakeMessage(player, joinMessageFormat);
+    FakeMessageUtils.broadcastFakeMessage(player, true);
     discordSRV.sendFakeJoin(player);
 
     FakeMessageUtils.sendStateToVelocity(player, SPECTATOR_CHANNEL, false);
@@ -318,5 +317,22 @@ public class SpectatorUtils {
     if (spectatorBossbar == null) return;
 
     player.hideBossBar(spectatorBossbar);
+  }
+
+  /**
+   * Logs a one-time deprecation warning if the given config key is present. The fake join/leave
+   * broadcasts in the spectator module now use the vanilla translation keys for compatibility with
+   * the "No Join Leave Messages" mod, so the custom MiniMessage format keys are no longer read.
+   */
+  private static void warnIfDeprecatedConfigKey(String key) {
+    if (IceCream.config.contains(key) && warnedConfigKeys.add(key)) {
+      IceCream.logger.warning(
+          "Config key '"
+              + key
+              + "' is deprecated and has no effect. The spectator module now uses the vanilla"
+              + " translation keys 'multiplayer.player.joined' / 'multiplayer.player.left' so that"
+              + " mods like 'No Join Leave Messages' can cancel the fake broadcast. Please remove"
+              + " this key from your config.");
+    }
   }
 }

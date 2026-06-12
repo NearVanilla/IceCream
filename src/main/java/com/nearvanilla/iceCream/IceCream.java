@@ -1,6 +1,5 @@
 package com.nearvanilla.iceCream;
 
-import com.nearvanilla.iceCream.modules.bannerLimit.BannerLimitModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
@@ -42,7 +41,6 @@ public final class IceCream extends JavaPlugin {
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
-  private final BannerLimitModule bannerLimitModule = new BannerLimitModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
   private final LightningModule lightningModule = new LightningModule();
@@ -73,7 +71,6 @@ public final class IceCream extends JavaPlugin {
               + " removed. Please remove this section from your config.");
     }
     // Register modules
-    bannerLimitModule.register();
     desertMobsModule.register();
     exampleModule.register();
     lightningModule.register();

@@ -1,10 +1,12 @@
 package com.nearvanilla.iceCream;
 
+import com.nearvanilla.iceCream.modules.bannerLimit.BannerLimitModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
+import com.nearvanilla.iceCream.modules.playerHeadDrops.PlayerHeadDropsModule;
 import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
@@ -40,10 +42,12 @@ public final class IceCream extends JavaPlugin {
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
+  private final BannerLimitModule bannerLimitModule = new BannerLimitModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
   private final LightningModule lightningModule = new LightningModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
+  private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderfulModule wanderfulModule = new WanderfulModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
@@ -69,10 +73,12 @@ public final class IceCream extends JavaPlugin {
               + " removed. Please remove this section from your config.");
     }
     // Register modules
+    bannerLimitModule.register();
     desertMobsModule.register();
     exampleModule.register();
     lightningModule.register();
     muteDeathsModule.register();
+    playerHeadDropsModule.register();
     isSlimeChunkModule.register();
     wanderfulModule.register();
     wanderingTradesModule.register();

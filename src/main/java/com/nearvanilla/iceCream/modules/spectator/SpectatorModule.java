@@ -9,6 +9,7 @@ import com.nearvanilla.iceCream.modules.spectator.commands.SpectatorCommand;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerQuitEvent;
+import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPrivateMessageCommandEvent;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -70,6 +71,10 @@ public class SpectatorModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new SpectatorPlayerAdvancementDoneEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new SpectatorPrivateMessageCommandEvent(), IceCream.instance);
   }
 
   @Override
@@ -77,9 +82,6 @@ public class SpectatorModule implements Module {
     initKeys();
     if (shouldEnable()) {
       try {
-        registerCommands();
-        registerEvents();
-
         DynmapIntegration.init();
 
         discordSRV = new DiscordSRVIntegration();
@@ -89,7 +91,16 @@ public class SpectatorModule implements Module {
         carbonChat.init(
             "modules.spectator", SpectatorUtils::isInSpectatorMode, "in spectator mode");
 
+        // Load SpectatorUtils config before wiring up listeners that depend on its statics.
         SpectatorUtils.init(discordSRV, carbonChat);
+
+        carbonChat.initPrivateMessage(
+            SpectatorUtils::isInSpectatorMode,
+            SpectatorUtils::canBypassPrivateMessage,
+            SpectatorUtils.getPrivateMessageOfflineMessage());
+
+        registerCommands();
+        registerEvents();
 
         isEnabled = true;
       } catch (Exception e) {

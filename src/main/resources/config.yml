@@ -28,6 +28,13 @@ modules:
       leave: '<yellow><player> left the game</yellow>'
       discord-join: '%player% joined the server'
       discord-leave: '%player% left the server'
+    private-message:
+      blocked-commands:
+        - msg
+        - tell
+        - w
+        - whisper
+      offline-message: '<red>Player not found</red>'
     carbon-chat:
       allowed-channels:
         - staff

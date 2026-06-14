@@ -5,6 +5,10 @@ import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
 import com.nearvanilla.iceCream.utils.FakeMessageUtils;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -34,6 +38,12 @@ public class SpectatorUtils {
 
   private static String leaveMessageFormat;
 
+  /** Component shown to a player whose private message to or from a spectator was blocked. */
+  private static Component privateMessageOfflineMessage;
+
+  /** Lower-case private message command aliases that the vanilla listener should intercept. */
+  private static Set<String> blockedPrivateMessageCommands = Collections.emptySet();
+
   private static DiscordSRVIntegration discordSRV;
   private static CarbonChatIntegration carbonChat;
 
@@ -49,6 +59,23 @@ public class SpectatorUtils {
     leaveMessageFormat =
         IceCream.config.getString(
             "modules.spectator.messages.leave", "<yellow><player> left the game</yellow>");
+
+    // Load private message interception config
+    String offlineMessageFormat =
+        IceCream.config.getString(
+            "modules.spectator.private-message.offline-message", "<red>Player not found</red>");
+    privateMessageOfflineMessage = MiniMessage.miniMessage().deserialize(offlineMessageFormat);
+
+    List<String> configuredCommands =
+        IceCream.config.getStringList("modules.spectator.private-message.blocked-commands");
+    Set<String> commands = new HashSet<>();
+    for (String command : configuredCommands) {
+      String trimmed = command.trim().toLowerCase();
+      if (!trimmed.isEmpty()) {
+        commands.add(trimmed);
+      }
+    }
+    blockedPrivateMessageCommands = commands;
 
     // Load config and create bossbar
     String text =
@@ -108,6 +135,40 @@ public class SpectatorUtils {
         player
             .getPersistentDataContainer()
             .get(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN));
+  }
+
+  /**
+   * Returns whether the given player is allowed to send and receive private messages that would
+   * otherwise be blocked by the spectator module's interception. Holders of the spectator toggle
+   * permission are treated as staff and can communicate with spectating players.
+   *
+   * @param player the player to check
+   * @return true if the player can bypass the private message block, false otherwise
+   */
+  public static boolean canBypassPrivateMessage(Player player) {
+    return player != null && player.hasPermission("icecream.modules.spectator");
+  }
+
+  /**
+   * Returns the component sent to a player whose private message to or from a spectator was
+   * blocked. Defaults to a vanilla "Player not found" style message so that the block is
+   * indistinguishable from the recipient being offline.
+   *
+   * @return the offline-style component
+   */
+  public static Component getPrivateMessageOfflineMessage() {
+    return privateMessageOfflineMessage;
+  }
+
+  /**
+   * Returns the set of lower-case private message command aliases (without leading slash) that the
+   * vanilla command listener should intercept. Configured via {@code
+   * modules.spectator.private-message.blocked-commands}.
+   *
+   * @return an unmodifiable view of the configured aliases
+   */
+  public static Set<String> getBlockedPrivateMessageCommands() {
+    return Collections.unmodifiableSet(blockedPrivateMessageCommands);
   }
 
   /**

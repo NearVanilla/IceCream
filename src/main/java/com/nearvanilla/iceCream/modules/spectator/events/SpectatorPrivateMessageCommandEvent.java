@@ -14,12 +14,9 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
  *
  * <p>Two directions are enforced:
  *
- * <ul>
- *   <li>Receiver-side: a standard player cannot /msg a spectating player; the sender sees an
- *       offline-style message.
- *   <li>Sender-side: a spectating player cannot /msg a recipient that does not have the spectator
- *       permission, including offline recipients.
- * </ul>
+ * <p>- Receiver-side: a standard player cannot /msg a spectating player; the sender sees an
+ * offline-style message. - Sender-side: a spectating player cannot /msg a recipient that does not
+ * have the spectator permission, including offline recipients.
  *
  * <p>Either side may bypass the block by holding the {@code icecream.modules.spectator} permission.
  *

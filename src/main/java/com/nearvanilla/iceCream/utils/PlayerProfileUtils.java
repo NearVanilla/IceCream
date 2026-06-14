@@ -32,9 +32,8 @@ public final class PlayerProfileUtils {
    * texture is re-applied to the profile; if sanitization fails for any reason the original profile
    * is left in an unsanitized state.
    *
-   * <p>Adapted from {@code PTUtils.sanitizeTextures} in PaperTweaks by Machine_Maker (GPL-3.0).
-   * Source: <a
-   * href="https://github.com/MC-Machinations/PaperTweaks">github.com/MC-Machinations/PaperTweaks</a>.
+   * Adapted from {@code PTUtils.sanitizeTextures} in PaperTweaks by Machine_Maker (GPL-3.0).
+   * Source: [github.com/MC-Machinations/PaperTweaks](https://github.com/MC-Machinations/PaperTweaks).
    * Adaptations: replaced Gson with Jackson 3.x (already a project dependency); wrapped parsing in
    * a try/catch that logs a warning on failure rather than propagating the checked exception.
    *

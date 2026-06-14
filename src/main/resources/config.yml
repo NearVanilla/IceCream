@@ -6,6 +6,10 @@ modules:
     chance: 0.5
   mutedeaths:
     enabled: true
+  playerheaddrops:
+    enabled: true
+    drop-chance: 1.0
+    require-player-kill: true
   isslimechunk:
     enabled: true
   wanderingtrades:

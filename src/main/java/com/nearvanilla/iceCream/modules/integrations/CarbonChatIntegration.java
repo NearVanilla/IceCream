@@ -10,6 +10,7 @@ import net.draycia.carbon.api.CarbonChat;
 import net.draycia.carbon.api.CarbonChatProvider;
 import net.draycia.carbon.api.event.CarbonEventSubscription;
 import net.draycia.carbon.api.event.events.CarbonChatEvent;
+import net.draycia.carbon.api.event.events.CarbonPrivateChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -32,10 +33,13 @@ import org.bukkit.entity.Player;
 public class CarbonChatIntegration {
 
   private CarbonEventSubscription<CarbonChatEvent> subscription = null;
+  private CarbonEventSubscription<CarbonPrivateChatEvent> privateMessageSubscription = null;
   private CarbonChat carbonChat = null;
   private final Set<String> allowedChannels = new HashSet<>();
   private Component chatBlocked;
+  private Component privateMessageBlocked;
   private Predicate<Player> isHiddenCheck;
+  private Predicate<Player> canBypassPrivateMessage;
 
   /**
    * Initializes the CarbonChat integration if CarbonChat is present.
@@ -62,13 +66,60 @@ public class CarbonChatIntegration {
     }
   }
 
-  /** Unregisters the CarbonChat event subscription. */
+  /** Unregisters the CarbonChat event subscriptions. */
   public void cleanup() {
     if (subscription != null) {
       subscription.dispose();
       subscription = null;
     }
+    if (privateMessageSubscription != null) {
+      privateMessageSubscription.dispose();
+      privateMessageSubscription = null;
+    }
+    canBypassPrivateMessage = null;
+    privateMessageBlocked = null;
     carbonChat = null;
+  }
+
+  /**
+   * Subscribes to {@link CarbonPrivateChatEvent} so that private messages involving a hidden player
+   * (per {@code isHiddenCheck}) are cancelled unless the other party holds the {@code canBypass}
+   * permission. This mirrors the vanilla {@code /msg} interception performed by the spectator
+   * module's command listener.
+   *
+   * <p>Caller must have already invoked {@link #init(String, Predicate, String)} successfully (or
+   * otherwise ensured that CarbonChat is present). The subscription is disposed by {@link
+   * #cleanup()}.
+   *
+   * @param isHiddenCheck predicate returning true for players in the hidden state
+   * @param canBypass predicate returning true for players allowed to interact with hidden players
+   * @param blockedMessage component sent to the would-be sender when the message is blocked
+   */
+  public void initPrivateMessage(
+      Predicate<Player> isHiddenCheck, Predicate<Player> canBypass, Component blockedMessage) {
+    if (Bukkit.getPluginManager().getPlugin("CarbonChat") == null) {
+      return;
+    }
+    if (carbonChat == null) {
+      IceCream.logger.warning(
+          "CarbonChat private message interception skipped: integration not initialised.");
+      return;
+    }
+    if (privateMessageSubscription != null) {
+      return;
+    }
+
+    try {
+      this.isHiddenCheck = isHiddenCheck;
+      this.canBypassPrivateMessage = canBypass;
+      this.privateMessageBlocked = blockedMessage;
+      privateMessageSubscription =
+          carbonChat
+              .eventHandler()
+              .subscribe(CarbonPrivateChatEvent.class, this::onCarbonPrivateChat);
+    } catch (Exception e) {
+      IceCream.logger.warning("Failed to hook into CarbonChat private messages: " + e.getMessage());
+    }
   }
 
   private void loadAllowedChannels(String configPrefix, String stateName) {
@@ -108,6 +159,36 @@ public class CarbonChatIntegration {
     if (!allowedChannels.contains(channelName)) {
       event.cancelled(true);
       player.sendMessage(chatBlocked);
+    }
+  }
+
+  private void onCarbonPrivateChat(CarbonPrivateChatEvent event) {
+    if (isHiddenCheck == null || canBypassPrivateMessage == null || privateMessageBlocked == null) {
+      return;
+    }
+
+    Player sender = Bukkit.getPlayer(event.sender().uuid());
+    Player recipient = Bukkit.getPlayer(event.recipient().uuid());
+
+    if (sender == null) {
+      return;
+    }
+
+    boolean senderIsHidden = isHiddenCheck.test(sender);
+    boolean recipientIsHidden = recipient != null && isHiddenCheck.test(recipient);
+
+    boolean senderBypasses = canBypassPrivateMessage.test(sender);
+    boolean recipientBypasses = recipient != null && canBypassPrivateMessage.test(recipient);
+
+    if (recipientIsHidden && !senderBypasses) {
+      event.cancelled(true);
+      sender.sendMessage(privateMessageBlocked);
+      return;
+    }
+
+    if (senderIsHidden && !recipientBypasses) {
+      event.cancelled(true);
+      sender.sendMessage(privateMessageBlocked);
     }
   }
 }

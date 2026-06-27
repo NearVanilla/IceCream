@@ -10,9 +10,9 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * WorldTourListener implements the disconnect failsafe for World Tour participants. When a
- * non-host participant disconnects and does not return within the configured timeout, they are
- * automatically opted out. Host disconnects do not automatically end the tour.
+ * WorldTourListener implements the disconnect failsafe for World Tour participants. When a non-host
+ * participant disconnects and does not return within the configured timeout, they are automatically
+ * opted out. Host disconnects do not automatically end the tour.
  *
  * @author Demonstrations
  * @version 1.0

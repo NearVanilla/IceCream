@@ -12,6 +12,7 @@ import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
+import com.nearvanilla.iceCream.modules.modulesInfo.ModulesInfoModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.List;
 import java.util.logging.Logger;
@@ -43,6 +44,9 @@ public class IceCream extends JavaPlugin {
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
 
+  /** The list of all registered module instances. Accessible for status introspection. */
+  public static List<Module> modules;
+
   /**
    * Returns the list of modules to register. Override in subclasses to provide a different module
    * set (e.g. Mochi).
@@ -55,6 +59,7 @@ public class IceCream extends JavaPlugin {
         new ExampleModule(),
         new isSlimeChunkModule(),
         new LightningModule(),
+        new ModulesInfoModule(),
         new MuteDeathsModule(),
         new PlayerHeadDropsModule(),
         new ReadOnlyLecternModule(),
@@ -82,14 +87,15 @@ public class IceCream extends JavaPlugin {
               + " removed. Please remove this section from your config.");
     }
     // Register modules
-    for (Module module : getModules()) {
+    modules = getModules();
+    for (Module module : modules) {
       module.register();
     }
   }
 
   @Override
   public void onDisable() {
-    for (Module module : getModules()) {
+    for (Module module : modules) {
       if (module instanceof SpectatorModule spectator) {
         spectator.unregister();
       }

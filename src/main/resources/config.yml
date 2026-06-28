@@ -1,6 +1,8 @@
 modules:
   example:
     enabled: true
+  modulesinfo:
+    enabled: true
   lightning:
     enabled: true
     chance: 0.5

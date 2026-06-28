@@ -6,6 +6,7 @@ import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
+import com.nearvanilla.iceCream.modules.modulesInfo.ModulesInfoModule;
 import java.util.List;
 
 /**
@@ -20,6 +21,7 @@ public class Mochi extends IceCream {
   protected List<Module> getModules() {
     return List.of(
         new LightningModule(),
+        new ModulesInfoModule(),
         new MuteDeathsModule(),
         new SpectatorModule(),
         new StaffModeModule(),

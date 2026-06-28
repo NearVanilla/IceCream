@@ -2,11 +2,11 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
+import com.nearvanilla.iceCream.modules.modulesInfo.ModulesInfoModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
-import com.nearvanilla.iceCream.modules.modulesInfo.ModulesInfoModule;
 import java.util.List;
 
 /**

@@ -42,15 +42,7 @@ public class ModulesInfoCommand {
           .getSender()
           .sendMessage(
               mm.deserialize(
-                  "<"
-                      + colorTag
-                      + "> • "
-                      + name
-                      + " - "
-                      + status
-                      + "</"
-                      + colorTag
-                      + ">"));
+                  "<" + colorTag + "> • " + name + " - " + status + "</" + colorTag + ">"));
     }
   }
 }

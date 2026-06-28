@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream;
 
+import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
@@ -12,6 +13,7 @@ import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.List;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -33,25 +35,34 @@ import org.incendo.cloud.paper.PaperCommandManager;
  * @see Logger
  * @see FileConfiguration
  */
-public final class IceCream extends JavaPlugin {
+public class IceCream extends JavaPlugin {
   // General plugin instance, config, logger and command management.
   public static IceCream instance;
   public static FileConfiguration config;
   public static Logger logger;
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
-  // Modules
-  private final DesertMobsModule desertMobsModule = new DesertMobsModule();
-  private final ExampleModule exampleModule = new ExampleModule();
-  private final LightningModule lightningModule = new LightningModule();
-  private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
-  private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
-  private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
-  private final WanderfulModule wanderfulModule = new WanderfulModule();
-  private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
-  private final StaffModeModule staffModeModule = new StaffModeModule();
-  private final SpectatorModule spectatorModule = new SpectatorModule();
-  private final ReadOnlyLecternModule readOnlyLecternModule = new ReadOnlyLecternModule();
+
+  /**
+   * Returns the list of modules to register. Override in subclasses to provide a different module
+   * set (e.g. Mochi).
+   *
+   * @return the modules for this plugin variant
+   */
+  protected List<Module> getModules() {
+    return List.of(
+        new DesertMobsModule(),
+        new ExampleModule(),
+        new isSlimeChunkModule(),
+        new LightningModule(),
+        new MuteDeathsModule(),
+        new PlayerHeadDropsModule(),
+        new ReadOnlyLecternModule(),
+        new SpectatorModule(),
+        new StaffModeModule(),
+        new WanderfulModule(),
+        new WanderingTradesModule());
+  }
 
   @Override
   public void onEnable() {
@@ -71,22 +82,17 @@ public final class IceCream extends JavaPlugin {
               + " removed. Please remove this section from your config.");
     }
     // Register modules
-    desertMobsModule.register();
-    exampleModule.register();
-    lightningModule.register();
-    muteDeathsModule.register();
-    playerHeadDropsModule.register();
-    isSlimeChunkModule.register();
-    wanderfulModule.register();
-    wanderingTradesModule.register();
-    staffModeModule.register();
-
-    spectatorModule.register();
-    readOnlyLecternModule.register();
+    for (Module module : getModules()) {
+      module.register();
+    }
   }
 
   @Override
   public void onDisable() {
-    spectatorModule.unregister();
+    for (Module module : getModules()) {
+      if (module instanceof SpectatorModule spectator) {
+        spectator.unregister();
+      }
+    }
   }
 }

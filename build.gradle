@@ -66,15 +66,63 @@ processResources {
     }
 }
 
+// Mochi resource processing: expands plugin-mochi.yml → plugin.yml
+def mochiResourcesDir = layout.buildDirectory.dir("mochiResources")
+tasks.register('processMochiResources', ProcessResources) {
+    from(sourceSets.main.resources) {
+        exclude 'plugin.yml'
+        exclude 'plugin-mochi.yml'
+    }
+    from(sourceSets.main.resources) {
+        include 'plugin-mochi.yml'
+        rename { 'plugin.yml' }
+    }
+    into mochiResourcesDir
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin-mochi.yml') {
+        expand props
+    }
+}
+
 runServer {
     minecraftVersion("1.21.11")
     jvmArgs("-Dcom.mojang.eula.agree=true")
 }
 
+// Mochi shadow JAR
+tasks.register('shadowJarMochi', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    group = 'build'
+    description = 'Create a combined Mochi JAR of project and runtime dependencies'
+    enableAutoRelocation = true
+    relocationPrefix = "${rootProject.property("group")}.mochi.lib"
+    minimize()
+    archiveBaseName.set('Mochi')
+    archiveClassifier.set("")
+    exclude 'META-INF/LICENSE'
+    exclude 'META-INF/NOTICE'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    configurations = [project.configurations.runtimeClasspath]
+    dependsOn(tasks.named('processMochiResources'))
+    from(sourceSets.main.output) { exclude 'plugin.yml' }
+    from(mochiResourcesDir)
+}
+
+// Mochi run server task
+tasks.register('runServerMochi', xyz.jpenilla.runpaper.task.RunServer) {
+    group = 'Run Paper'
+    description = 'Run a Paper server with the Mochi plugin for testing'
+    minecraftVersion("1.21.11")
+    jvmArgs("-Dcom.mojang.eula.agree=true")
+    dependsOn(tasks.named('shadowJarMochi'))
+    pluginJars(tasks.named('shadowJarMochi').flatMap { it.archiveFile })
+}
 shadowJar {
     enableAutoRelocation = true
-    relocationPrefix = "${rootProject.property("group")}.${rootProject.property("name").toString().toLowerCase()}.lib"
+    relocationPrefix = "${rootProject.property("group")}.icecream.lib"
     minimize()
+    archiveBaseName.set('IceCream')
     archiveClassifier.set("")
     // Exclude duplicate meta files to fix remap errors
     exclude 'META-INF/LICENSE'

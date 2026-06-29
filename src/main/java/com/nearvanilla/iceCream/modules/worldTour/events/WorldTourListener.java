@@ -26,6 +26,12 @@ public class WorldTourListener implements Listener {
     this.module = module;
   }
 
+  /**
+   * Clear glow tracking if the quitting player was glowing. Skip auto-opt-out for the host (host
+   * disconnect does not end the tour). For participants, schedule a failsafe task that opts them
+   * out if they do not return within the configured timeout.
+   */
+
   @EventHandler
   public void onPlayerQuit(PlayerQuitEvent event) {
     Player player = event.getPlayer();
@@ -67,6 +73,11 @@ public class WorldTourListener implements Listener {
       module.scheduleDisconnectTask(player.getUniqueId(), task);
     }
   }
+
+  /**
+   * Cancel the disconnect failsafe task for the rejoining player. If no tour is active, clean up
+   * any stale join flag left behind from a prior session.
+   */
 
   @EventHandler
   public void onPlayerJoin(PlayerJoinEvent event) {

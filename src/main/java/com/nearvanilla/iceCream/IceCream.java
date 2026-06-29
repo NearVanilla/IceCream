@@ -11,6 +11,7 @@ import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
+import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -52,6 +53,7 @@ public final class IceCream extends JavaPlugin {
   private final StaffModeModule staffModeModule = new StaffModeModule();
   private final SpectatorModule spectatorModule = new SpectatorModule();
   private final ReadOnlyLecternModule readOnlyLecternModule = new ReadOnlyLecternModule();
+  private final WorldTourModule worldTourModule = new WorldTourModule();
 
   @Override
   public void onEnable() {
@@ -80,13 +82,14 @@ public final class IceCream extends JavaPlugin {
     wanderfulModule.register();
     wanderingTradesModule.register();
     staffModeModule.register();
-
     spectatorModule.register();
     readOnlyLecternModule.register();
+    worldTourModule.register();
   }
 
   @Override
   public void onDisable() {
     spectatorModule.unregister();
+    worldTourModule.unregister();
   }
 }

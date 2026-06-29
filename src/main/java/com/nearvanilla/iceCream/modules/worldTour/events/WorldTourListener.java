@@ -31,7 +31,6 @@ public class WorldTourListener implements Listener {
    * disconnect does not end the tour). For participants, schedule a failsafe task that opts them
    * out if they do not return within the configured timeout.
    */
-
   @EventHandler
   public void onPlayerQuit(PlayerQuitEvent event) {
     Player player = event.getPlayer();
@@ -78,7 +77,6 @@ public class WorldTourListener implements Listener {
    * Cancel the disconnect failsafe task for the rejoining player. If no tour is active, clean up
    * any stale join flag left behind from a prior session.
    */
-
   @EventHandler
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();

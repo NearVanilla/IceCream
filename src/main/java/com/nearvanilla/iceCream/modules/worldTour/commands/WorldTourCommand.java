@@ -108,7 +108,6 @@ public class WorldTourCommand {
    * Opt into the World Tour as a participant. Sets a persistent data flag so the player is
    * recognized on reconnect. Idempotent - returns an error if already joined.
    */
-
   @Command("worldtour join")
   @CommandDescription("Opt into the World Tour.")
   public void joinCommand(CommandSourceStack stack) {
@@ -130,7 +129,6 @@ public class WorldTourCommand {
    * player is the current host, the command is rejected - they must use /worldtour end to conclude
    * the tour for everyone.
    */
-
   @Command("worldtour leave")
   @CommandDescription("Opt out of the World Tour. Hosts must use /worldtour end instead.")
   public void leaveCommand(CommandSourceStack stack) {
@@ -161,7 +159,6 @@ public class WorldTourCommand {
    * configured start time, weather to clear, and keepInventory to true across all loaded
    * dimensions. Blocked if a tour is already ongoing.
    */
-
   @Command("worldtour start")
   @CommandDescription(
       "Start a World Tour: become host, set time to the configured start time, weather to clear, and enable keepInventory. Blocked if a tour is already ongoing.")
@@ -195,7 +192,6 @@ public class WorldTourCommand {
    * stores the pending request for confirmation. Rejected if the requester is already the host or
    * if no host is set.
    */
-
   @Command("worldtour takeover")
   @CommandDescription("Request to take over as World Tour host.")
   @Permission("icecream.modules.worldtour.host")
@@ -254,7 +250,6 @@ public class WorldTourCommand {
    * each teleported participant a notification. Reports the total count of teleported players back
    * to the host. Only usable by the current host.
    */
-
   @Command("worldtour tpall")
   @CommandDescription("Teleport all World Tour participants to the host.")
   @Permission("icecream.modules.worldtour.host")
@@ -293,7 +288,6 @@ public class WorldTourCommand {
    * Transfer the host's glowing effect to a specified target player. The target is notified that
    * they are now glowing. Only usable by the current host.
    */
-
   @Command("worldtour glow <player>")
   @CommandDescription("Transfer the host's Glowing effect to another player.")
   @Permission("icecream.modules.worldtour.host")
@@ -321,7 +315,6 @@ public class WorldTourCommand {
    * storage, clears the current host, and transfers host and glowing effect to the requester.
    * Notifies both parties of the result. Fails gracefully if the requester is no longer online.
    */
-
   @Command("worldtour takeover confirm")
   @CommandDescription("Accept a pending World Tour host takeover request.")
   @Permission("icecream.modules.worldtour.host")
@@ -363,7 +356,6 @@ public class WorldTourCommand {
    * and notifies the requester that their request was denied. Does not affect host status or tour
    * state.
    */
-
   @Command("worldtour takeover deny")
   @CommandDescription("Deny a pending World Tour host takeover request.")
   @Permission("icecream.modules.worldtour.host")
@@ -390,7 +382,6 @@ public class WorldTourCommand {
    * restore original time, weather, and keepInventory settings across all loaded dimensions. Only
    * usable by the current host. Rejects if no host is set or if the sender is not the host.
    */
-
   @Command("worldtour end")
   @CommandDescription("End the World Tour: clear the host and restore original environment.")
   @Permission("icecream.modules.worldtour.host")
@@ -420,7 +411,6 @@ public class WorldTourCommand {
    * environment settings. Does not check if the sender is the host, allowing admins and moderators
    * to clean up. Fails gracefully if no tour is active.
    */
-
   @Command("worldtour forceend")
   @CommandDescription("Force-end the World Tour as an admin or moderator.")
   @Permission("icecream.modules.worldtour.host")
@@ -443,7 +433,6 @@ public class WorldTourCommand {
    * (case-insensitive, autocompleted). Delegates to module.setWeather() which applies the change to
    * all dimensions. Only usable if a host is online. Returns an error for unknown weather types.
    */
-
   @Command("worldtour weather <type>")
   @CommandDescription("Change the weather across all loaded World Tour dimensions.")
   @Permission("icecream.modules.worldtour.host")
@@ -475,7 +464,6 @@ public class WorldTourCommand {
    * applies it via module.setTime(). Only usable if a host is online. Returns an error for unknown
    * time types.
    */
-
   @Command("worldtour time <type>")
   @CommandDescription("Change the time across all loaded World Tour dimensions.")
   @Permission("icecream.modules.worldtour.host")

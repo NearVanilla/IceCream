@@ -92,7 +92,7 @@ runServer {
 }
 
 // Mochi shadow JAR
-tasks.register('shadowJarMochi', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+tasks.register('shadowJarMochi', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) { // The usage here is correct, just some weird renaming from the refactor to gradleup.
     group = 'build'
     description = 'Create a combined Mochi JAR of project and runtime dependencies'
     enableAutoRelocation = true

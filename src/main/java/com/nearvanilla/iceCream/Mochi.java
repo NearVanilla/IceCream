@@ -10,7 +10,7 @@ import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import java.util.List;
 
 /**
- * Mochi is a minified variant of the IceCream plugin, intended for smaller servers. It includes
+ * Mochi is a minified variant of the IceCream plugin, intended for the creative server. It includes
  * only a subset of modules: lightning, muteDeaths, spectator, staffMode, and wanderful.
  *
  * @see IceCream

@@ -95,6 +95,9 @@ public class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    if (modules == null) {
+      return;
+    }
     for (Module module : modules) {
       if (module instanceof SpectatorModule spectator) {
         spectator.unregister();

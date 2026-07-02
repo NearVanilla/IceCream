@@ -1,5 +1,0 @@
-name: Mochi
-version: '1.1-SNAPSHOT'
-main: com.nearvanilla.iceCream.Mochi
-api-version: '1.21'
-softdepend: [ArmorStandEditor, dynmap, DiscordSRV, CarbonChat]

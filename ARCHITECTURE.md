@@ -8,8 +8,8 @@ compiled together and registered according to the configuration when the plugin 
 Note: An example module can be found within the `example` package under the `modules` package.
 
 By default, all modules should implement the `Module` interface, which contains the methods that must be implemented
-when creating a module within the plugin. Modules are also required to be included within the `onEnable` method of the
-main class, `IceCream.java`.
+when creating a module within the plugin. Modules are also required to be included within the `getModules()` method of
+the main class, `IceCream.java` (or the relevant subclass, e.g. `Mochi.java`, for build variants).
 
 ## Data Persistence
 

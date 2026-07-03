@@ -79,3 +79,13 @@ modules:
           D: DIAMOND
           A: ARMOR_STAND
           H: STICK
+  worldtour:
+    enabled: true
+    failsafe-timeout-minutes: 10
+    start-time-ticks: 1000
+    times:
+      day: 1000
+      noon: 6000
+      night: 13000
+      midnight: 18000
+

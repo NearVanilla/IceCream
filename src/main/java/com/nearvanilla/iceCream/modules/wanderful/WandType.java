@@ -1,7 +1,6 @@
 package com.nearvanilla.iceCream.modules.wanderful;
 
 import com.nearvanilla.iceCream.IceCream;
-import java.util.List;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 
@@ -15,6 +14,9 @@ import org.bukkit.inventory.ItemStack;
 public enum WandType {
   ITEM_FRAME(
       "modules.wanderful.item_frame.", new NamespacedKey(IceCream.instance, "item_frame_wand")),
+  // ArmorStandEditor recognizes this wand by its material and display name (its own config.yml
+  // sets tool, requireToolName and toolName), not by a persistent data key, so the key below is
+  // only used to identify the item on our side. Keep the display name in sync with ASE's toolName.
   ARMOR_STAND(
       "modules.wanderful.armor_stand.", new NamespacedKey(IceCream.instance, "armor_stand_wand"));
 
@@ -40,21 +42,6 @@ public enum WandType {
 
   public String getName() {
     return getId().replace('_', ' ');
-  }
-
-  public List<NamespacedKey> getPersistentKeys() {
-    return switch (this) {
-      case ITEM_FRAME -> List.of(persistentKey);
-      case ARMOR_STAND -> {
-        NamespacedKey toolField = ArmorStandEditorWrapper.getFlag();
-        if (toolField == null) {
-          throw new IllegalStateException(
-              "ArmorStandEditor plugin not found or not configured properly.");
-        }
-
-        yield List.of(persistentKey, toolField);
-      }
-    };
   }
 
   public ItemStack createItem() {

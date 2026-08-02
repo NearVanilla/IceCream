@@ -29,12 +29,12 @@ public class WanderfulItems {
   /**
    * Create a wand ItemStack based on the specified WandType.
    *
-   * @param WandType The prefix for config keys (e.g. "modules.wanderful.item_frame.")
+   * @param type The wand type to create, which supplies its config prefix and persistent key
    * @return The created ItemStack, or null if creation fails
    */
   public static ItemStack createWand(WandType type) {
     String configKeyPrefix = type.getConfigKeyPrefix();
-    List<NamespacedKey> persistentKeys = type.getPersistentKeys();
+    NamespacedKey persistentKey = type.getMainPersistentKey();
 
     String wandMaterialType = IceCream.config.getString(configKeyPrefix + "type");
     String wandName = IceCream.config.getString(configKeyPrefix + "name");
@@ -63,10 +63,8 @@ public class WanderfulItems {
     // Make the item glow by adding an enchantment
     stack.addUnsafeEnchantment(Enchantment.LURE, 1);
 
-    // Set persistent data keys
-    for (NamespacedKey key : persistentKeys) {
-      meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-    }
+    // Set persistent data key
+    meta.getPersistentDataContainer().set(persistentKey, PersistentDataType.BYTE, (byte) 1);
 
     stack.setItemMeta(meta);
 

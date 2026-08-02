@@ -55,7 +55,6 @@ public class WanderfulModule implements Module {
       try {
         registerCommands();
         registerEvents();
-        ArmorStandEditorWrapper.configure();
 
         // Add Recipes
         WanderfulItems.addRecipes();

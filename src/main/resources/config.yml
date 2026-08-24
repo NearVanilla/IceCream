@@ -79,6 +79,8 @@ modules:
           D: DIAMOND
           A: ARMOR_STAND
           H: STICK
+  phantomtoggle:
+    enabled: true
   worldtour:
     enabled: true
     failsafe-timeout-minutes: 10

@@ -1,8 +1,8 @@
 plugins {
     id 'java'
     id 'xyz.jpenilla.run-paper' version '3.0.2'
-    id 'com.gradleup.shadow' version '9.3.2'
-    id 'com.diffplug.spotless' version '8.2.1'
+    id 'com.gradleup.shadow' version '9.6.1'
+    id 'com.diffplug.spotless' version '8.9.0'
 }
 
 group = 'com.nearvanilla'
@@ -29,17 +29,17 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    implementation("org.incendo:cloud-paper:2.0.0-beta.10")
-    implementation("org.incendo:cloud-annotations:2.0.0")
-    implementation("tools.jackson.core:jackson-core:3.1.0")
-    implementation("tools.jackson.core:jackson-databind:3.1.0")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.91-stable")
+    implementation("org.incendo:cloud-paper:2.0.0")
+    implementation("org.incendo:cloud-annotations:2.1.0")
+    implementation("tools.jackson.core:jackson-core:3.2.1")
+    implementation("tools.jackson.core:jackson-databind:3.2.1")
     compileOnly("us.dynmap:DynmapCoreAPI:3.8")
-    compileOnly("com.discordsrv:discordsrv:1.30.4")
-    compileOnly("de.hexaoxi:carbonchat-api:3.0.0-beta.36")
+    compileOnly("com.discordsrv:discordsrv:1.30.5")
+    compileOnly("de.hexaoxi:carbonchat-api:3.0.0-beta.37")
 }
 
-def targetJavaVersion = 21
+def targetJavaVersion = 25
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -60,14 +60,14 @@ tasks.withType(JavaCompile).configureEach {
 processResources {
     def props = [version: version]
     inputs.properties props
-    filteringCharset 'UTF-8'
+    filteringCharset = 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
     }
 }
 
 runServer {
-    minecraftVersion("1.21.11")
+    minecraftVersion("26.2")
     jvmArgs("-Dcom.mojang.eula.agree=true")
 }
 

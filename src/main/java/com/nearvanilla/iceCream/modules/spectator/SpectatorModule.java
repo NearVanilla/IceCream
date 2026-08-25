@@ -28,6 +28,7 @@ public class SpectatorModule implements Module {
   public static NamespacedKey PREVIOUS_GAMEMODE_KEY;
   public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
   public static NamespacedKey PREVIOUS_LOCATION_KEY;
+  public static NamespacedKey HIDDEN_SINCE_KEY;
 
   private DiscordSRVIntegration discordSRV;
   private CarbonChatIntegration carbonChat;
@@ -40,6 +41,7 @@ public class SpectatorModule implements Module {
     DYNMAP_WAS_HIDDEN_KEY =
         new NamespacedKey(IceCream.instance, "spectator.dynmap_hidden_before_spectator");
     PREVIOUS_LOCATION_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_location");
+    HIDDEN_SINCE_KEY = new NamespacedKey(IceCream.instance, "spectator.hidden_since");
   }
 
   @Override

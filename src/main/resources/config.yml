@@ -81,6 +81,14 @@ modules:
           H: STICK
   phantomtoggle:
     enabled: true
+  playerseen:
+    enabled: true
+    date-format: 'yyyy-MM-dd HH:mm:ss'
+    messages:
+      not-found: '<gray>Player <red>could not be found</red>.</gray>'
+      online: '<gray>Player <white><player></white> <green>is currently online</green></gray>'
+      never-played: '<gray>Player <white><player></white> <red>has never played before</red></gray>'
+      last-seen: '<gray>Player <white><player></white> <gray>was last seen <time></gray>'
   worldtour:
     enabled: true
     failsafe-timeout-minutes: 10

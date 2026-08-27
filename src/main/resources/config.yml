@@ -1,6 +1,13 @@
 modules:
   example:
     enabled: true
+  firstjoinmessage:
+    enabled: true
+    announcement: '<yellow>Welcome our new player <gold><player></gold>!</yellow>'
+    welcome-message:
+      - '<#EDD9B0>Please read our <click:open_url:"https://discord.com/channels/476016120139350066/478674275885383681"><hover:show_text:"<gray>Open #rules in Discord"><#E0A458><underlined>#rules</underlined></#E0A458></hover></click> and <click:open_url:"https://discord.com/channels/476016120139350066/800053432421056549"><hover:show_text:"<gray>Open #faq in Discord"><#E0A458><underlined>#faq</underlined></#E0A458></hover></click> before you start.</#EDD9B0>'
+      - '<#EDD9B0>Join us on <click:open_url:"https://discord.gg/KHAuj5F"><hover:show_text:"<gray>discord.gg/KHAuj5F"><#E0A458><underlined>Discord</underlined></#E0A458></hover></click> or browse the <click:open_url:"http://map.nearvanilla.com/"><hover:show_text:"<gray>map.nearvanilla.com"><#E0A458><underlined>live map</underlined></#E0A458></hover></click>.</#EDD9B0>'
+      - '<#EDD9B0>You can kick people out of bed by clicking on the message in chat.</#EDD9B0>'
   lightning:
     enabled: true
     chance: 0.5

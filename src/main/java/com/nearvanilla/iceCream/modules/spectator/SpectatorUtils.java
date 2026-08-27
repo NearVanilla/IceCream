@@ -138,6 +138,21 @@ public class SpectatorUtils {
   }
 
   /**
+   * Returns when the given player was hidden by spectator mode, which is the moment other players
+   * last saw them, or 0 if they are not hidden.
+   *
+   * @param player the player to check
+   * @return the epoch milliseconds at which the player was hidden, or 0 if unknown
+   */
+  public static long getHiddenSince(Player player) {
+    Long hiddenSince =
+        player
+            .getPersistentDataContainer()
+            .get(SpectatorModule.HIDDEN_SINCE_KEY, PersistentDataType.LONG);
+    return hiddenSince == null ? 0L : hiddenSince;
+  }
+
+  /**
    * Returns whether the given player is allowed to send and receive private messages that would
    * otherwise be blocked by the spectator module's interception. Holders of the spectator toggle
    * permission are treated as staff and can communicate with spectating players.
@@ -226,6 +241,14 @@ public class SpectatorUtils {
       } else {
         player.getPersistentDataContainer().remove(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY);
       }
+
+      // Record the moment others last saw them
+      player
+          .getPersistentDataContainer()
+          .set(
+              SpectatorModule.HIDDEN_SINCE_KEY,
+              PersistentDataType.LONG,
+              System.currentTimeMillis());
     }
 
     // Set spectator state in PDC
@@ -269,6 +292,7 @@ public class SpectatorUtils {
     player
         .getPersistentDataContainer()
         .set(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
+    player.getPersistentDataContainer().remove(SpectatorModule.HIDDEN_SINCE_KEY);
 
     // Restore previous gamemode
     String previousGamemodeName =

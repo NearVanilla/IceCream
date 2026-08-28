@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
+import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
@@ -46,6 +47,7 @@ public final class IceCream extends JavaPlugin {
   // Modules
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
+  private final FirstJoinMessageModule firstJoinMessageModule = new FirstJoinMessageModule();
   private final LightningModule lightningModule = new LightningModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
@@ -79,6 +81,7 @@ public final class IceCream extends JavaPlugin {
     // Register modules
     desertMobsModule.register();
     exampleModule.register();
+    firstJoinMessageModule.register();
     lightningModule.register();
     muteDeathsModule.register();
     playerHeadDropsModule.register();

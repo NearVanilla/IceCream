@@ -81,7 +81,7 @@ public class OnePlayerSleepModule implements Module {
       IceCream.logger.info("One Player Sleep module is disabled.");
       return;
     }
-    Object configuredMultiplier = IceCream.config.get("modules.oneplayersleep.multiplier", 2.0);
+    Object configuredMultiplier = IceCream.config.get("modules.oneplayersleep.multiplier", 10.0);
     if (!(configuredMultiplier instanceof Number number)
         || !Double.isFinite(number.doubleValue())
         || number.doubleValue() < 1.0) {

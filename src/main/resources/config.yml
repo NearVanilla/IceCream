@@ -16,7 +16,7 @@ modules:
   oneplayersleep:
     enabled: true
     # Total night speed while sleeping; fractions are supported, minimum 1.0.
-    multiplier: 2.0
+    multiplier: 10.0
   playerheaddrops:
     enabled: true
     drop-chance: 1.0

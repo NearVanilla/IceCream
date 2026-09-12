@@ -5,6 +5,7 @@ import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
+import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerProtectionModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.OnePlayerSleepModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
@@ -62,6 +63,8 @@ public final class IceCream extends JavaPlugin {
   private final PhantomToggleModule phantomToggleModule = new PhantomToggleModule();
   private final PlayerSeenModule playerSeenModule = new PlayerSeenModule();
   private final OnePlayerSleepModule onePlayerSleepModule = new OnePlayerSleepModule();
+  private final LootContainerProtectionModule lootContainerProtectionModule =
+      new LootContainerProtectionModule();
 
   @Override
   public void onEnable() {
@@ -97,10 +100,12 @@ public final class IceCream extends JavaPlugin {
     phantomToggleModule.register();
     playerSeenModule.register();
     onePlayerSleepModule.register();
+    lootContainerProtectionModule.register();
   }
 
   @Override
   public void onDisable() {
+    lootContainerProtectionModule.unregister();
     onePlayerSleepModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();

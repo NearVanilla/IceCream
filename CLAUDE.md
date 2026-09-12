@@ -6,3 +6,5 @@
 - Do not use em dashes (`—`) in documentation. Use commas, parentheses, or standard hyphens (`-`) instead. Em dashes create inconsistent formatting across editors, terminals, Markdown renderers, and documentation generators.\
 - Do not use HTML tags anywhere in documentation. Standard Markdown and plain text must be used exclusively. The only exception is JavaDocs where HTML is explicitly supported and commonly required. HTML reduces readability in raw files, creates formatting inconsistencies, and may render unpredictably across tooling and documentation platforms.
 - Documentation should remain clean, portable, and readable in plain text form. All formatting decisions should prioritize compatibility with Markdown tooling, Git diffs, IDE previews, and static site generators.
+- New modules do not need to be documented in `ARCHITECTURE.md`.
+

@@ -1,6 +1,8 @@
 modules:
   example:
     enabled: true
+  bonemealablesporeblossoms:
+    enabled: true
   firstjoinmessage:
     enabled: true
     announcement: '<yellow>Welcome our new player <gold><player></gold>!</yellow>'

@@ -59,6 +59,8 @@ modules:
   readonlylectern:
     enabled: true
     max-distance: 5
+  lootcontainerprotection:
+    enabled: true
   wanderful:
     enabled: true
     item_frame:

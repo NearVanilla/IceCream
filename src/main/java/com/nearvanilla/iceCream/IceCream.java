@@ -1,12 +1,15 @@
 package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
+import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
+import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerProtectionModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
+import com.nearvanilla.iceCream.modules.onePlayerSleep.OnePlayerSleepModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
 import com.nearvanilla.iceCream.modules.playerHeadDrops.PlayerHeadDropsModule;
 import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
@@ -48,6 +51,7 @@ public final class IceCream extends JavaPlugin {
   // Modules
   private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
       new BonemealableSporeBlossomsModule();
+  private final DeathLocationModule deathLocationModule = new DeathLocationModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
   private final FirstJoinMessageModule firstJoinMessageModule = new FirstJoinMessageModule();
@@ -63,6 +67,9 @@ public final class IceCream extends JavaPlugin {
   private final WorldTourModule worldTourModule = new WorldTourModule();
   private final PhantomToggleModule phantomToggleModule = new PhantomToggleModule();
   private final PlayerSeenModule playerSeenModule = new PlayerSeenModule();
+  private final OnePlayerSleepModule onePlayerSleepModule = new OnePlayerSleepModule();
+  private final LootContainerProtectionModule lootContainerProtectionModule =
+      new LootContainerProtectionModule();
 
   @Override
   public void onEnable() {
@@ -83,6 +90,7 @@ public final class IceCream extends JavaPlugin {
     }
     // Register modules
     bonemealableSporeBlossomsModule.register();
+    deathLocationModule.register();
     desertMobsModule.register();
     exampleModule.register();
     firstJoinMessageModule.register();
@@ -98,10 +106,14 @@ public final class IceCream extends JavaPlugin {
     worldTourModule.register();
     phantomToggleModule.register();
     playerSeenModule.register();
+    onePlayerSleepModule.register();
+    lootContainerProtectionModule.register();
   }
 
   @Override
   public void onDisable() {
+    lootContainerProtectionModule.unregister();
+    onePlayerSleepModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();
   }

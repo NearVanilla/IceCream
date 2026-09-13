@@ -1,4 +1,6 @@
 modules:
+  deathlocation:
+    enabled: true
   example:
     enabled: true
   bonemealablesporeblossoms:
@@ -15,6 +17,10 @@ modules:
     chance: 0.5
   mutedeaths:
     enabled: true
+  oneplayersleep:
+    enabled: true
+    # Total night speed while sleeping; fractions are supported, minimum 1.0.
+    multiplier: 10.0
   playerheaddrops:
     enabled: true
     drop-chance: 1.0
@@ -57,6 +63,8 @@ modules:
   readonlylectern:
     enabled: true
     max-distance: 5
+  lootcontainerprotection:
+    enabled: true
   wanderful:
     enabled: true
     item_frame:

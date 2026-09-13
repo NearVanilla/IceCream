@@ -22,7 +22,7 @@ import org.bukkit.inventory.ItemStack;
  * SporeBlossomBonemealEvent gives spore blossoms the renewable bone meal behavior of two-block-tall
  * flowers.
  *
- * It handles player interactions from either hand and automated use from dispensers. Successful
+ * <p>It handles player interactions from either hand and automated use from dispensers. Successful
  * uses consume one bone meal outside creative mode, drop one spore blossom, and show the normal
  * growth effects.
  *
@@ -36,7 +36,7 @@ public class SporeBlossomBonemealEvent implements Listener {
   /**
    * Duplicates a spore blossom when a player uses bone meal on it.
    *
-   * When both hands contain bone meal, the main-hand interaction takes precedence so one click
+   * <p>When both hands contain bone meal, the main-hand interaction takes precedence so one click
    * produces only one blossom.
    *
    * @param event the player interaction to inspect

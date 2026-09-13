@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream;
 
+import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
@@ -48,6 +49,8 @@ public final class IceCream extends JavaPlugin {
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
+  private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
+      new BonemealableSporeBlossomsModule();
   private final DeathLocationModule deathLocationModule = new DeathLocationModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
@@ -86,6 +89,7 @@ public final class IceCream extends JavaPlugin {
               + " removed. Please remove this section from your config.");
     }
     // Register modules
+    bonemealableSporeBlossomsModule.register();
     deathLocationModule.register();
     desertMobsModule.register();
     exampleModule.register();

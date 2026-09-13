@@ -1,4 +1,6 @@
 modules:
+  deathlocation:
+    enabled: true
   example:
     enabled: true
   firstjoinmessage:

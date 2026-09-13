@@ -15,6 +15,14 @@ modules:
   lightning:
     enabled: true
     chance: 0.5
+  locatorbar:
+    enabled: true
+    # https://mcsrc.dev/2/26.2/net/minecraft/server/waypoints/ServerWaypointManager#L94
+    # Allowed range: 0.1 to 60000000.
+    # Using 0 triggers a vanilla bug? that also removes the player from other players' locator bars.
+    # This effectively disables reception; at 0.1, waypoints appear only when another
+    # transmitter is nearly overlapping the player.
+    disabled-receive-range: 0.1
   mutedeaths:
     enabled: true
   oneplayersleep:

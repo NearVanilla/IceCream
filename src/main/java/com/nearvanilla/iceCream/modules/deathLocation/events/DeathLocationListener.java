@@ -1,7 +1,7 @@
 package com.nearvanilla.iceCream.modules.deathLocation.events;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,17 +16,18 @@ public class DeathLocationListener implements Listener {
   public void onPlayerDeath(PlayerDeathEvent event) {
     Player player = event.getEntity();
     Location location = player.getLocation();
+    String coordinates =
+        "<"
+            + location.getBlockX()
+            + ", "
+            + location.getBlockY()
+            + ", "
+            + location.getBlockZ()
+            + ">";
     player.sendMessage(
-        Component.text("You died at ", NamedTextColor.GRAY)
-            .append(
-                Component.text(
-                    "<"
-                        + location.getBlockX()
-                        + ", "
-                        + location.getBlockY()
-                        + ", "
-                        + location.getBlockZ()
-                        + ">",
-                    NamedTextColor.GOLD)));
+        MiniMessage.miniMessage()
+            .deserialize(
+                "<gray>You died at <gold><coordinates></gold></gray>",
+                Placeholder.unparsed("coordinates", coordinates)));
   }
 }

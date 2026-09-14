@@ -65,8 +65,8 @@ public final class HatInventoryListener implements Listener {
     }
 
     ItemStack helmet = inventory.getItem(EquipmentSlot.HEAD);
-    event.getView().setCursor(helmet.clone());
-    inventory.setItem(EquipmentSlot.HEAD, item.clone());
+    event.getView().setCursor(helmet);
+    inventory.setItem(EquipmentSlot.HEAD, item);
     player.sendMessage(SET_MESSAGE);
   }
 }

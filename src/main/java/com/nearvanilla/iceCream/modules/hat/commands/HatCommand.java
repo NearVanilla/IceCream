@@ -55,8 +55,8 @@ public final class HatCommand {
     }
 
     ItemStack helmet = inventory.getItem(EquipmentSlot.HEAD);
-    inventory.setItemInMainHand(helmet.clone());
-    inventory.setItem(EquipmentSlot.HEAD, held.clone());
+    inventory.setItemInMainHand(helmet);
+    inventory.setItem(EquipmentSlot.HEAD, held);
     player.sendMessage(SET_MESSAGE);
   }
 }

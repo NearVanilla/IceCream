@@ -14,6 +14,8 @@ modules:
       - '<#EDD9B0>You can kick people out of bed by clicking on the message in chat.</#EDD9B0>'
   flight:
     enabled: true
+  hat:
+    enabled: true
   lightning:
     enabled: true
     chance: 0.5

@@ -8,6 +8,7 @@ import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
 import com.nearvanilla.iceCream.modules.flight.FlightModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
+import com.nearvanilla.iceCream.modules.locatorBar.LocatorBarModule;
 import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerProtectionModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.OnePlayerSleepModule;
@@ -58,6 +59,7 @@ public final class IceCream extends JavaPlugin {
   private final FirstJoinMessageModule firstJoinMessageModule = new FirstJoinMessageModule();
   private final FlightModule flightModule = new FlightModule();
   private final LightningModule lightningModule = new LightningModule();
+  private final LocatorBarModule locatorBarModule = new LocatorBarModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
@@ -97,6 +99,7 @@ public final class IceCream extends JavaPlugin {
     exampleModule.register();
     firstJoinMessageModule.register();
     lightningModule.register();
+    locatorBarModule.register();
     muteDeathsModule.register();
     playerHeadDropsModule.register();
     isSlimeChunkModule.register();

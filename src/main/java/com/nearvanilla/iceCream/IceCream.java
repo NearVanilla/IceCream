@@ -5,6 +5,7 @@ import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
+import com.nearvanilla.iceCream.modules.flight.FlightModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerProtectionModule;
@@ -55,6 +56,7 @@ public final class IceCream extends JavaPlugin {
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
   private final FirstJoinMessageModule firstJoinMessageModule = new FirstJoinMessageModule();
+  private final FlightModule flightModule = new FlightModule();
   private final LightningModule lightningModule = new LightningModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
@@ -102,6 +104,7 @@ public final class IceCream extends JavaPlugin {
     wanderingTradesModule.register();
     staffModeModule.register();
     spectatorModule.register();
+    flightModule.register();
     readOnlyLecternModule.register();
     worldTourModule.register();
     phantomToggleModule.register();
@@ -112,6 +115,7 @@ public final class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    flightModule.unregister();
     lootContainerProtectionModule.unregister();
     onePlayerSleepModule.unregister();
     spectatorModule.unregister();

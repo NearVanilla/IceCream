@@ -11,6 +11,7 @@ import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_M
 import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_MODE_TOGGLE_KEY;
 
 import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.modules.flight.FlightUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
@@ -162,6 +163,9 @@ public class StaffModeCommand {
 
     pdc.remove(STAFF_MODE_INVENTORY_KEY);
     pdc.set(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
+    if (IceCream.config.getBoolean("modules.flight.enabled", false)) {
+      FlightUtils.restoreFlight(player);
+    }
 
     player.sendMessage(staffModeDisabled);
   }

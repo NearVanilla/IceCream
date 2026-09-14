@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.hat.events;
 
+import com.nearvanilla.iceCream.modules.hat.HatModule;
 import com.nearvanilla.iceCream.modules.hat.commands.HatCommand;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
@@ -9,13 +10,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+/**
+ * Handles placing normally non-equippable items into a player's helmet slot using the cursor.
+ *
+ * @author Demonstrations
+ * @version 1.0
+ * @since 2026-09-14
+ * @see HatModule
+ * @see HatCommand
+ */
 public final class HatInventoryListener implements Listener {
   private static final int HELMET_SLOT = 39;
   private static final Component SET_MESSAGE =
@@ -24,6 +33,11 @@ public final class HatInventoryListener implements Listener {
       MiniMessage.miniMessage()
           .deserialize("<red>[Hat] You do not have permission to use hats.</red>");
 
+  /**
+   * Handles manual item swaps targeting the player's helmet slot.
+   *
+   * @param event the inventory click event
+   */
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
   public void onInventoryClick(InventoryClickEvent event) {
     if (!(event.getWhoClicked() instanceof Player player)
@@ -34,10 +48,8 @@ public final class HatInventoryListener implements Listener {
     }
 
     PlayerInventory inventory = player.getInventory();
-    boolean numberKey = event.getClick() == ClickType.NUMBER_KEY;
-    ItemStack item =
-        numberKey ? inventory.getItem(event.getHotbarButton()) : event.getCursor();
-    if (item == null || item.isEmpty()) {
+    ItemStack item = event.getCursor();
+    if (item.isEmpty()) {
       return;
     }
 
@@ -53,11 +65,7 @@ public final class HatInventoryListener implements Listener {
     }
 
     ItemStack helmet = inventory.getItem(EquipmentSlot.HEAD);
-    if (numberKey) {
-      inventory.setItem(event.getHotbarButton(), helmet.clone());
-    } else {
-      event.getView().setCursor(helmet.clone());
-    }
+    event.getView().setCursor(helmet.clone());
     inventory.setItem(EquipmentSlot.HEAD, item.clone());
     player.sendMessage(SET_MESSAGE);
   }

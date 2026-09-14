@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.hat.commands;
 
+import com.nearvanilla.iceCream.modules.hat.HatModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -11,6 +12,14 @@ import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
 import org.incendo.cloud.annotations.Permission;
 
+/**
+ * Handles the {@code /hat} command and swaps the held item with the player's helmet slot.
+ *
+ * @author Demonstrations
+ * @version 1.0
+ * @since 2026-09-14
+ * @see HatModule
+ */
 @SuppressWarnings("unused")
 public final class HatCommand {
   public static final String PERMISSION = "icecream.modules.hat";
@@ -24,6 +33,11 @@ public final class HatCommand {
       MiniMessage.miniMessage()
           .deserialize("<red>[Hat] This command can only be used by players.</red>");
 
+  /**
+   * Swaps the item in a player's main hand with their helmet slot.
+   *
+   * @param source the Cloud command source
+   */
   @Command("hat")
   @CommandDescription("Swap the item in your main hand with your helmet slot.")
   @Permission(PERMISSION)
@@ -45,5 +59,4 @@ public final class HatCommand {
     inventory.setItem(EquipmentSlot.HEAD, held.clone());
     player.sendMessage(SET_MESSAGE);
   }
-
 }

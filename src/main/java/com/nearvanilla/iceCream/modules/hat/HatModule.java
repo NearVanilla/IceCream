@@ -5,25 +5,32 @@ import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.hat.commands.HatCommand;
 import com.nearvanilla.iceCream.modules.hat.events.HatInventoryListener;
 
-public final class HatModule implements Module {
-  private static final String CONFIG_PREFIX = "modules.hat.";
-
-  private boolean enabled;
-  private HatCommand command;
+/**
+ * Enables players to wear held items as hats through a command or the helmet inventory slot.
+ *
+ * @author Demonstrations
+ * @version 1.0
+ * @since 2026-09-14
+ * @see Module
+ * @see HatCommand
+ * @see HatInventoryListener
+ */
+public class HatModule implements Module {
+  protected boolean isEnabled = false;
 
   @Override
   public boolean shouldEnable() {
-    return IceCream.config.getBoolean(CONFIG_PREFIX + "enabled", true);
+    return IceCream.config.getBoolean("modules.hat.enabled", false);
   }
 
   @Override
   public boolean isEnabled() {
-    return enabled;
+    return isEnabled;
   }
 
   @Override
   public void registerCommands() {
-    IceCream.annotationParser.parse(command);
+    IceCream.annotationParser.parse(new HatCommand());
   }
 
   @Override
@@ -36,15 +43,18 @@ public final class HatModule implements Module {
 
   @Override
   public void register() {
-    if (!shouldEnable()) {
+    if (shouldEnable()) {
+      try {
+        registerCommands();
+        registerEvents();
+        isEnabled = true;
+      } catch (Exception exception) {
+        IceCream.logger.severe("Failed to register Hat module: " + exception.getMessage());
+        return;
+      }
+      IceCream.logger.info("Hat module has been enabled.");
+    } else {
       IceCream.logger.info("Hat module is disabled.");
-      return;
     }
-
-    command = new HatCommand();
-    registerCommands();
-    registerEvents();
-    enabled = true;
-    IceCream.logger.info("Hat module has been enabled.");
   }
 }

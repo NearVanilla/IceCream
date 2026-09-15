@@ -110,6 +110,11 @@ modules:
           H: STICK
   phantomtoggle:
     enabled: true
+  vinegrowth:
+    enabled: true
+    messages:
+      stopped: '<gray>Vine growth <red>stopped</red></gray>'
+      growing: '<gray>Vine growth <green>resumed</green></gray>'
   playerseen:
     enabled: true
     date-format: 'yyyy-MM-dd HH:mm:ss'

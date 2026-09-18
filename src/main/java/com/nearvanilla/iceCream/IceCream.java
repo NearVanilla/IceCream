@@ -19,6 +19,7 @@ import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
 import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
+import com.nearvanilla.iceCream.modules.vineGrowth.VineGrowthModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
@@ -76,6 +77,7 @@ public final class IceCream extends JavaPlugin {
   private final OnePlayerSleepModule onePlayerSleepModule = new OnePlayerSleepModule();
   private final LootContainerProtectionModule lootContainerProtectionModule =
       new LootContainerProtectionModule();
+  private final VineGrowthModule vineGrowthModule = new VineGrowthModule();
 
   @Override
   public void onEnable() {
@@ -117,6 +119,7 @@ public final class IceCream extends JavaPlugin {
     playerSeenModule.register();
     onePlayerSleepModule.register();
     lootContainerProtectionModule.register();
+    vineGrowthModule.register();
   }
 
   @Override

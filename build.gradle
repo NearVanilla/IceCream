@@ -29,8 +29,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.91-stable")
-    implementation("org.incendo:cloud-paper:2.0.0")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.200-stable")
+    implementation("org.incendo:cloud-paper:2.0.1")
     implementation("org.incendo:cloud-annotations:2.1.0")
     implementation("tools.jackson.core:jackson-core:3.2.1")
     implementation("tools.jackson.core:jackson-databind:3.2.1")
@@ -67,7 +67,7 @@ processResources {
 }
 
 runServer {
-    minecraftVersion("26.2")
+    minecraftVersion("26.3")
     jvmArgs("-Dcom.mojang.eula.agree=true")
 }
 

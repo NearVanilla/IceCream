@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
+import com.nearvanilla.iceCream.modules.deathDb.DeathDbModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
@@ -55,6 +56,7 @@ public final class IceCream extends JavaPlugin {
   // Modules
   private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
       new BonemealableSporeBlossomsModule();
+  private final DeathDbModule deathDbModule = new DeathDbModule();
   private final DeathLocationModule deathLocationModule = new DeathLocationModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
   private final ExampleModule exampleModule = new ExampleModule();
@@ -98,6 +100,7 @@ public final class IceCream extends JavaPlugin {
     }
     // Register modules
     bonemealableSporeBlossomsModule.register();
+    deathDbModule.register();
     deathLocationModule.register();
     desertMobsModule.register();
     exampleModule.register();
@@ -124,6 +127,7 @@ public final class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    deathDbModule.unregister();
     flightModule.unregister();
     lootContainerProtectionModule.unregister();
     onePlayerSleepModule.unregister();

@@ -3,7 +3,7 @@ package com.nearvanilla.iceCream.modules.spectator;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.utils.FakeMessageUtils;
 import java.util.Collections;
 import java.util.HashSet;
@@ -230,16 +230,16 @@ public class SpectatorUtils {
           .getPersistentDataContainer()
           .set(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING, serialized);
 
-      // Save pre-spectator Dynmap visibility so it can be restored on exit.
-      // Kept inside this guard: on rejoin the player is already hidden on Dynmap, so
+      // Save pre-spectator squaremap visibility so it can be restored on exit.
+      // Kept inside this guard: on rejoin the player is already hidden on squaremap, so
       // re-sampling outside the guard would corrupt the stored pre-spectator state.
-      boolean wasHiddenOnDynmap = !DynmapIntegration.isPlayerVisible(player);
-      if (wasHiddenOnDynmap) {
+      boolean wasHiddenOnMap = !SquaremapIntegration.isPlayerVisible(player);
+      if (wasHiddenOnMap) {
         player
             .getPersistentDataContainer()
-            .set(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
+            .set(SpectatorModule.MAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN, true);
       } else {
-        player.getPersistentDataContainer().remove(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY);
+        player.getPersistentDataContainer().remove(SpectatorModule.MAP_WAS_HIDDEN_KEY);
       }
 
       // Record the moment others last saw them
@@ -269,8 +269,8 @@ public class SpectatorUtils {
     // on the next tick, so the player must already be hidden before that fires.
     player.setGameMode(GameMode.SPECTATOR);
 
-    // Hide from Dynmap
-    DynmapIntegration.hidePlayer(player);
+    // Hide from squaremap
+    SquaremapIntegration.hidePlayer(player);
 
     // Broadcast fake quit messages
     if (broadcastMessages) {
@@ -349,15 +349,15 @@ public class SpectatorUtils {
       onlinePlayer.showPlayer(IceCream.instance, player);
     }
 
-    // Restore pre-spectator Dynmap visibility; only show if they were visible before
-    boolean wasHiddenOnDynmap =
+    // Restore pre-spectator squaremap visibility; only show if they were visible before
+    boolean wasHiddenOnMap =
         Boolean.TRUE.equals(
             player
                 .getPersistentDataContainer()
-                .get(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN));
-    player.getPersistentDataContainer().remove(SpectatorModule.DYNMAP_WAS_HIDDEN_KEY);
-    if (!wasHiddenOnDynmap) {
-      DynmapIntegration.showPlayer(player);
+                .get(SpectatorModule.MAP_WAS_HIDDEN_KEY, PersistentDataType.BOOLEAN));
+    player.getPersistentDataContainer().remove(SpectatorModule.MAP_WAS_HIDDEN_KEY);
+    if (!wasHiddenOnMap) {
+      SquaremapIntegration.showPlayer(player);
     }
 
     // Broadcast fake join messages

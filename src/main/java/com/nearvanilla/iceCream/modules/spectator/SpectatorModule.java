@@ -4,7 +4,7 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
-import com.nearvanilla.iceCream.modules.integrations.DynmapIntegration;
+import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.modules.spectator.commands.SpectatorCommand;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
@@ -14,7 +14,7 @@ import org.bukkit.NamespacedKey;
 
 /**
  * SpectatorModule provides spectator mode functionality for staff members. When in spectator mode,
- * players are set to SPECTATOR gamemode, hidden from other players, removed from Dynmap, and
+ * players are set to SPECTATOR gamemode, hidden from other players, removed from squaremap, and
  * DiscordSRV broadcasts fake leave/join messages.
  *
  * @author 105hua
@@ -26,7 +26,7 @@ public class SpectatorModule implements Module {
   protected boolean isEnabled = false;
   public static NamespacedKey SPECTATOR_TOGGLE_KEY;
   public static NamespacedKey PREVIOUS_GAMEMODE_KEY;
-  public static NamespacedKey DYNMAP_WAS_HIDDEN_KEY;
+  public static NamespacedKey MAP_WAS_HIDDEN_KEY;
   public static NamespacedKey PREVIOUS_LOCATION_KEY;
   public static NamespacedKey HIDDEN_SINCE_KEY;
 
@@ -38,7 +38,7 @@ public class SpectatorModule implements Module {
 
     SPECTATOR_TOGGLE_KEY = new NamespacedKey(IceCream.instance, "spectator.enabled");
     PREVIOUS_GAMEMODE_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_gamemode");
-    DYNMAP_WAS_HIDDEN_KEY =
+    MAP_WAS_HIDDEN_KEY =
         new NamespacedKey(IceCream.instance, "spectator.dynmap_hidden_before_spectator");
     PREVIOUS_LOCATION_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_location");
     HIDDEN_SINCE_KEY = new NamespacedKey(IceCream.instance, "spectator.hidden_since");
@@ -84,7 +84,7 @@ public class SpectatorModule implements Module {
     initKeys();
     if (shouldEnable()) {
       try {
-        DynmapIntegration.init();
+        SquaremapIntegration.init();
 
         discordSRV = new DiscordSRVIntegration();
         discordSRV.init("modules.spectator.messages");

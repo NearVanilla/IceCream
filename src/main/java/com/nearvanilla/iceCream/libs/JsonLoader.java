@@ -61,4 +61,15 @@ public final class JsonLoader {
       throws IOException {
     return MAPPER.readValue(inputStream, typeReference);
   }
+
+  /**
+   * Saves a Java object to a JSON file, pretty printed.
+   *
+   * @param file The JSON file to write.
+   * @param value The object to serialize.
+   * @throws IOException If writing fails.
+   */
+  public static void save(File file, Object value) throws IOException {
+    MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, value);
+  }
 }

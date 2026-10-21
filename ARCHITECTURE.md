@@ -20,7 +20,7 @@ be noted that PDC is also not exclusive to `Player`.
 
 ## Optional Integrations
 
-Some modules, both new and pre-existing, may require integrations. Currently, the plugin soft-depends on `Dynmap`,
+Some modules, both new and pre-existing, may require integrations. Currently, the plugin soft-depends on `squaremap`,
 `DiscordSRV` and `CarbonChat` to provide full functionality. In cases where integrations are required, they should
 follow this pattern:
 - Lookup the plugin via Bukkit's `getPluginManager().getPlugin("NAME")` method.

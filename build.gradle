@@ -74,7 +74,7 @@ runServer {
         url("https://cdn.modrinth.com/data/UmLGoGij/versions/ATlquwiT/DiscordSRV-Build-1.30.5.jar")
         url("https://cdn.modrinth.com/data/QzooIsZI/versions/GM05Fv8t/carbonchat-paper-3.0.0-beta.39.jar")
         url("https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar")
-        url("https://cdn.modrinth.com/data/oIBGjZ77/versions/7DxLZFJJ/ArmorStandEditor-26.1.2-51.jar")
+        url("https://cdn.modrinth.com/data/oIBGjZ77/versions/rIPMStjV/ArmorStandEditor-26.3-52.1.jar")
     }
 }
 

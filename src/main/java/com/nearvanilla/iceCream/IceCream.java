@@ -12,6 +12,7 @@ import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
 import com.nearvanilla.iceCream.modules.lightning.LightningModule;
 import com.nearvanilla.iceCream.modules.locatorBar.LocatorBarModule;
 import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerProtectionModule;
+import com.nearvanilla.iceCream.modules.mapTools.MapToolsModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.OnePlayerSleepModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
@@ -80,6 +81,7 @@ public final class IceCream extends JavaPlugin {
   private final LootContainerProtectionModule lootContainerProtectionModule =
       new LootContainerProtectionModule();
   private final VineGrowthModule vineGrowthModule = new VineGrowthModule();
+  private final MapToolsModule mapToolsModule = new MapToolsModule();
 
   @Override
   public void onEnable() {
@@ -123,12 +125,14 @@ public final class IceCream extends JavaPlugin {
     onePlayerSleepModule.register();
     lootContainerProtectionModule.register();
     vineGrowthModule.register();
+    mapToolsModule.register();
   }
 
   @Override
   public void onDisable() {
     deathDbModule.unregister();
     flightModule.unregister();
+    mapToolsModule.unregister();
     lootContainerProtectionModule.unregister();
     onePlayerSleepModule.unregister();
     spectatorModule.unregister();

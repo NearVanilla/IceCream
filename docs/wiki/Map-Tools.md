@@ -12,13 +12,13 @@ Requires squaremap. Permissions: `icecream.modules.maptools.manage` for everythi
 
 ## Modes
 
-Only left click is used. Clicks never use items or break blocks. `/maptools stop` leaves any mode.
+Only left click is used. Clicks never use items or break blocks. While drawing or editing, the swap hands key (F) or `/maptools undo` undoes the last change, and shift + F or `/maptools redo` redoes it. `/maptools stop` leaves any mode.
 
 | Command | Left click | Shift + left click |
 | --- | --- | --- |
 | `/maptools editmode` | Edit the claim or marker you click | |
 | `/maptools create claim rect` | Corner 1 | Corner 2 |
-| `/maptools create claim polygon` | Add a point | Undo the last point |
+| `/maptools create claim polygon` | Add a point, or pick up a point and click where it goes | On a point: remove it. Elsewhere: add a point to the nearest line |
 | `/maptools create claim circle` | Center | Radius |
 | `/maptools create marker` | Spot | |
 

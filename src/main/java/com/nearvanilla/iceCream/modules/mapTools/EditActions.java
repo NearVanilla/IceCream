@@ -41,7 +41,9 @@ public final class EditActions {
     if (session.isViewing()) {
       editAreaAt(player, block, null);
       return;
-    } else if (session.isNew()) {
+    }
+    EditSession.Snapshot before = session.snapshot();
+    if (session.isNew()) {
       drawNew(player, session, block, sneaking);
     } else if (!block.getWorld().getKey().asString().equals(session.getWorld())) {
       send(player, "<red>This claim is in another world.</red>");
@@ -49,27 +51,28 @@ public final class EditActions {
     } else {
       editExisting(player, session, block, sneaking);
     }
+    session.remember(before);
     AreaDisplays.refreshPreview(player);
   }
 
   /**
-   * Handles a left click that hits no block, such as at the sky. While editing a claim it puts down
-   * the picked up corner, or with nothing picked up stops editing the claim, like clicking far
-   * outside it.
+   * Handles a left click that hits no block, such as at the sky. It puts down the picked up corner
+   * without moving it, or while editing a claim with nothing picked up stops editing it, like
+   * clicking far outside it.
    *
    * @param player the editing player
    * @param sneaking whether the player held shift
    */
   public static void clickNothing(Player player, boolean sneaking) {
     EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    if (sneaking || session == null || !session.isEditingArea()) return;
+    if (sneaking || session == null || session.isViewing()) return;
 
     if (session.getPicked() != null) {
       session.setPicked(null);
       AreaDisplays.refreshPreview(player);
       return;
     }
-    leave(player);
+    if (session.isEditingArea()) leave(player);
   }
 
   /** Stops editing the claim and goes back to edit mode, asking first if there are changes. */
@@ -108,10 +111,25 @@ public final class EditActions {
         }
       }
       case POLYGON -> {
-        if (!sneaking) {
+        // Works like editing a polygon, except a click away from the points adds one at the end.
+        // A click in another world starts over there, so it never touches the old points.
+        boolean sameWorld = block.getWorld().getKey().asString().equals(session.getWorld());
+        Integer index = sameWorld ? session.indexAt(block) : null;
+        if (!sameWorld) {
           session.addPoint(block);
+        } else if (sneaking && index != null) {
+          session.removePoint(index);
+          session.setPicked(null);
+        } else if (sneaking) {
+          session.insertPoint(session.nearestEdge(block) + 1, block);
+          session.setPicked(null);
+        } else if (index != null) {
+          session.setPicked(index);
+        } else if (session.getPicked() != null) {
+          session.setPoint(session.getPicked(), block);
+          session.setPicked(null);
         } else {
-          session.undoPoint();
+          session.addPoint(block);
         }
       }
       case CIRCLE -> {
@@ -215,6 +233,42 @@ public final class EditActions {
   private static void change(EditSession session) {
     session.setPicked(null);
     session.setChanged(true);
+  }
+
+  /**
+   * Undoes the last change to the shape the player is drawing or editing.
+   *
+   * @param player the editing player
+   */
+  public static void undo(Player player) {
+    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
+    if (session == null || session.isViewing()) {
+      send(player, "<red>You are not drawing or editing a shape.</red>");
+      return;
+    }
+    if (!session.undo()) {
+      send(player, "<gray>Nothing to undo.</gray>");
+      return;
+    }
+    AreaDisplays.refreshPreview(player);
+  }
+
+  /**
+   * Redoes the last undone change to the shape the player is drawing or editing.
+   *
+   * @param player the editing player
+   */
+  public static void redo(Player player) {
+    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
+    if (session == null || session.isViewing()) {
+      send(player, "<red>You are not drawing or editing a shape.</red>");
+      return;
+    }
+    if (!session.redo()) {
+      send(player, "<gray>Nothing to redo.</gray>");
+      return;
+    }
+    AreaDisplays.refreshPreview(player);
   }
 
   /**

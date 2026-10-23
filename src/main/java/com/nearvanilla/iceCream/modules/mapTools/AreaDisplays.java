@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -23,8 +24,9 @@ import org.joml.Vector3f;
 
 /**
  * Draws areas and the shape being edited in game with block display entities that only the viewing
- * player can see: outlined corner blocks (ghost blocks) joined by flat lines at the height of the
- * lowest corner, and a faint grid inside. Only the part near the player is drawn.
+ * player can see: outlined corner blocks (ghost blocks) joined by lines, and a faint grid inside.
+ * Everything follows the ground, so large areas over hills stay visible. Only the part near the
+ * player is drawn.
  *
  * @author Dynant
  * @version 1.0
@@ -40,20 +42,29 @@ public final class AreaDisplays {
   public static final double VIEW_DISTANCE = 128;
 
   /** How far around the player grids are drawn; kept short to limit the number of entities. */
-  private static final double GRID_DISTANCE = 48;
+  private static final double GRID_DISTANCE = 80;
 
-  /** Longest line one display draws; longer lines are split so each piece is sent near it. */
-  private static final float MAX_SEGMENT_LENGTH = 32;
+  /** Blocks between the ground samples an outline follows. */
+  private static final double OUTLINE_STEP = 4;
+
+  /** Blocks between the ground samples a grid line follows; coarser to limit the entity count. */
+  private static final double GRID_STEP = 12;
+
+  /** The largest height change between two ground samples before a line samples in between. */
+  private static final double MAX_RISE = 1;
+
+  /** How far lines and dots float above the ground, so they are not hidden in it. */
+  private static final double GROUND_LIFT = 0.15;
 
   /** Blocks between grid lines, measured along x + z. */
-  private static final int GRID_SPACING = 8;
+  private static final int GRID_SPACING = 12;
 
-  private static final float LINE_THICKNESS = 0.08f;
-  private static final float GRID_THICKNESS = 0.03f;
+  private static final float LINE_THICKNESS = 0.15f;
+  private static final float GRID_THICKNESS = 0.04f;
 
-  private static final float GRID_DOT_SIZE = 0.12f;
+  private static final float GRID_DOT_SIZE = 0.2f;
 
-  /** Translucent, for area outlines and the faint grid lines. */
+  /** Translucent, for the faint grid lines. */
   private static final BlockData GLASS_BLOCK = Material.WHITE_STAINED_GLASS.createBlockData();
 
   /** Solid, for the shape being edited and the grid dots. */
@@ -123,7 +134,16 @@ public final class AreaDisplays {
       List<Location> ghosts = areaGhosts(area, world);
       BlockData ghost = area.isMarker() ? MARKER_BLOCK : HIGHLIGHT_BLOCK;
       drawShape(
-          player, anchor, area.points(), true, ghosts, ghost, null, color, GLASS_BLOCK, entities);
+          player,
+          anchor,
+          area.points(),
+          true,
+          ghosts,
+          ghost,
+          null,
+          color,
+          lineBlock(color),
+          entities);
     }
     areaDrawings.put(player.getUniqueId(), new Drawing(entities, anchor));
   }
@@ -147,8 +167,7 @@ public final class AreaDisplays {
       if (!area.world().equals(worldKey) || area.id().equals(session.getAreaId())) continue;
       if (!isNear(area, anchor, GRID_DISTANCE)) continue;
       Color color = Color.fromRGB(MapToolsUtils.areaColor(area).value());
-      double y = lineHeight(areaGhosts(area, world), anchor);
-      drawGrid(player, anchor, area.points(), y, color, entities);
+      drawGrid(player, anchor, area.points(), color, entities);
     }
     gridDrawings.put(player.getUniqueId(), new Drawing(entities, anchor));
   }
@@ -163,8 +182,7 @@ public final class AreaDisplays {
     if (!anchor.getWorld().getKey().asString().equals(session.getWorld())) return;
 
     List<Display> entities = new ArrayList<>();
-    double y = lineHeight(session.definingBlocks(), anchor);
-    drawGrid(player, anchor, session.previewOutline(), y, Color.WHITE, entities);
+    drawGrid(player, anchor, session.previewOutline(), Color.WHITE, entities);
     previewGridDrawings.put(player.getUniqueId(), new Drawing(entities, anchor));
   }
 
@@ -285,18 +303,47 @@ public final class AreaDisplays {
     return dx * dx + dz * dz <= range * range;
   }
 
-  /** The height outlines and grids are drawn at: the middle of the lowest ghost block. */
-  private static double lineHeight(List<Location> ghosts, Location anchor) {
-    int lowest = Integer.MAX_VALUE;
-    for (Location ghost : ghosts) {
-      if (ghost != null) lowest = Math.min(lowest, ghost.getBlockY());
+  /**
+   * The solid block an area's outline is drawn with: the concrete closest to its color, so the
+   * outline stands out in daylight.
+   */
+  private static BlockData lineBlock(Color color) {
+    DyeColor closest = DyeColor.WHITE;
+    int closestDistance = Integer.MAX_VALUE;
+    for (DyeColor dye : DyeColor.values()) {
+      Color candidate = dye.getColor();
+      int dr = candidate.getRed() - color.getRed();
+      int dg = candidate.getGreen() - color.getGreen();
+      int db = candidate.getBlue() - color.getBlue();
+      int distance = dr * dr + dg * dg + db * db;
+      if (distance < closestDistance) {
+        closest = dye;
+        closestDistance = distance;
+      }
     }
-    return (lowest == Integer.MAX_VALUE ? anchor.getBlockY() : lowest) + 0.5;
+    return Material.valueOf(closest.name() + "_CONCRETE").createBlockData();
   }
 
   /**
-   * Draws a shape as ghost blocks joined by flat lines, all at the height of the lowest ghost
-   * block.
+   * Where a ghost block is drawn: on the ground at its x and z, or where it is if its chunk is not
+   * loaded.
+   *
+   * @param block the defining block
+   * @return the block to outline
+   */
+  public static Location drawnGhost(Location block) {
+    Location ground = MapToolsUtils.groundBlock(block.getWorld(), block.getX(), block.getZ());
+    return ground == null ? block : ground;
+  }
+
+  /** The height lines are drawn at above a spot, or null if its chunk is not loaded. */
+  private static Double surfaceHeight(World world, double x, double z) {
+    Location ground = MapToolsUtils.groundBlock(world, x, z);
+    return ground == null ? null : ground.getBlockY() + 1 + GROUND_LIFT;
+  }
+
+  /**
+   * Draws a shape as ghost blocks on the ground joined by lines that follow the ground.
    *
    * @param outline the points the lines run through
    * @param ghosts the blocks to outline; null entries are skipped
@@ -314,14 +361,10 @@ public final class AreaDisplays {
       Color color,
       BlockData block,
       List<Display> entities) {
-    double y = lineHeight(ghosts, anchor);
-    // Ghost blocks are drawn at the line's height, so corners line up with the outline.
-    int ghostY = (int) Math.floor(y);
     for (int i = 0; i < ghosts.size(); i++) {
       Location ghost = ghosts.get(i);
       if (ghost == null) continue;
-      Location drawn = ghost.clone();
-      drawn.setY(ghostY);
+      Location drawn = drawnGhost(ghost);
       boolean isPicked = picked != null && picked == i;
       highlightBlock(
           player,
@@ -338,7 +381,7 @@ public final class AreaDisplays {
     for (int i = 0; i < edges; i++) {
       MapPoint a = outline.get(i);
       MapPoint b = outline.get((i + 1) % outline.size());
-      drawLine(player, anchor, a, b, y, range, LINE_THICKNESS, color, block, entities);
+      drawLine(player, anchor, a, b, range, OUTLINE_STEP, LINE_THICKNESS, color, block, entities);
     }
   }
 
@@ -350,7 +393,6 @@ public final class AreaDisplays {
       Player player,
       Location anchor,
       List<MapPoint> outline,
-      double y,
       Color dotColor,
       List<Display> entities) {
     if (outline.size() < 3) return;
@@ -389,11 +431,21 @@ public final class AreaDisplays {
         for (int i = 0; i + 1 < crossings.size(); i += 2) {
           MapPoint from = onDiagonal(sign, line, crossings.get(i));
           MapPoint to = onDiagonal(sign, line, crossings.get(i + 1));
-          drawLine(player, anchor, from, to, y, range, GRID_THICKNESS, null, GLASS_BLOCK, entities);
+          drawLine(
+              player,
+              anchor,
+              from,
+              to,
+              range,
+              GRID_STEP,
+              GRID_THICKNESS,
+              null,
+              GLASS_BLOCK,
+              entities);
         }
       }
     }
-    drawGridDots(player, anchor, outline, y, spacing, range, dotColor, entities);
+    drawGridDots(player, anchor, outline, spacing, range, dotColor, entities);
   }
 
   /**
@@ -404,7 +456,6 @@ public final class AreaDisplays {
       Player player,
       Location anchor,
       List<MapPoint> outline,
-      double y,
       int spacing,
       double range,
       Color color,
@@ -429,8 +480,10 @@ public final class AreaDisplays {
         double dz = z - anchor.getZ();
         if (dx * dx + dz * dz > range * range) continue;
         if (!MapToolsUtils.contains(outline, x, z)) continue;
+        Double y = surfaceHeight(anchor.getWorld(), x, z);
+        if (y == null) continue;
 
-        Location location = new Location(anchor.getWorld(), x, y, z);
+        Location location = new Location(anchor.getWorld(), x, y + GRID_DOT_SIZE / 2, z);
         entities.add(spawn(player, location, dot, color, SOLID_BLOCK));
       }
     }
@@ -442,15 +495,17 @@ public final class AreaDisplays {
   }
 
   /**
-   * Draws the part of the flat line from a to b at height y that lies within range of the anchor.
+   * Draws the part of the line from a to b that lies within range of the anchor, following the
+   * ground in pieces of at most {@code step} blocks, and shorter pieces where the ground is steep.
+   * Pieces over unloaded chunks are left out.
    */
   private static void drawLine(
       Player player,
       Location anchor,
       MapPoint a,
       MapPoint b,
-      double y,
       double range,
+      double step,
       float thickness,
       Color color,
       BlockData block,
@@ -472,9 +527,49 @@ public final class AreaDisplays {
     double t1 = Math.min(1, (-qb + root) / (2 * qa));
     if (t0 >= t1) return;
 
-    Vector3f from = new Vector3f((float) (a.x() + dx * t0), (float) y, (float) (a.z() + dz * t0));
-    Vector3f to = new Vector3f((float) (a.x() + dx * t1), (float) y, (float) (a.z() + dz * t1));
-    drawSegment(player, anchor.getWorld(), from, to, thickness, color, block, entities);
+    World world = anchor.getWorld();
+    int pieces = (int) Math.max(1, Math.ceil(Math.sqrt(qa) * (t1 - t0) / step));
+    Vector3f previous = null;
+    for (int i = 0; i <= pieces; i++) {
+      double t = t0 + (t1 - t0) * i / pieces;
+      Vector3f point = groundPoint(world, a.x() + dx * t, a.z() + dz * t);
+      if (previous != null && point != null) {
+        drawGroundSegment(player, world, previous, point, thickness, color, block, entities);
+      }
+      previous = point;
+    }
+  }
+
+  /** The point just above the ground at a spot, or null if its chunk is not loaded. */
+  private static Vector3f groundPoint(World world, double x, double z) {
+    Double y = surfaceHeight(world, x, z);
+    return y == null ? null : new Vector3f((float) x, y.floatValue(), (float) z);
+  }
+
+  /**
+   * Draws a piece of line between two ground points, splitting it in half while the height changes
+   * by more than {@link #MAX_RISE} over more than a block, so it follows cliffs and ravines instead
+   * of cutting through the air or the ground.
+   */
+  private static void drawGroundSegment(
+      Player player,
+      World world,
+      Vector3f from,
+      Vector3f to,
+      float thickness,
+      Color color,
+      BlockData block,
+      List<Display> entities) {
+    float flatLength = (float) Math.hypot(to.x - from.x, to.z - from.z);
+    if (Math.abs(to.y - from.y) > MAX_RISE && flatLength > 1) {
+      Vector3f middle = groundPoint(world, (from.x + to.x) / 2, (from.z + to.z) / 2);
+      if (middle != null) {
+        drawGroundSegment(player, world, from, middle, thickness, color, block, entities);
+        drawGroundSegment(player, world, middle, to, thickness, color, block, entities);
+        return;
+      }
+    }
+    drawSegment(player, world, from, to, thickness, color, block, entities);
   }
 
   private static void drawSegment(
@@ -489,13 +584,6 @@ public final class AreaDisplays {
     Vector3f direction = new Vector3f(to).sub(from);
     float length = direction.length();
     if (length == 0) return;
-    // A display is only sent to players near its location, its start, so long lines are split up.
-    if (length > MAX_SEGMENT_LENGTH) {
-      Vector3f middle = new Vector3f(from).add(to).mul(0.5f);
-      drawSegment(player, world, from, middle, thickness, color, block, entities);
-      drawSegment(player, world, middle, to, thickness, color, block, entities);
-      return;
-    }
 
     Quaternionf rotation = new Quaternionf().rotationTo(new Vector3f(1, 0, 0), direction);
     Vector3f offset = rotation.transform(new Vector3f(0, -thickness / 2, -thickness / 2));

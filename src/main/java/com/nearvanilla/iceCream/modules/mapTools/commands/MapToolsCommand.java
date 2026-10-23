@@ -170,7 +170,10 @@ public class MapToolsCommand {
   @CommandDescription("Draw a new polygon claim.")
   @Permission(PERMISSION)
   public void createPolygon(CommandSourceStack stack) {
-    startNew(stack, Mode.POLYGON, "click to add points, shift + click to undo");
+    startNew(
+        stack,
+        Mode.POLYGON,
+        "click to add points, click a point to move it, shift + click to remove or insert");
   }
 
   @Command("maptools create claim circle")
@@ -202,6 +205,24 @@ public class MapToolsCommand {
     } else {
       player.sendMessage(NOTHING_TO_SAVE);
     }
+  }
+
+  @Command("maptools undo")
+  @CommandDescription("Undo the last change to the shape you are drawing or editing.")
+  @Permission(PERMISSION)
+  public void undo(CommandSourceStack stack) {
+    Player player = requirePlayer(stack);
+    if (player == null) return;
+    EditActions.undo(player);
+  }
+
+  @Command("maptools redo")
+  @CommandDescription("Redo the last change you undid.")
+  @Permission(PERMISSION)
+  public void redo(CommandSourceStack stack) {
+    Player player = requirePlayer(stack);
+    if (player == null) return;
+    EditActions.redo(player);
   }
 
   @Command("maptools manage")

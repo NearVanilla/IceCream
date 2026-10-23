@@ -30,6 +30,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -71,19 +72,25 @@ public class MapToolsListener implements Listener {
     // Reach as far as outlines are drawn, and stop at water so lakes and the sea can be clicked.
     int reach = (int) AreaDisplays.VIEW_DISTANCE;
 
+    Block block = event.getClickedBlock();
+    if (block == null) block = player.getTargetBlockExact(reach, FluidCollisionMode.ALWAYS);
+
     // Ghost blocks have no hitbox, so check the line of sight against the corners of the area
-    // being edited before falling back to the block that was hit.
+    // being edited, or the points of a new polygon, before falling back to the block that was hit.
+    // A corner behind the hit block does not count, so clicks near the player are not taken by a
+    // corner far away in the same direction.
     EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    if (session != null && session.isEditingArea()) {
-      Location corner = session.cornerInSight(player.getEyeLocation(), reach);
-      if (corner != null) {
+    if (session != null
+        && (session.isEditingArea()
+            || (session.isNew() && session.getMode() == EditSession.Mode.POLYGON))) {
+      Location eye = player.getEyeLocation();
+      Location corner = session.cornerInSight(eye, reach);
+      if (corner != null && (block == null || !isBehind(eye, corner, block))) {
         EditActions.click(player, corner, secondary);
         return;
       }
     }
 
-    Block block = event.getClickedBlock();
-    if (block == null) block = player.getTargetBlockExact(reach, FluidCollisionMode.ALWAYS);
     if (block == null) {
       EditActions.clickNothing(player, secondary);
       return;
@@ -95,6 +102,33 @@ public class MapToolsListener implements Listener {
             .getWorld()
             .getHighestBlockAt(block.getX(), block.getZ(), HeightMap.MOTION_BLOCKING_NO_LEAVES);
     EditActions.click(player, top.getLocation(), secondary);
+  }
+
+  /**
+   * The swap hands key (F by default) undoes the last change while drawing or editing; with shift
+   * it redoes.
+   */
+  @EventHandler(priority = EventPriority.LOW)
+  public void onSwapHands(PlayerSwapHandItemsEvent event) {
+    Player player = event.getPlayer();
+    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
+    // Only while drawing or editing a shape; in view mode the key swaps hands as usual.
+    if (session == null || session.isViewing()) return;
+    event.setCancelled(true);
+    if (player.isSneaking()) {
+      EditActions.redo(player);
+    } else {
+      EditActions.undo(player);
+    }
+  }
+
+  /**
+   * Whether a corner, where its ghost block is drawn, is further from the eye than the hit block.
+   */
+  private static boolean isBehind(Location eye, Location corner, Block block) {
+    Location drawn = AreaDisplays.drawnGhost(corner).toCenterLocation();
+    // Allow a little slack so a corner on the hit block, or right next to it, still counts.
+    return eye.distance(drawn) > eye.distance(block.getLocation().toCenterLocation()) + 1.5;
   }
 
   /** Creative players break blocks instantly, so make sure clicks never break anything. */

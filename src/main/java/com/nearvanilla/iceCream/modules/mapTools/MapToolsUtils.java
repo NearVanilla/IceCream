@@ -23,7 +23,9 @@ import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import xyz.jpenilla.squaremap.api.BukkitAdapter;
@@ -523,13 +525,26 @@ public final class MapToolsUtils {
   }
 
   /**
-   * @return the ground block at the spot, ignoring leaves, or null if its chunk is not loaded
+   * @return the ground block at the spot, ignoring trees, or null if its chunk is not loaded
    */
   public static Location groundBlock(World world, double x, double z) {
     int blockX = (int) Math.floor(x);
     int blockZ = (int) Math.floor(z);
     if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) return null;
     int y = world.getHighestBlockYAt(blockX, blockZ, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+    // The height map skips leaves but not logs, so walk down tree trunks to the ground. Below a
+    // branch, keep going through the air under it.
+    boolean inTree = false;
+    while (y > world.getMinHeight()) {
+      Block block = world.getBlockAt(blockX, y, blockZ);
+      Material type = block.getType();
+      if (Tag.LOGS.isTagged(type) || Tag.LEAVES.isTagged(type)) {
+        inTree = true;
+      } else if (!inTree || !block.isPassable() || block.isLiquid()) {
+        break;
+      }
+      y--;
+    }
     return new Location(world, blockX, y, blockZ);
   }
 

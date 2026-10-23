@@ -3,7 +3,9 @@ package com.nearvanilla.iceCream.modules.mapTools;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.AreaGeometry;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -58,6 +60,25 @@ public class EditSession {
   private boolean changed;
   private boolean hinted;
 
+  /** How many changes can be undone. */
+  private static final int MAX_UNDO = 50;
+
+  /** The shape before each change, newest first. */
+  private final Deque<Snapshot> history = new ArrayDeque<>();
+
+  /** The shapes undone since the last change, most recently undone first. */
+  private final Deque<Snapshot> undone = new ArrayDeque<>();
+
+  /** The shape at one moment, as kept for undo. */
+  public record Snapshot(
+      String world,
+      Location corner1,
+      Location corner2,
+      List<Location> points,
+      Location center,
+      Integer radius,
+      boolean changed) {}
+
   private EditSession(Mode mode, String areaId) {
     this.mode = mode;
     this.areaId = areaId;
@@ -103,7 +124,7 @@ public class EditSession {
 
   /**
    * Finds the ground blocks for the given spots without loading chunks. Spots in unloaded chunks
-   * get the lowest height found, since lines and corners are drawn at the lowest corner anyway.
+   * get the lowest height found; they are drawn on the ground once their chunk loads.
    */
   private static List<Location> ground(World world, List<MapPoint> spots) {
     List<Location> blocks = new ArrayList<>();
@@ -284,10 +305,6 @@ public class EditSession {
     points.remove(index);
   }
 
-  public void undoPoint() {
-    if (!points.isEmpty()) points.removeLast();
-  }
-
   public void setCenter(Location block) {
     switchWorld(block);
     center = block.toBlockLocation();
@@ -297,10 +314,70 @@ public class EditSession {
     this.radius = radius;
   }
 
+  /** The current shape, taken before a click so the click can be undone. */
+  public Snapshot snapshot() {
+    return new Snapshot(world, corner1, corner2, List.copyOf(points), center, radius, changed);
+  }
+
+  /**
+   * Remembers the shape from before a click, if the click changed it. A new change clears what
+   * could be redone.
+   *
+   * @param before the snapshot taken before the click
+   */
+  public void remember(Snapshot before) {
+    if (before.equals(snapshot())) return;
+    push(history, before);
+    undone.clear();
+  }
+
+  /**
+   * Puts the shape back to how it was before the last change.
+   *
+   * @return false if there is nothing to undo
+   */
+  public boolean undo() {
+    Snapshot previous = history.poll();
+    if (previous == null) return false;
+    push(undone, snapshot());
+    restore(previous);
+    return true;
+  }
+
+  /**
+   * Applies the last undone change again.
+   *
+   * @return false if there is nothing to redo
+   */
+  public boolean redo() {
+    Snapshot next = undone.poll();
+    if (next == null) return false;
+    push(history, snapshot());
+    restore(next);
+    return true;
+  }
+
+  private static void push(Deque<Snapshot> stack, Snapshot snapshot) {
+    stack.push(snapshot);
+    if (stack.size() > MAX_UNDO) stack.removeLast();
+  }
+
+  private void restore(Snapshot previous) {
+    world = previous.world();
+    corner1 = previous.corner1();
+    corner2 = previous.corner2();
+    points.clear();
+    points.addAll(previous.points());
+    center = previous.center();
+    radius = previous.radius();
+    changed = previous.changed();
+    picked = null;
+  }
+
   /**
    * The blocks that define the shape, outlined as ghost blocks: the four rectangle corners, the
    * polygon points, or the circle or marker center. Rectangle corners that were not clicked use the
-   * lower of the two clicked heights.
+   * lower of the two clicked heights, though ghost blocks are drawn on the ground.
    */
   public List<Location> definingBlocks() {
     return switch (mode) {
@@ -347,14 +424,13 @@ public class EditSession {
     Vector direction = eye.getDirection();
     Location nearest = null;
     double nearestDistance = Double.MAX_VALUE;
-    List<Location> blocks = definingBlocks();
-    // Ghost blocks are drawn at the lowest corner's height, so aim at that height too.
-    int drawnY = blocks.stream().mapToInt(Location::getBlockY).min().orElse(0);
-    for (Location block : blocks) {
+    for (Location block : definingBlocks()) {
       if (!block.getWorld().equals(eye.getWorld())) continue;
 
+      // Aim at the ghost block where it is drawn, on the ground.
+      Location drawn = AreaDisplays.drawnGhost(block);
       Vector toCenter =
-          new Vector(block.getBlockX() + 0.5, drawnY + 0.5, block.getBlockZ() + 0.5)
+          new Vector(drawn.getBlockX() + 0.5, drawn.getBlockY() + 0.5, drawn.getBlockZ() + 0.5)
               .subtract(origin);
       double along = toCenter.dot(direction);
       if (along < 0 || along > reach) continue;

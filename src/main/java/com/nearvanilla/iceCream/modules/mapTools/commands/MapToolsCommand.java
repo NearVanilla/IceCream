@@ -29,6 +29,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.annotation.specifier.Greedy;
+import org.incendo.cloud.annotation.specifier.Quoted;
 import org.incendo.cloud.annotations.Argument;
 import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
@@ -277,6 +278,52 @@ public class MapToolsCommand {
             MapArea.RECT,
             null,
             null);
+    MapToolsUtils.createArea(
+        stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
+  }
+
+  @Command("maptools create claim circle <world> <x> <z> <radius> <id> <color> <label>")
+  @CommandDescription("Create a circular claim from coordinates.")
+  @Permission(PERMISSION)
+  public void createCircle(
+      CommandSourceStack stack,
+      @Argument("world") World world,
+      @Argument("x") int x,
+      @Argument("z") int z,
+      @Argument("radius") int radius,
+      @Argument("id") String id,
+      @Argument(value = "color", suggestions = "map_colors") String color,
+      @Argument("label") @Greedy String label) {
+    AreaGeometry geometry =
+        parseShape(world.getKey().asString(), "circle", x + " " + z + " " + radius);
+    if (geometry == null) {
+      stack.getSender().sendMessage(MM.deserialize("<red>The radius must be at least 1.</red>"));
+      return;
+    }
+    MapToolsUtils.createArea(
+        stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
+  }
+
+  @Command("maptools create claim polygon <world> <points> <id> <color> <label>")
+  @CommandDescription("Create a polygon claim from coordinates, given as \"x z; x z; x z\".")
+  @Permission(PERMISSION)
+  public void createPolygon(
+      CommandSourceStack stack,
+      @Argument("world") World world,
+      @Argument("points") @Quoted String points,
+      @Argument("id") String id,
+      @Argument(value = "color", suggestions = "map_colors") String color,
+      @Argument("label") @Greedy String label) {
+    AreaGeometry geometry = parseShape(world.getKey().asString(), "points", points);
+    if (geometry == null) {
+      stack
+          .getSender()
+          .sendMessage(
+              MM.deserialize(
+                  "<red>Use points in quotes, such as \"0 0; 10 0; 10 10\", with at least 3"
+                      + " points.</red>"));
+      return;
+    }
     MapToolsUtils.createArea(
         stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
   }

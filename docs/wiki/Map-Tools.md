@@ -49,8 +49,10 @@ Each command names the kind after the action: `claim` or `marker`. Tab completio
 | `/maptools set marker <id> <field> [value]` | Change `id`, `label`, `color`, `owners`, `description` or `icon`, or `move <x> <z>`. |
 | `/maptools delete claim <id>` | Delete a claim. Players confirm in a dialog. The shape is printed so it can be recreated. Also `delete marker <id>`. |
 | `/maptools create claim rect <world> <x1> <z1> <x2> <z2> <id> <color> <label>` | Create a rectangle from coordinates. |
+| `/maptools create claim circle <world> <x> <z> <radius> <id> <color> <label>` | Create a circle from its center and radius. |
+| `/maptools create claim polygon <world> "<x z; x z; x z>" <id> <color> <label>` | Create a polygon from at least 3 points, in quotes. |
 
-Ids use `a-z`, `0-9`, `_` and `-`, up to 32 characters, and are unique across claims and markers. Colors are a name like `gold` or a hex code like `#ff8800`. `list`, `set`, `delete` and `create claim rect <world> ...` also work from the console. The world is its key, like `minecraft:overworld`.
+Ids use `a-z`, `0-9`, `_` and `-`, up to 32 characters, and are unique across claims and markers. Colors are a name like `gold` or a hex code like `#ff8800`. `list`, `set`, `delete` and `create claim rect|circle|polygon <world> ...` also work from the console. The world is its key, like `minecraft:overworld`.
 
 ## Markers
 

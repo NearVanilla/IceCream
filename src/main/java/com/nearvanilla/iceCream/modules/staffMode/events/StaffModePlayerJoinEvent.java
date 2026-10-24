@@ -5,15 +5,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * StaffModePlayerJoin is a simple event listener that reminds the player that they are in staff
- * mode. It listens for the PlayerJoinEvent and sends a reminder message to the player when they
- * join the server.
+ * Restores flight and reminds players whose persisted staff mode is enabled when they join.
  *
  * @author Demonstrations
  * @version 1.0
@@ -32,18 +31,19 @@ public class StaffModePlayerJoinEvent implements Listener {
                   + "</hover></click>]</aqua>");
 
   /**
-   * Handles the PlayerJoinEvent. When a player joins the server, this method is called, sending a
-   * welcome message to the player.
+   * Restores staff flight without replacing the inventory or location saved before staff mode.
    *
    * @param event The PlayerJoinEvent that is triggered when a player joins the server.
    * @see PlayerJoinEvent
    */
-  @EventHandler
+  @EventHandler(priority = EventPriority.HIGHEST)
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
     PersistentDataContainer playerContainer = player.getPersistentDataContainer();
     if (Boolean.TRUE.equals(
         playerContainer.get(StaffModeModule.STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN))) {
+      player.setAllowFlight(true);
+      player.setFlying(true);
       player.sendMessage(staffModeMutedReminderComponent);
     }
   }

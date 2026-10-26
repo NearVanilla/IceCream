@@ -15,6 +15,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -30,6 +31,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.annotation.specifier.Greedy;
 import org.incendo.cloud.annotation.specifier.Quoted;
+import org.incendo.cloud.annotation.specifier.Range;
 import org.incendo.cloud.annotations.Argument;
 import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
@@ -84,19 +86,22 @@ public class MapToolsCommand {
   /** How many entries {@code /maptools list} shows without a search. */
   private static final int LIST_LIMIT = 10;
 
-  private static final Component SHAPE_USAGE =
+  private static final Component POINTS_USAGE =
       MM.deserialize(
-          "<red>Use rect \\<x1> \\<z1> \\<x2> \\<z2>, circle \\<x> \\<z> \\<radius>, or"
-              + " points \\<x z; x z; x z> with at least 3 points.</red>");
-  private static final Component MOVE_USAGE = MM.deserialize("<red>Use move \\<x> \\<z>.</red>");
+          "<red>Use points \\<x z; x z; x z> with at least 3 points that are not in one"
+              + " line.</red>");
+  private static final String RECT_TOO_LARGE_TEXT =
+      "A rectangle can be at most " + MapToolsUtils.MAX_TYPED_SIZE + " blocks wide and long.";
+  private static final Component RECT_TOO_LARGE =
+      MM.deserialize("<red>" + RECT_TOO_LARGE_TEXT + "</red>");
   private static final Component INVALID_COLOR =
-      MM.deserialize("<red>Use a color name such as gold, or a hex code such as #ff8800.</red>");
+      MM.deserialize("<red>Use a color name such as gold, or a hex code such as ff8800.</red>");
 
+  // Shapes and positions typed as coordinates have their own set commands.
   private static final List<String> CLAIM_FIELDS =
-      List.of(
-          "id", "label", "color", "owners", "description", "opacity", "rect", "circle", "points");
+      List.of("id", "label", "color", "owners", "description", "opacity", "points");
   private static final List<String> MARKER_FIELDS =
-      List.of("id", "label", "color", "owners", "description", "icon", "move");
+      List.of("id", "label", "color", "owners", "description", "icon");
 
   @Suggestions("area_ids")
   public List<String> suggestIds(CommandContext<CommandSourceStack> ctx, CommandInput input) {
@@ -122,7 +127,47 @@ public class MapToolsCommand {
 
   @Suggestions("map_colors")
   public List<String> suggestColors(CommandContext<CommandSourceStack> ctx, CommandInput input) {
-    return List.copyOf(NamedTextColor.NAMES.keys());
+    return colorSuggestions(null);
+  }
+
+  /** The block the player stands on, instead of the default 0 to 9 number suggestions. */
+  @Suggestions("block_x")
+  public List<String> suggestBlockX(CommandContext<CommandSourceStack> ctx, CommandInput input) {
+    return List.of(String.valueOf(ctx.sender().getLocation().getBlockX()));
+  }
+
+  @Suggestions("block_z")
+  public List<String> suggestBlockZ(CommandContext<CommandSourceStack> ctx, CommandInput input) {
+    return List.of(String.valueOf(ctx.sender().getLocation().getBlockZ()));
+  }
+
+  /** No suggestions, instead of the default 0 to 9 number suggestions. */
+  @Suggestions("none")
+  public List<String> suggestNothing(CommandContext<CommandSourceStack> ctx, CommandInput input) {
+    return List.of();
+  }
+
+  /** Suggests the current value of the field being set. */
+  @Suggestions("area_values")
+  public List<String> suggestValues(CommandContext<CommandSourceStack> ctx, CommandInput input) {
+    // Read from the raw input, since earlier arguments are not always parsed yet while suggesting.
+    String[] words = ctx.rawInput().input().trim().split("\\s+");
+    if (words.length < 5) return List.of();
+    MapArea area = MapToolsModule.store.getArea(words[3]);
+    if (area == null) return List.of();
+    return switch (words[4].toLowerCase(Locale.ROOT)) {
+      case "color" -> colorSuggestions(area);
+      case "label" -> area.label() == null ? List.of() : List.of(area.label());
+      case "owners" ->
+          area.owners().isEmpty() ? List.of() : List.of(String.join(", ", area.owners()));
+      case "description" -> area.description() == null ? List.of() : List.of(area.description());
+      case "icon" -> MapToolsUtils.iconNames();
+      case "points" ->
+          MapArea.POLYGON.equals(area.shape())
+              ? List.of(MapToolsUtils.pointsText(area))
+              : List.of();
+      default -> List.of();
+    };
   }
 
   @Command("maptools stop")
@@ -161,34 +206,33 @@ public class MapToolsCommand {
   }
 
   @Command("maptools create claim rect")
-  @CommandDescription("Draw a new rectangular claim.")
+  @CommandDescription("Open a form to create a rectangular claim from coordinates.")
   @Permission(PERMISSION)
   public void createRectangle(CommandSourceStack stack) {
-    startNew(stack, Mode.RECT, "click corner 1, shift + click corner 2");
+    openCreateForm(stack, Mode.RECT);
   }
 
   @Command("maptools create claim polygon")
-  @CommandDescription("Draw a new polygon claim.")
+  @CommandDescription("Draw a polygon claim in game, then save it with /maptools save.")
   @Permission(PERMISSION)
   public void createPolygon(CommandSourceStack stack) {
-    startNew(
-        stack,
-        Mode.POLYGON,
-        "click to add points, click a point to move it, shift + click to remove or insert");
+    Player player = requirePlayer(stack);
+    if (player != null) startNew(player, Mode.POLYGON);
   }
 
   @Command("maptools create claim circle")
-  @CommandDescription("Draw a new circular claim.")
+  @CommandDescription("Open a form to create a circular claim from coordinates.")
   @Permission(PERMISSION)
   public void createCircle(CommandSourceStack stack) {
-    startNew(stack, Mode.CIRCLE, "click the center, shift + click sets the radius");
+    openCreateForm(stack, Mode.CIRCLE);
   }
 
   @Command("maptools create marker")
   @CommandDescription("Place a new marker with an icon.")
   @Permission(PERMISSION)
   public void createMarker(CommandSourceStack stack) {
-    startNew(stack, Mode.MARKER, "click where the marker goes");
+    Player player = requirePlayer(stack);
+    if (player != null) startNew(player, Mode.MARKER);
   }
 
   @Command("maptools save")
@@ -258,85 +302,188 @@ public class MapToolsCommand {
     if (area != null) AreaForms.openManage(player, area);
   }
 
-  @Command("maptools create claim rect <world> <x1> <z1> <x2> <z2> <id> <color> <label>")
+  @Command("maptools create claim rect <x1> <z1> <x2> <z2> <id> <color> <label>")
   @CommandDescription("Create a rectangular claim from coordinates.")
   @Permission(PERMISSION)
   public void createRect(
       CommandSourceStack stack,
-      @Argument("world") World world,
-      @Argument("x1") int x1,
-      @Argument("z1") int z1,
-      @Argument("x2") int x2,
-      @Argument("z2") int z2,
+      @Argument(value = "x1", suggestions = "block_x") int x1,
+      @Argument(value = "z1", suggestions = "block_z") int z1,
+      @Argument(value = "x2", suggestions = "block_x") int x2,
+      @Argument(value = "z2", suggestions = "block_z") int z2,
       @Argument("id") String id,
       @Argument(value = "color", suggestions = "map_colors") String color,
       @Argument("label") @Greedy String label) {
+    if (MapToolsUtils.rectangleTooLarge(x1, z1, x2, z2)) {
+      stack.getSender().sendMessage(RECT_TOO_LARGE);
+      return;
+    }
     AreaGeometry geometry =
         new AreaGeometry(
-            world.getKey().asString(),
+            MapToolsUtils.overworld(),
             MapToolsUtils.rectangle(x1, z1, x2, z2),
             MapArea.RECT,
             null,
             null);
-    MapToolsUtils.createArea(
-        stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
+    createClaim(stack.getSender(), id, geometry, color, label);
   }
 
-  @Command("maptools create claim circle <world> <x> <z> <radius> <id> <color> <label>")
+  @Command("maptools create claim circle <x> <z> <radius> <id> <color> <label>")
   @CommandDescription("Create a circular claim from coordinates.")
   @Permission(PERMISSION)
   public void createCircle(
       CommandSourceStack stack,
-      @Argument("world") World world,
-      @Argument("x") int x,
-      @Argument("z") int z,
-      @Argument("radius") int radius,
+      @Argument(value = "x", suggestions = "block_x") int x,
+      @Argument(value = "z", suggestions = "block_z") int z,
+      @Argument(value = "radius", suggestions = "none") @Range(min = "1", max = "3000") int radius,
       @Argument("id") String id,
       @Argument(value = "color", suggestions = "map_colors") String color,
       @Argument("label") @Greedy String label) {
     AreaGeometry geometry =
-        parseShape(world.getKey().asString(), "circle", x + " " + z + " " + radius);
-    if (geometry == null) {
-      stack.getSender().sendMessage(MM.deserialize("<red>The radius must be at least 1.</red>"));
-      return;
-    }
-    MapToolsUtils.createArea(
-        stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
+        MapToolsUtils.circleShape(
+            MapToolsUtils.overworld(), MapToolsUtils.blockCenter(x, z), radius);
+    createClaim(stack.getSender(), id, geometry, color, label);
   }
 
-  @Command("maptools create claim polygon <world> <points> <id> <color> <label>")
+  @Command("maptools create claim polygon <points> <id> <color> <label>")
   @CommandDescription("Create a polygon claim from coordinates, given as \"x z; x z; x z\".")
   @Permission(PERMISSION)
   public void createPolygon(
       CommandSourceStack stack,
-      @Argument("world") World world,
       @Argument("points") @Quoted String points,
       @Argument("id") String id,
       @Argument(value = "color", suggestions = "map_colors") String color,
       @Argument("label") @Greedy String label) {
-    AreaGeometry geometry = parseShape(world.getKey().asString(), "points", points);
+    AreaGeometry geometry = MapToolsUtils.parsePoints(MapToolsUtils.overworld(), points);
     if (geometry == null) {
       stack
           .getSender()
           .sendMessage(
               MM.deserialize(
                   "<red>Use points in quotes, such as \"0 0; 10 0; 10 10\", with at least 3"
-                      + " points.</red>"));
+                      + " points that are not in one line.</red>"));
       return;
     }
-    MapToolsUtils.createArea(
-        stack.getSender(), id, geometry, color, label, List.of(), null, null, null);
+    createClaim(stack.getSender(), id, geometry, color, label);
+  }
+
+  @Command("maptools set <kind> <id> rect <x1> <z1> <x2> <z2>")
+  @CommandDescription("Replace a claim's shape with a rectangle between two corners.")
+  @Permission(PERMISSION)
+  public void setRect(
+      CommandSourceStack stack,
+      @Argument("kind") Kind kind,
+      @Argument(value = "id", suggestions = "area_ids") String id,
+      @Argument(value = "x1", suggestions = "block_x") int x1,
+      @Argument(value = "z1", suggestions = "block_z") int z1,
+      @Argument(value = "x2", suggestions = "block_x") int x2,
+      @Argument(value = "z2", suggestions = "block_z") int z2) {
+    setShape(
+        stack.getSender(),
+        kind,
+        Kind.CLAIM,
+        id,
+        area ->
+            MapToolsUtils.rectangleTooLarge(x1, z1, x2, z2)
+                ? null
+                : new AreaGeometry(
+                    area.world(),
+                    MapToolsUtils.rectangle(x1, z1, x2, z2),
+                    MapArea.RECT,
+                    null,
+                    null),
+        RECT_TOO_LARGE_TEXT);
+  }
+
+  @Command("maptools set <kind> <id> circle <x> <z> <radius>")
+  @CommandDescription("Replace a claim's shape with a circle.")
+  @Permission(PERMISSION)
+  public void setCircle(
+      CommandSourceStack stack,
+      @Argument("kind") Kind kind,
+      @Argument(value = "id", suggestions = "area_ids") String id,
+      @Argument(value = "x", suggestions = "block_x") int x,
+      @Argument(value = "z", suggestions = "block_z") int z,
+      @Argument(value = "radius", suggestions = "none") @Range(min = "1", max = "3000")
+          int radius) {
+    setShape(
+        stack.getSender(),
+        kind,
+        Kind.CLAIM,
+        id,
+        area -> MapToolsUtils.circleShape(area.world(), MapToolsUtils.blockCenter(x, z), radius),
+        null);
+  }
+
+  @Command("maptools set <kind> <id> radius <radius>")
+  @CommandDescription("Resize a circle, keeping its center.")
+  @Permission(PERMISSION)
+  public void setRadius(
+      CommandSourceStack stack,
+      @Argument("kind") Kind kind,
+      @Argument(value = "id", suggestions = "area_ids") String id,
+      @Argument(value = "radius", suggestions = "none") @Range(min = "1", max = "3000")
+          int radius) {
+    setShape(
+        stack.getSender(),
+        kind,
+        Kind.CLAIM,
+        id,
+        area ->
+            area.isCircle() ? MapToolsUtils.circleShape(area.world(), area.center(), radius) : null,
+        "Only circles have a center and radius.");
+  }
+
+  @Command("maptools set <kind> <id> center <x> <z>")
+  @CommandDescription("Move a circle, keeping its size.")
+  @Permission(PERMISSION)
+  public void setCenter(
+      CommandSourceStack stack,
+      @Argument("kind") Kind kind,
+      @Argument(value = "id", suggestions = "area_ids") String id,
+      @Argument(value = "x", suggestions = "block_x") int x,
+      @Argument(value = "z", suggestions = "block_z") int z) {
+    setShape(
+        stack.getSender(),
+        kind,
+        Kind.CLAIM,
+        id,
+        area ->
+            area.isCircle()
+                ? MapToolsUtils.circleShape(
+                    area.world(), MapToolsUtils.blockCenter(x, z), area.radius())
+                : null,
+        "Only circles have a center and radius.");
+  }
+
+  @Command("maptools set <kind> <id> move <x> <z>")
+  @CommandDescription("Move a marker.")
+  @Permission(PERMISSION)
+  public void setMove(
+      CommandSourceStack stack,
+      @Argument("kind") Kind kind,
+      @Argument(value = "id", suggestions = "area_ids") String id,
+      @Argument(value = "x", suggestions = "block_x") int x,
+      @Argument(value = "z", suggestions = "block_z") int z) {
+    MapPoint spot = MapToolsUtils.blockCenter(x, z);
+    setShape(
+        stack.getSender(),
+        kind,
+        Kind.MARKER,
+        id,
+        area -> new AreaGeometry(area.world(), List.of(spot), MapArea.MARKER, spot, null),
+        null);
   }
 
   @Command("maptools set <kind> <id> <field> [value]")
-  @CommandDescription("Change details, or replace a claim's shape or move a marker by coordinates.")
+  @CommandDescription("Change the details of a claim or marker, or a polygon's points.")
   @Permission(PERMISSION)
   public void set(
       CommandSourceStack stack,
       @Argument("kind") Kind kind,
       @Argument(value = "id", suggestions = "area_ids") String id,
       @Argument(value = "field", suggestions = "area_fields") String field,
-      @Argument("value") @Greedy String value) {
+      @Argument(value = "value", suggestions = "area_values") @Greedy String value) {
     CommandSender sender = stack.getSender();
     MapArea area = find(sender, kind, id);
     if (area == null) return;
@@ -368,8 +515,6 @@ public class MapToolsCommand {
       rename(sender, kind, area, value);
       return;
     }
-
-    boolean shapeChanged = List.of("rect", "circle", "points", "move").contains(lowerField);
 
     MapArea updated;
     switch (lowerField) {
@@ -409,14 +554,26 @@ public class MapToolsCommand {
         }
         updated = area.withIcon(value);
       }
-      case "rect", "circle", "points", "move" -> {
-        AreaGeometry geometry = parseShape(area.world(), lowerField, value);
+      case "points" -> {
+        AreaGeometry geometry = MapToolsUtils.parsePoints(area.world(), value);
         if (geometry == null) {
-          sender.sendMessage(kind == Kind.MARKER ? MOVE_USAGE : SHAPE_USAGE);
+          sender.sendMessage(POINTS_USAGE);
           return;
         }
         if (MapToolsUtils.blockedByEditor(sender, id)) return;
-        updated = area.withGeometry(geometry);
+        AreaForms.confirmNearby(
+            sender,
+            geometry,
+            id,
+            () -> {
+              MapArea current = find(sender, kind, id);
+              if (current == null) return;
+              MapToolsUtils.saveArea(current.withGeometry(geometry));
+              sender.sendMessage(
+                  MM.deserialize(
+                      "<green>Updated the shape of <id>.</green>", Placeholder.unparsed("id", id)));
+            });
+        return;
       }
       default -> throw new IllegalStateException("Unhandled field " + lowerField);
     }
@@ -424,8 +581,7 @@ public class MapToolsCommand {
     sender.sendMessage(
         MM.deserialize(
             "<green>Updated the <field> of <id>.</green>",
-            Placeholder.unparsed(
-                "field", shapeChanged ? (kind == Kind.MARKER ? "position" : "shape") : lowerField),
+            Placeholder.unparsed("field", lowerField.equals("points") ? "shape" : lowerField),
             Placeholder.unparsed("id", id)));
   }
 
@@ -563,11 +719,41 @@ public class MapToolsCommand {
     player.teleportAsync(new Location(world, x, y, z, player.getYaw(), player.getPitch()));
   }
 
-  private static void startNew(CommandSourceStack stack, Mode mode, String controls) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-    if (!MapToolsUtils.confirmLeave(player, () -> startNew(stack, mode, controls))) return;
+  /** Creates a claim from typed coordinates, after the player confirms if it is near others. */
+  private static void createClaim(
+      CommandSender sender, String id, AreaGeometry geometry, String color, String label) {
+    String problem = MapToolsUtils.validate(id, color, label, true);
+    if (problem != null) {
+      sender.sendMessage(
+          MM.deserialize("<red><problem></red>", Placeholder.unparsed("problem", problem)));
+      return;
+    }
+    AreaForms.confirmNearby(
+        sender,
+        geometry,
+        null,
+        () ->
+            MapToolsUtils.createArea(
+                sender, id, geometry, color, label, List.of(), null, null, null));
+  }
 
+  private static void openCreateForm(CommandSourceStack stack, Mode mode) {
+    Player player = requirePlayer(stack);
+    if (player != null) AreaForms.openCreate(player, mode);
+  }
+
+  /** Starts drawing a new shape in game. */
+  private static void startNew(Player player, Mode mode) {
+    if (!MapToolsUtils.confirmLeave(player, () -> startNew(player, mode))) return;
+
+    String controls =
+        switch (mode) {
+          case RECT -> "click corner 1, shift + click corner 2";
+          case POLYGON ->
+              "click to add points, click a point to move it, shift + click to remove or insert";
+          case CIRCLE -> "click the center, shift + click sets the radius";
+          case MARKER -> "click where the marker goes";
+        };
     MapToolsUtils.startEditing(player, EditSession.create(mode));
     player.sendMessage(
         MM.deserialize(
@@ -577,57 +763,50 @@ public class MapToolsCommand {
   }
 
   /**
-   * Parses a shape typed as block coordinates, the same blocks that would be clicked in game.
+   * Replaces the shape of a claim or the position of a marker.
    *
-   * @param shape rect, circle or points for a claim, move for a marker
-   * @return the shape, or null if the coordinates do not fit the shape
+   * @param expected the kind the command works on
+   * @param shape builds the new shape, or returns null if it does not apply to the area
+   * @param notApplicable what to tell the sender when {@code shape} returns null
    */
-  private static AreaGeometry parseShape(String world, String shape, String value) {
-    if (value == null) return null;
-    try {
-      if (shape.equals("points")) {
-        List<MapPoint> points = new ArrayList<>();
-        for (String point : value.split(";")) {
-          int[] xz = numbers(point, 2);
-          if (xz == null) return null;
-          points.add(new MapPoint(xz[0] + 0.5, xz[1] + 0.5));
-        }
-        if (points.size() < 3) return null;
-        return new AreaGeometry(world, points, MapArea.POLYGON, null, null);
-      }
-      if (shape.equals("move")) {
-        int[] c = numbers(value, 2);
-        if (c == null) return null;
-        MapPoint spot = new MapPoint(c[0] + 0.5, c[1] + 0.5);
-        return new AreaGeometry(world, List.of(spot), MapArea.MARKER, spot, null);
-      }
-      if (shape.equals("rect")) {
-        int[] c = numbers(value, 4);
-        if (c == null) return null;
-        return new AreaGeometry(
-            world, MapToolsUtils.rectangle(c[0], c[1], c[2], c[3]), MapArea.RECT, null, null);
-      }
-      int[] c = numbers(value, 3);
-      if (c == null || c[2] < 1) return null;
-      MapPoint center = new MapPoint(c[0] + 0.5, c[1] + 0.5);
-      return new AreaGeometry(
-          world,
-          MapToolsUtils.circle(center.x(), center.z(), c[2]),
-          MapArea.CIRCLE,
-          center,
-          (double) c[2]);
-    } catch (NumberFormatException e) {
-      return null;
+  private static void setShape(
+      CommandSender sender,
+      Kind kind,
+      Kind expected,
+      String id,
+      Function<MapArea, AreaGeometry> shape,
+      String notApplicable) {
+    MapArea area = find(sender, kind, id);
+    if (area == null) return;
+    if (kind != expected) {
+      sender.sendMessage(
+          MM.deserialize(
+              "<red>That only works for <kind>s.</red>",
+              Placeholder.unparsed("kind", expected.label())));
+      return;
     }
-  }
-
-  /** Splits text on spaces into exactly {@code count} whole numbers, or returns null. */
-  private static int[] numbers(String text, int count) {
-    String[] parts = text.trim().split("\\s+");
-    if (parts.length != count) return null;
-    int[] values = new int[count];
-    for (int i = 0; i < count; i++) values[i] = Integer.parseInt(parts[i]);
-    return values;
+    AreaGeometry geometry = shape.apply(area);
+    if (geometry == null) {
+      sender.sendMessage(MM.deserialize("<red>" + notApplicable + "</red>"));
+      return;
+    }
+    if (MapToolsUtils.blockedByEditor(sender, id)) return;
+    Runnable save =
+        () -> {
+          MapArea current = find(sender, kind, id);
+          if (current == null) return;
+          MapToolsUtils.saveArea(current.withGeometry(geometry));
+          sender.sendMessage(
+              MM.deserialize(
+                  "<green>Updated the <field> of <id>.</green>",
+                  Placeholder.unparsed("field", kind == Kind.MARKER ? "position" : "shape"),
+                  Placeholder.unparsed("id", id)));
+        };
+    if (kind == Kind.MARKER) {
+      save.run();
+    } else {
+      AreaForms.confirmNearby(sender, geometry, id, save);
+    }
   }
 
   /** Gives a claim or marker a new id, keeping everything else. */
@@ -671,6 +850,17 @@ public class MapToolsCommand {
     };
   }
 
+  /**
+   * The color names, with the area's current color as a hex code first so players see that hex
+   * codes work. Without an area, an example hex code is shown instead.
+   */
+  private static List<String> colorSuggestions(MapArea area) {
+    List<String> colors = new ArrayList<>();
+    colors.add(area == null ? "ff8800" : MapToolsUtils.areaColor(area).asHexString().substring(1));
+    colors.addAll(NamedTextColor.NAMES.keys());
+    return colors;
+  }
+
   /** The claims or markers, or both when no kind is given. */
   private static Stream<MapArea> areas(Kind kind) {
     return MapToolsModule.store.getAreas().stream()
@@ -678,10 +868,7 @@ public class MapToolsCommand {
   }
 
   private static List<String> searchWords(Kind kind) {
-    return areas(kind)
-        .flatMap(area -> Stream.concat(Stream.of(area.id(), area.label()), area.owners().stream()))
-        .distinct()
-        .toList();
+    return areas(kind).map(MapArea::id).toList();
   }
 
   /**

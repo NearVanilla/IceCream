@@ -127,7 +127,11 @@ public final class AreaDisplays {
     String worldKey = world.getKey().asString();
     List<Display> entities = new ArrayList<>();
     for (MapArea area : MapToolsModule.store.getAreas()) {
-      if (!area.world().equals(worldKey) || area.id().equals(session.getAreaId())) continue;
+      if (!area.world().equals(worldKey)
+          || area.id().equals(session.getAreaId())
+          || area.isHidden()) {
+        continue;
+      }
       if (!isNear(area, anchor, VIEW_DISTANCE)) continue;
 
       Color color = Color.fromRGB(MapToolsUtils.areaColor(area).value());
@@ -164,7 +168,11 @@ public final class AreaDisplays {
     String worldKey = world.getKey().asString();
     List<Display> entities = new ArrayList<>();
     for (MapArea area : MapToolsModule.store.getAreas()) {
-      if (!area.world().equals(worldKey) || area.id().equals(session.getAreaId())) continue;
+      if (!area.world().equals(worldKey)
+          || area.id().equals(session.getAreaId())
+          || area.isHidden()) {
+        continue;
+      }
       if (!isNear(area, anchor, GRID_DISTANCE)) continue;
       Color color = Color.fromRGB(MapToolsUtils.areaColor(area).value());
       drawGrid(player, anchor, area.points(), color, entities);

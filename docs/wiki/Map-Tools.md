@@ -6,27 +6,28 @@ Requires squaremap. Permissions: `icecream.modules.maptools.manage` for everythi
 
 ## Quick start
 
-1. `/maptools create claim rect`
-2. Left click one corner, shift + left click the opposite corner.
-3. `/maptools save` and fill in the form.
+1. `/maptools create claim rect` opens a form, filled in with where you stand.
+2. Type the corners, id and label, and click Create.
+
+Reshape a claim afterwards in `/maptools editmode`, or by typing new coordinates in `/maptools manage`.
 
 ## Modes
 
 Only left click is used. Clicks never use items or break blocks. While drawing or editing, the swap hands key (F) or `/maptools undo` undoes the last change, and shift + F or `/maptools redo` redoes it. `/maptools stop` leaves any mode.
 
-| Command | Left click | Shift + left click |
+`/maptools create claim rect|circle` opens a form to type the coordinates. `/maptools create claim polygon` starts drawing the polygon in game.
+
+| Mode | Left click | Shift + left click |
 | --- | --- | --- |
 | `/maptools editmode` | Edit the claim or marker you click | |
-| `/maptools create claim rect` | Corner 1 | Corner 2 |
 | `/maptools create claim polygon` | Add a point, or pick up a point and click where it goes | On a point: remove it. Elsewhere: add a point to the nearest line |
-| `/maptools create claim circle` | Center | Radius |
 | `/maptools create marker` | Spot | |
 
-Save a new shape with `/maptools save`, which opens a form.
+Save a new polygon or marker with `/maptools save`, which opens a form.
 
 ### Editing
 
-In `/maptools editmode`, left click a claim (or use Edit shape in its form), then `/maptools save` to save and go back to edit mode. Stopping or switching claims with unsaved changes asks whether to save or discard them. Only one person can edit a claim at a time. Left click more than 8 blocks outside the claim, or at the sky, to stop editing it. With a corner picked up, clicking the sky lets go of it without moving it.
+In `/maptools editmode`, left click a claim, then `/maptools save` to save and go back to edit mode. Stopping or switching claims with unsaved changes asks whether to save or discard them. Only one person can edit a claim at a time. Left click more than 8 blocks outside the claim, or at the sky, to stop editing it. With a corner picked up, clicking the sky lets go of it without moving it.
 
 | Shape | Left click | Shift + left click |
 | --- | --- | --- |
@@ -42,17 +43,19 @@ Each command names the kind after the action: `claim` or `marker`. Tab completio
 | Command | Description |
 | --- | --- |
 | `/maptools list claims [search]` | List claims (the first 10 without a search), or only those whose id, label or owners match. Click `[TP]` to teleport. Also `list markers`. |
-| `/maptools manage claim <id>` | Form to change details, edit the shape or delete. Also `manage marker <id>`, or `/maptools manage` for what you are editing. |
+| `/maptools manage claim <id>` | Form to change details and typed coordinates (center and radius, or corners), hide a claim in edit mode or delete. Also `manage marker <id>`, or `/maptools manage` for what you are editing. |
 | `/maptools tp claim <id>` | Teleport to the middle of a claim. Also `tp marker <id>`. |
 | `/maptools set claim <id> <field> [value]` | Change `id`, `label`, `color`, `owners` (comma separated), `description` or `opacity` (0 to 100). Leave out the value to clear it. |
 | `/maptools set claim <id> rect <x1> <z1> <x2> <z2>` | Replace the shape with a rectangle. Also `circle <x> <z> <radius>` and `points <x z; x z; x z>`. |
+| `/maptools set claim <id> radius <radius>` | Resize a circle, keeping its center. |
+| `/maptools set claim <id> center <x> <z>` | Move a circle, keeping its size. |
 | `/maptools set marker <id> <field> [value]` | Change `id`, `label`, `color`, `owners`, `description` or `icon`, or `move <x> <z>`. |
 | `/maptools delete claim <id>` | Delete a claim. Players confirm in a dialog. The shape is printed so it can be recreated. Also `delete marker <id>`. |
-| `/maptools create claim rect <world> <x1> <z1> <x2> <z2> <id> <color> <label>` | Create a rectangle from coordinates. |
-| `/maptools create claim circle <world> <x> <z> <radius> <id> <color> <label>` | Create a circle from its center and radius. |
-| `/maptools create claim polygon <world> "<x z; x z; x z>" <id> <color> <label>` | Create a polygon from at least 3 points, in quotes. |
+| `/maptools create claim rect <x1> <z1> <x2> <z2> <id> <color> <label>` | Create a rectangle from coordinates. |
+| `/maptools create claim circle <x> <z> <radius> <id> <color> <label>` | Create a circle from its center and radius. |
+| `/maptools create claim polygon "<x z; x z; x z>" <id> <color> <label>` | Create a polygon from at least 3 points, in quotes. |
 
-Ids use `a-z`, `0-9`, `_` and `-`, up to 32 characters, and are unique across claims and markers. Colors are a name like `gold` or a hex code like `#ff8800`. `list`, `set`, `delete` and `create claim rect|circle|polygon <world> ...` also work from the console. The world is its key, like `minecraft:overworld`.
+Ids use `a-z`, `0-9`, `_` and `-`, up to 32 characters, and are unique across claims and markers. Colors are a name like `gold` or a hex code like `ff8800` (leave out the `#` in commands). Labels, owners and descriptions can contain any characters, including `'`. `list`, `set`, `delete` and `create claim rect|circle|polygon ...` also work from the console. Creating or reshaping a claim that overlaps or is within 300 blocks (`nearby-claim-distance` in the config) of other claims asks you to confirm, listing their id, label and owners. Claims created from coordinates go in the overworld, and typed rectangles are at most 3000 blocks wide and long and typed circles have a radius of at most 3000.
 
 ## Markers
 

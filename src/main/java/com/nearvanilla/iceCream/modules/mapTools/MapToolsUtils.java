@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.mapTools;
 
+import com.google.common.primitives.Ints;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.AreaGeometry;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
@@ -7,6 +8,7 @@ import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -60,6 +62,8 @@ public final class MapToolsUtils {
 
   /** Valid area ids. */
   public static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9_-]{1,32}");
+
+  private static final Pattern HEX_COLOR = Pattern.compile("#[0-9a-f]{6}");
 
   private static final Key LAYER_KEY = Key.of("icecream_areas");
   private static final Key MARKER_LAYER_KEY = Key.of("icecream_markers");
@@ -262,15 +266,32 @@ public final class MapToolsUtils {
   }
 
   /**
-   * Parses a color given as a hex code ({@code #ff8800}) or an Adventure color name ({@code gold}).
+   * Parses a color given as a hex code ({@code #ff8800} or {@code ff8800}) or an Adventure color
+   * name ({@code gold}).
    *
    * @param input the color text
    * @return the color, or null if it cannot be parsed
    */
   public static TextColor parseColor(String input) {
+    String color = normalizeColor(input);
+    if (color == null) return null;
+    if (color.startsWith("#")) return TextColor.fromHexString(color);
+    return NamedTextColor.NAMES.value(color);
+  }
+
+  /**
+   * Returns a color in the form it is stored: a lowercase hex code with {@code #}, or a lowercase
+   * color name. The {@code #} is optional in the input, since commands cannot take it unquoted.
+   *
+   * @param input the color text
+   * @return the stored form, or null if it is not a valid color
+   */
+  public static String normalizeColor(String input) {
     if (input == null) return null;
-    if (input.startsWith("#")) return TextColor.fromHexString(input);
-    return NamedTextColor.NAMES.value(input.toLowerCase(Locale.ROOT));
+    String color = input.trim().toLowerCase(Locale.ROOT);
+    if (NamedTextColor.NAMES.value(color) != null) return color;
+    if (!color.startsWith("#")) color = "#" + color;
+    return HEX_COLOR.matcher(color).matches() ? color : null;
   }
 
   /**
@@ -288,6 +309,92 @@ public final class MapToolsUtils {
         new MapPoint(maxX, minZ),
         new MapPoint(maxX, maxZ),
         new MapPoint(minX, maxZ));
+  }
+
+  /** The most blocks a typed rectangle can be wide or long, and the most a typed radius can be. */
+  public static final int MAX_TYPED_SIZE = 3000;
+
+  /** Whether a rectangle between two corner blocks is too wide or long to be typed. */
+  public static boolean rectangleTooLarge(int x1, int z1, int x2, int z2) {
+    return Math.abs((long) x1 - x2) + 1 > MAX_TYPED_SIZE
+        || Math.abs((long) z1 - z2) + 1 > MAX_TYPED_SIZE;
+  }
+
+  /** Claims made from typed coordinates are always in the overworld, the server's main world. */
+  public static String overworld() {
+    return Bukkit.getWorlds().getFirst().getKey().asString();
+  }
+
+  /** The middle of a block, where shapes typed as block coordinates are placed. */
+  public static MapPoint blockCenter(int x, int z) {
+    return new MapPoint(x + 0.5, z + 0.5);
+  }
+
+  /** A circle shape around a center. */
+  public static AreaGeometry circleShape(String world, MapPoint center, double radius) {
+    return new AreaGeometry(
+        world, circle(center.x(), center.z(), radius), MapArea.CIRCLE, center, radius);
+  }
+
+  /**
+   * Parses polygon points typed as block coordinates, such as {@code 0 0; 10 0; 10 10}.
+   *
+   * @return the shape, or null if there are fewer than 3 valid points or they enclose no area
+   */
+  public static AreaGeometry parsePoints(String world, String value) {
+    if (value == null) return null;
+    List<MapPoint> points = new ArrayList<>();
+    for (String point : value.split(";")) {
+      String[] xz = point.trim().split("\\s+");
+      Integer x = xz.length == 2 ? Ints.tryParse(xz[0]) : null;
+      Integer z = xz.length == 2 ? Ints.tryParse(xz[1]) : null;
+      if (x == null || z == null) return null;
+      points.add(blockCenter(x, z));
+    }
+    if (points.size() < 3 || area(points) == 0) return null;
+    return new AreaGeometry(world, points, MapArea.POLYGON, null, null);
+  }
+
+  /** How close, in blocks, an existing claim has to be for a claim to ask for confirmation. */
+  public static int nearbyClaimDistance() {
+    return Math.max(0, IceCream.config.getInt("modules.maptools.nearby-claim-distance", 300));
+  }
+
+  /** An existing claim near a new shape; a distance of 0 means they overlap. */
+  public record NearbyClaim(MapArea claim, double distance) {}
+
+  /**
+   * Finds the claims in the same world that are within {@link #nearbyClaimDistance()} blocks of a
+   * shape, or overlap it.
+   *
+   * @param editingId the id of the claim the shape belongs to when it is being edited, or null for
+   *     a new claim
+   * @return the nearby claims, closest first
+   */
+  public static List<NearbyClaim> nearbyClaims(AreaGeometry geometry, String editingId) {
+    int range = nearbyClaimDistance();
+    return MapToolsModule.store.getAreas().stream()
+        .filter(
+            area ->
+                !area.isMarker()
+                    && area.world().equals(geometry.world())
+                    && !area.id().equals(editingId)
+                    && ShapeDistance.boxesWithin(geometry.points(), area.points(), range))
+        .map(area -> new NearbyClaim(area, ShapeDistance.between(geometry.points(), area.points())))
+        .filter(nearby -> nearby.distance() <= range)
+        .sorted(Comparator.comparingDouble(NearbyClaim::distance))
+        .toList();
+  }
+
+  /** The area of a polygon by the shoelace formula, 0 when its points are all in one line. */
+  private static double area(List<MapPoint> points) {
+    double sum = 0;
+    for (int i = 0; i < points.size(); i++) {
+      MapPoint a = points.get(i);
+      MapPoint b = points.get((i + 1) % points.size());
+      sum += a.x() * b.z() - b.x() * a.z();
+    }
+    return Math.abs(sum) / 2;
   }
 
   /**
@@ -424,7 +531,7 @@ public final class MapToolsUtils {
   }
 
   /**
-   * Returns the area containing a spot, skipping one area.
+   * Returns the area containing a spot, skipping one area and the areas hidden in edit mode.
    *
    * @param skipId the id of an area to skip, or null
    * @return the first area containing the spot, or null
@@ -432,7 +539,7 @@ public final class MapToolsUtils {
   public static MapArea areaAt(String world, double x, double z, String skipId) {
     MapArea found = null;
     for (MapArea area : MapToolsModule.store.getAreas()) {
-      if (!area.world().equals(world) || area.id().equals(skipId)) continue;
+      if (!area.world().equals(world) || area.id().equals(skipId) || area.isHidden()) continue;
       // A marker is hit on its own block, and wins over a claim around it.
       if (area.isMarker()) {
         if (block(area.center().x()) == block(x) && block(area.center().z()) == block(z)) {
@@ -496,9 +603,34 @@ public final class MapToolsUtils {
       int[] corners = rectangleBlocks(area.points());
       return "rect %d %d %d %d".formatted(corners[0], corners[1], corners[2], corners[3]);
     }
+    return "points " + pointsText(area);
+  }
+
+  /**
+   * A claim's shape as the manage form's text fields: a circle's center and radius, or a
+   * rectangle's two corners. Coordinates are written as {@code x z}.
+   *
+   * @return the fields, empty for a polygon, whose points can be too long for a field, and a marker
+   */
+  public static List<String> shapeFields(MapArea area) {
+    if (area.isMarker() || MapArea.POLYGON.equals(area.shape())) return List.of();
+    if (area.isCircle()) {
+      return List.of(
+          block(area.center().x()) + " " + block(area.center().z()),
+          String.valueOf(Math.round(area.radius())));
+    }
+    if (MapArea.RECT.equals(area.shape())) {
+      int[] corners = rectangleBlocks(area.points());
+      return List.of(corners[0] + " " + corners[1], corners[2] + " " + corners[3]);
+    }
+    return List.of();
+  }
+
+  /** A polygon's points as {@code /maptools set <kind> <id> points} takes them. */
+  public static String pointsText(MapArea area) {
     List<String> points = new ArrayList<>();
     for (MapPoint point : area.points()) points.add(block(point.x()) + " " + block(point.z()));
-    return "points " + String.join("; ", points);
+    return String.join("; ", points);
   }
 
   private static long block(double coordinate) {
@@ -586,7 +718,8 @@ public final class MapToolsUtils {
                 null,
                 null,
                 opacity,
-                icon)
+                icon,
+                null)
             .withGeometry(geometry);
     saveArea(area);
     sender.sendMessage(
@@ -624,7 +757,7 @@ public final class MapToolsUtils {
       return "Labels can be up to " + LABEL_MAX_LENGTH + " characters.";
     }
     if (parseColor(color) == null) {
-      return "Use a color name such as gold, or a hex code such as #ff8800.";
+      return "Use a color name such as gold, or a hex code such as ff8800.";
     }
     return null;
   }

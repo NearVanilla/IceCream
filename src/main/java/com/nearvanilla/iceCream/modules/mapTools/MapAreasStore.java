@@ -33,7 +33,8 @@ public class MapAreasStore {
    * #RECT} keeps its four corners square, a {@value #POLYGON} has free points, a {@value #CIRCLE}
    * is defined by its {@code center} and {@code radius}, and a {@value #MARKER} is a single spot at
    * its {@code center} shown with an {@code icon}. Circle and marker points are built from the
-   * center when loading and are not written to disk.
+   * center when loading and are not written to disk. A {@code hidden} area is not drawn or clicked
+   * in edit mode.
    */
   public record MapArea(
       String id,
@@ -47,11 +48,15 @@ public class MapAreasStore {
       MapPoint center,
       Double radius,
       Double opacity,
-      String icon) {
+      String icon,
+      Boolean hidden) {
 
     public MapArea {
       // Older or hand-edited files may leave owners out.
       owners = owners == null ? List.of() : owners;
+      // The stored form is a lowercase hex code or color name; unparseable colors stay as they are.
+      String normalized = MapToolsUtils.normalizeColor(color);
+      color = normalized != null ? normalized : color;
     }
 
     public static final String RECT = "rect";
@@ -61,6 +66,11 @@ public class MapAreasStore {
 
     public boolean isCircle() {
       return CIRCLE.equals(shape);
+    }
+
+    /** Whether the area is left out of edit mode, so it does not get in the way or get clicked. */
+    public boolean isHidden() {
+      return Boolean.TRUE.equals(hidden);
     }
 
     public boolean isMarker() {
@@ -80,7 +90,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     public MapArea withLabel(String label) {
@@ -96,7 +107,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     public MapArea withDescription(String description) {
@@ -112,7 +124,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     public MapArea withOwners(List<String> owners) {
@@ -128,7 +141,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     public MapArea withColor(String color) {
@@ -144,7 +158,28 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
+    }
+
+    /**
+     * @param hidden whether to leave the area out of edit mode; stored only when true
+     */
+    public MapArea withHidden(boolean hidden) {
+      return new MapArea(
+          id,
+          world,
+          points,
+          label,
+          description,
+          owners,
+          color,
+          shape,
+          center,
+          radius,
+          opacity,
+          icon,
+          hidden ? true : null);
     }
 
     /**
@@ -163,7 +198,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     public MapArea withGeometry(AreaGeometry geometry) {
@@ -179,7 +215,8 @@ public class MapAreasStore {
           geometry.center(),
           geometry.radius(),
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     /**
@@ -198,7 +235,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     /** Circles and markers are saved without points; rebuild them from the center. */
@@ -223,7 +261,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
 
     /** The area as written to disk: circles and markers leave out their points. */
@@ -241,7 +280,8 @@ public class MapAreasStore {
           center,
           radius,
           opacity,
-          icon);
+          icon,
+          hidden);
     }
   }
 

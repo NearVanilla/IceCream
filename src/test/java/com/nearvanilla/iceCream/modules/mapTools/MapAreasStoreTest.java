@@ -38,6 +38,7 @@ class MapAreasStoreTest {
         null,
         null,
         null,
+        null,
         null);
   }
 

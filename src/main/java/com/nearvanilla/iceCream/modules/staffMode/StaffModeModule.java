@@ -4,6 +4,7 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.staffMode.commands.StaffModeCommand;
 import com.nearvanilla.iceCream.modules.staffMode.events.StaffModePlayerJoinEvent;
+import com.nearvanilla.iceCream.modules.staffMode.events.StaffModePlayerQuitEvent;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -64,6 +65,10 @@ public class StaffModeModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new StaffModePlayerJoinEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new StaffModePlayerQuitEvent(), IceCream.instance);
   }
 
   @Override

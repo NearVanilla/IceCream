@@ -5,6 +5,7 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.AreaGeometry;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
@@ -199,11 +200,18 @@ public final class MapToolsUtils {
       removeFromMap(area.world(), previousId);
     }
     renderArea(area);
+    // Each editor reloads on their own thread, if they are still in the same session by then.
     editorsOf(previousId)
         .forEach(
-            (editor, session) -> {
-              if (!session.hasChanges()) startEditing(editor, EditSession.edit(area));
-            });
+            (editor, session) ->
+                SchedulerUtils.runFor(
+                    editor,
+                    () -> {
+                      if (MapToolsModule.sessions.get(editor.getUniqueId()) == session
+                          && !session.hasChanges()) {
+                        startEditing(editor, EditSession.edit(area));
+                      }
+                    }));
     AreaDisplays.refreshAllAreas();
   }
 
@@ -497,11 +505,15 @@ public final class MapToolsUtils {
     removeFromMap(area.world(), area.id());
     editorsOf(id)
         .forEach(
-            (editor, session) -> {
-              // The area is gone, so its unsaved changes are too; skip the discard warning.
-              session.setChanged(false);
-              startEditing(editor, EditSession.view());
-            });
+            (editor, session) ->
+                SchedulerUtils.runFor(
+                    editor,
+                    () -> {
+                      if (MapToolsModule.sessions.get(editor.getUniqueId()) != session) return;
+                      // The area is gone, so its unsaved changes are too; skip the discard warning.
+                      session.setChanged(false);
+                      startEditing(editor, EditSession.view());
+                    }));
     AreaDisplays.refreshAllAreas();
     return area;
   }
@@ -657,12 +669,14 @@ public final class MapToolsUtils {
   }
 
   /**
-   * @return the ground block at the spot, ignoring trees, or null if its chunk is not loaded
+   * @return the ground block at the spot, ignoring trees, or null if its chunk is not loaded or
+   *     belongs to another region's thread
    */
   public static Location groundBlock(World world, double x, double z) {
     int blockX = (int) Math.floor(x);
     int blockZ = (int) Math.floor(z);
     if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) return null;
+    if (!Bukkit.isOwnedByCurrentRegion(world, blockX >> 4, blockZ >> 4)) return null;
     int y = world.getHighestBlockYAt(blockX, blockZ, HeightMap.MOTION_BLOCKING_NO_LEAVES);
     // The height map skips leaves but not logs, so walk down tree trunks to the ground. Below a
     // branch, keep going through the air under it.

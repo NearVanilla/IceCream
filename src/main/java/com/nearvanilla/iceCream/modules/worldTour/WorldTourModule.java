@@ -4,18 +4,22 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.worldTour.commands.WorldTourCommand;
 import com.nearvanilla.iceCream.modules.worldTour.events.WorldTourListener;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.GameRules;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * WorldTourModule provides commands and features for hosting World Tours, including join/leave
@@ -35,13 +39,25 @@ public class WorldTourModule implements Module {
   /** PDC key marking a player as opted into the World Tour. */
   public static NamespacedKey JOINED_KEY;
 
+  // World PDC keys holding each world's environment from before the tour, so a tour the server
+  // stopped during can be undone on the next start. On Folia that is the only way, since the
+  // environment cannot change while the server shuts down.
+  private static NamespacedKey ORIGINAL_STORM_KEY;
+  private static NamespacedKey ORIGINAL_THUNDERING_KEY;
+  private static NamespacedKey ORIGINAL_WEATHER_DURATION_KEY;
+  private static NamespacedKey ORIGINAL_THUNDER_DURATION_KEY;
+  private static NamespacedKey ORIGINAL_FULL_TIME_KEY;
+  private static NamespacedKey ORIGINAL_KEEP_INVENTORY_KEY;
+
   private boolean isEnabled = false;
 
   /** The current World Tour host, or {@code null} if no host is set. */
-  Player currentHost;
+  volatile Player currentHost;
 
   /** The player currently bearing the Glowing effect, or {@code null}. */
-  Player currentGlowing;
+  volatile Player currentGlowing;
+
+  // The original environment maps are only used on the global region.
 
   /** Original weather values per world, saved before the first tour weather change. */
   private final Map<String, WeatherSnapshot> originalWeather = new HashMap<>();
@@ -53,7 +69,7 @@ public class WorldTourModule implements Module {
   private final Map<String, Boolean> originalKeepInventory = new HashMap<>();
 
   /** Active failsafe tasks keyed by player UUID. */
-  final Map<UUID, BukkitTask> disconnectTasks = new HashMap<>();
+  final Map<UUID, ScheduledTask> disconnectTasks = new ConcurrentHashMap<>();
 
   /** Configurable timeout in minutes for the disconnect failsafe. */
   private int failsafeTimeoutMinutes;
@@ -65,7 +81,7 @@ public class WorldTourModule implements Module {
   private final Map<String, Long> configuredTimes = new HashMap<>();
 
   /** Pending takeover requests, keyed by current host UUID, value is requester UUID. */
-  final Map<UUID, UUID> pendingTakeovers = new HashMap<>();
+  final Map<UUID, UUID> pendingTakeovers = new ConcurrentHashMap<>();
 
   private static final class WeatherSnapshot {
     private final boolean storm;
@@ -84,6 +100,15 @@ public class WorldTourModule implements Module {
   private static void initKeys() {
     if (JOINED_KEY != null) return;
     JOINED_KEY = new NamespacedKey(IceCream.instance, "worldtour.joined");
+    ORIGINAL_STORM_KEY = new NamespacedKey(IceCream.instance, "worldtour.original.storm");
+    ORIGINAL_THUNDERING_KEY = new NamespacedKey(IceCream.instance, "worldtour.original.thundering");
+    ORIGINAL_WEATHER_DURATION_KEY =
+        new NamespacedKey(IceCream.instance, "worldtour.original.weather_duration");
+    ORIGINAL_THUNDER_DURATION_KEY =
+        new NamespacedKey(IceCream.instance, "worldtour.original.thunder_duration");
+    ORIGINAL_FULL_TIME_KEY = new NamespacedKey(IceCream.instance, "worldtour.original.full_time");
+    ORIGINAL_KEEP_INVENTORY_KEY =
+        new NamespacedKey(IceCream.instance, "worldtour.original.keep_inventory");
   }
 
   @Override
@@ -111,9 +136,11 @@ public class WorldTourModule implements Module {
 
   @Override
   public void register() {
+    initKeys();
+    // Even with the module now disabled, undo what an unfinished tour left behind.
+    SchedulerUtils.runGlobal(this::restoreLeftoverEnvironment);
     if (shouldEnable()) {
       try {
-        initKeys();
         registerCommands();
         registerEvents();
         failsafeTimeoutMinutes =
@@ -152,7 +179,23 @@ public class WorldTourModule implements Module {
    */
   public void unregister() {
     cancelAllDisconnectTasks();
-    clearHost(true);
+    if (SchedulerUtils.isFolia()) {
+      // Folia stops the region threads before plugins, so the environment can no longer change
+      // here. It stays saved in each world and is restored when the server next starts.
+      Player glowing = currentGlowing;
+      currentGlowing = null;
+      if (glowing != null) {
+        try {
+          glowing.removePotionEffect(PotionEffectType.GLOWING);
+        } catch (RuntimeException e) {
+          IceCream.logger.log(
+              Level.WARNING, "Failed to remove the World Tour glow from " + glowing.getName(), e);
+        }
+      }
+      currentHost = null;
+    } else {
+      clearHost(true);
+    }
     isEnabled = false;
   }
 
@@ -219,12 +262,25 @@ public class WorldTourModule implements Module {
   }
 
   /**
+   * Makes the player host, unless a tour is already running. Atomic, so two players starting a tour
+   * at once in different regions cannot both become host.
+   *
+   * @param player the player starting the tour
+   * @return true if the player is now host, false if a tour is already running
+   */
+  public synchronized boolean tryStart(Player player) {
+    if (currentHost != null) return false;
+    currentHost = player;
+    return true;
+  }
+
+  /**
    * Sets the current host. If a different host is already set, notifies the previous host of the
    * takeover.
    *
    * @param player the player to set as host
    */
-  public void setCurrentHost(Player player) {
+  public synchronized void setCurrentHost(Player player) {
     if (currentHost != null && !currentHost.equals(player)) {
       currentHost.sendMessage(
           net.kyori.adventure.text.Component.text(
@@ -239,13 +295,16 @@ public class WorldTourModule implements Module {
    *
    * @param restoreEnvironment whether to restore weather and time to pre-tour values
    */
-  public void clearHost(boolean restoreEnvironment) {
+  public synchronized void clearHost(boolean restoreEnvironment) {
     if (currentHost == null) return;
     pendingTakeovers.remove(currentHost.getUniqueId());
     if (restoreEnvironment) {
-      restoreWeather();
-      restoreTime();
-      restoreKeepInventory();
+      SchedulerUtils.runGlobal(
+          () -> {
+            restoreWeather();
+            restoreTime();
+            restoreKeepInventory();
+          });
     }
     clearGlowing();
     currentHost = null;
@@ -257,24 +316,27 @@ public class WorldTourModule implements Module {
    */
   public void endTour() {
     clearHost(true);
-    for (Player online : IceCream.instance.getServer().getOnlinePlayers()) {
-      if (Boolean.TRUE.equals(
-          online.getPersistentDataContainer().get(JOINED_KEY, PersistentDataType.BOOLEAN))) {
-        online.getPersistentDataContainer().set(JOINED_KEY, PersistentDataType.BOOLEAN, false);
-        online.sendMessage(
-            MiniMessage.miniMessage()
-                .deserialize(
-                    "<gold>✨ The World Tour has concluded. Thank you for participating!</gold>"));
-      }
-    }
+    SchedulerUtils.runForEach(
+        IceCream.instance.getServer().getOnlinePlayers(),
+        online -> {
+          if (Boolean.TRUE.equals(
+              online.getPersistentDataContainer().get(JOINED_KEY, PersistentDataType.BOOLEAN))) {
+            online.getPersistentDataContainer().set(JOINED_KEY, PersistentDataType.BOOLEAN, false);
+            online.sendMessage(
+                MiniMessage.miniMessage()
+                    .deserialize(
+                        "<gold>✨ The World Tour has concluded. Thank you for participating!</gold>"));
+          }
+        });
   }
 
   /** Removes the Glowing effect from whoever currently has it and clears the tracking reference. */
-  public void clearGlowing() {
-    if (currentGlowing != null) {
-      currentGlowing.removePotionEffect(PotionEffectType.GLOWING);
-    }
+  public synchronized void clearGlowing() {
+    Player glowing = currentGlowing;
     currentGlowing = null;
+    if (glowing != null) {
+      SchedulerUtils.runFor(glowing, () -> glowing.removePotionEffect(PotionEffectType.GLOWING));
+    }
   }
 
   /**
@@ -282,18 +344,28 @@ public class WorldTourModule implements Module {
    *
    * @param player the player to apply Glowing to
    */
-  public void setGlowing(Player player) {
+  public synchronized void setGlowing(Player player) {
     clearGlowing();
     currentGlowing = player;
-    player.addPotionEffect(
-        new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 1, false, false));
+    // The player may be in another region; effects can only change on their own thread.
+    SchedulerUtils.runFor(
+        player,
+        () ->
+            player.addPotionEffect(
+                new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 1, false, false)));
   }
 
   /** Saves the current weather for every loaded world before modification. */
   public void saveWeather() {
     if (!originalWeather.isEmpty()) return;
     for (World world : IceCream.instance.getServer().getWorlds()) {
-      originalWeather.put(world.getName(), new WeatherSnapshot(world));
+      WeatherSnapshot snapshot = new WeatherSnapshot(world);
+      originalWeather.put(world.getName(), snapshot);
+      PersistentDataContainer data = world.getPersistentDataContainer();
+      data.set(ORIGINAL_STORM_KEY, PersistentDataType.BOOLEAN, snapshot.storm);
+      data.set(ORIGINAL_THUNDERING_KEY, PersistentDataType.BOOLEAN, snapshot.thundering);
+      data.set(ORIGINAL_WEATHER_DURATION_KEY, PersistentDataType.INTEGER, snapshot.weatherDuration);
+      data.set(ORIGINAL_THUNDER_DURATION_KEY, PersistentDataType.INTEGER, snapshot.thunderDuration);
     }
   }
 
@@ -330,6 +402,12 @@ public class WorldTourModule implements Module {
         world.setThundering(snapshot.thundering);
         world.setWeatherDuration(snapshot.weatherDuration);
         world.setThunderDuration(snapshot.thunderDuration);
+        removeKeys(
+            world,
+            ORIGINAL_STORM_KEY,
+            ORIGINAL_THUNDERING_KEY,
+            ORIGINAL_WEATHER_DURATION_KEY,
+            ORIGINAL_THUNDER_DURATION_KEY);
       }
     }
     originalWeather.clear();
@@ -340,6 +418,9 @@ public class WorldTourModule implements Module {
     if (!originalTimes.isEmpty()) return;
     for (World world : IceCream.instance.getServer().getWorlds()) {
       originalTimes.put(world.getName(), world.getFullTime());
+      world
+          .getPersistentDataContainer()
+          .set(ORIGINAL_FULL_TIME_KEY, PersistentDataType.LONG, world.getFullTime());
     }
   }
 
@@ -358,6 +439,7 @@ public class WorldTourModule implements Module {
       Long originalTime = originalTimes.get(world.getName());
       if (originalTime != null) {
         world.setFullTime(originalTime);
+        removeKeys(world, ORIGINAL_FULL_TIME_KEY);
       }
     }
     originalTimes.clear();
@@ -377,7 +459,13 @@ public class WorldTourModule implements Module {
   public void saveKeepInventory() {
     if (!originalKeepInventory.isEmpty()) return;
     for (World world : IceCream.instance.getServer().getWorlds()) {
-      originalKeepInventory.put(world.getName(), world.getGameRuleValue(GameRules.KEEP_INVENTORY));
+      Boolean keepInventory = world.getGameRuleValue(GameRules.KEEP_INVENTORY);
+      originalKeepInventory.put(world.getName(), keepInventory);
+      if (keepInventory != null) {
+        world
+            .getPersistentDataContainer()
+            .set(ORIGINAL_KEEP_INVENTORY_KEY, PersistentDataType.BOOLEAN, keepInventory);
+      }
     }
   }
 
@@ -396,13 +484,62 @@ public class WorldTourModule implements Module {
       if (original != null) {
         world.setGameRule(GameRules.KEEP_INVENTORY, original);
       }
+      removeKeys(world, ORIGINAL_KEEP_INVENTORY_KEY);
     }
     originalKeepInventory.clear();
   }
 
+  /**
+   * Restores the weather, time and keepInventory that a tour left changed because the server
+   * stopped or crashed before it ended. Runs on the global region at startup.
+   */
+  private void restoreLeftoverEnvironment() {
+    for (World world : IceCream.instance.getServer().getWorlds()) {
+      PersistentDataContainer data = world.getPersistentDataContainer();
+      Boolean storm = data.get(ORIGINAL_STORM_KEY, PersistentDataType.BOOLEAN);
+      Boolean thundering = data.get(ORIGINAL_THUNDERING_KEY, PersistentDataType.BOOLEAN);
+      Integer weatherDuration = data.get(ORIGINAL_WEATHER_DURATION_KEY, PersistentDataType.INTEGER);
+      Integer thunderDuration = data.get(ORIGINAL_THUNDER_DURATION_KEY, PersistentDataType.INTEGER);
+      Long fullTime = data.get(ORIGINAL_FULL_TIME_KEY, PersistentDataType.LONG);
+      Boolean keepInventory = data.get(ORIGINAL_KEEP_INVENTORY_KEY, PersistentDataType.BOOLEAN);
+      if (storm == null
+          && thundering == null
+          && weatherDuration == null
+          && thunderDuration == null
+          && fullTime == null
+          && keepInventory == null) {
+        continue;
+      }
+      // Durations last: changing the storm or thunder resets them.
+      if (storm != null) world.setStorm(storm);
+      if (thundering != null) world.setThundering(thundering);
+      if (weatherDuration != null) world.setWeatherDuration(weatherDuration);
+      if (thunderDuration != null) world.setThunderDuration(thunderDuration);
+      if (fullTime != null) world.setFullTime(fullTime);
+      if (keepInventory != null) world.setGameRule(GameRules.KEEP_INVENTORY, keepInventory);
+      removeKeys(
+          world,
+          ORIGINAL_STORM_KEY,
+          ORIGINAL_THUNDERING_KEY,
+          ORIGINAL_WEATHER_DURATION_KEY,
+          ORIGINAL_THUNDER_DURATION_KEY,
+          ORIGINAL_FULL_TIME_KEY,
+          ORIGINAL_KEEP_INVENTORY_KEY);
+      IceCream.logger.info(
+          "Restored the environment of world "
+              + world.getName()
+              + " left changed by a World Tour that did not end.");
+    }
+  }
+
+  private static void removeKeys(World world, NamespacedKey... keys) {
+    PersistentDataContainer data = world.getPersistentDataContainer();
+    for (NamespacedKey key : keys) data.remove(key);
+  }
+
   /** Cancels every active disconnect failsafe task. */
   public void cancelAllDisconnectTasks() {
-    for (BukkitTask task : disconnectTasks.values()) {
+    for (ScheduledTask task : disconnectTasks.values()) {
       if (task != null && !task.isCancelled()) {
         task.cancel();
       }
@@ -416,7 +553,7 @@ public class WorldTourModule implements Module {
    * @param playerId the UUID of the player
    */
   public void cancelDisconnectTask(UUID playerId) {
-    BukkitTask task = disconnectTasks.remove(playerId);
+    ScheduledTask task = disconnectTasks.remove(playerId);
     if (task != null && !task.isCancelled()) {
       task.cancel();
     }
@@ -428,8 +565,8 @@ public class WorldTourModule implements Module {
    * @param playerId the UUID of the player
    * @param task the scheduled task
    */
-  public void scheduleDisconnectTask(UUID playerId, BukkitTask task) {
-    BukkitTask existing = disconnectTasks.put(playerId, task);
+  public void scheduleDisconnectTask(UUID playerId, ScheduledTask task) {
+    ScheduledTask existing = disconnectTasks.put(playerId, task);
     if (existing != null && !existing.isCancelled()) {
       existing.cancel();
     }

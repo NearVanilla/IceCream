@@ -45,11 +45,12 @@ public class SeenCommand {
       @Argument(value = "player", description = "The player to look up") OfflinePlayer player) {
     String playerName = player.getName();
     Player onlinePlayer = player.getPlayer();
-    boolean hidden = onlinePlayer != null && SpectatorUtils.isInSpectatorMode(onlinePlayer);
+    boolean hidden =
+        onlinePlayer != null && SpectatorUtils.isSpectating(onlinePlayer.getUniqueId());
     long lastSeen = player.getLastSeen();
     if (hidden) {
       // Spectator mode hides a player as though offline, so report when they were hidden.
-      long hiddenSince = SpectatorUtils.getHiddenSince(onlinePlayer);
+      long hiddenSince = SpectatorUtils.getHiddenSince(onlinePlayer.getUniqueId());
       lastSeen = hiddenSince > 0 ? hiddenSince : player.getLastLogin();
     }
     Component message;

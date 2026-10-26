@@ -3,11 +3,12 @@ package com.nearvanilla.iceCream.modules.mapTools;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -83,10 +84,10 @@ public final class AreaDisplays {
   /** How far a corner block highlight sticks out past the block on each side. */
   private static final float HIGHLIGHT_GROWTH = 0.03f;
 
-  private static final Map<UUID, Drawing> areaDrawings = new HashMap<>();
-  private static final Map<UUID, Drawing> previewDrawings = new HashMap<>();
-  private static final Map<UUID, Drawing> gridDrawings = new HashMap<>();
-  private static final Map<UUID, Drawing> previewGridDrawings = new HashMap<>();
+  private static final Map<UUID, Drawing> areaDrawings = new ConcurrentHashMap<>();
+  private static final Map<UUID, Drawing> previewDrawings = new ConcurrentHashMap<>();
+  private static final Map<UUID, Drawing> gridDrawings = new ConcurrentHashMap<>();
+  private static final Map<UUID, Drawing> previewGridDrawings = new ConcurrentHashMap<>();
 
   /** The entities drawn for one player, and where the player stood when they were drawn. */
   private record Drawing(List<Display> entities, Location anchor) {}
@@ -194,10 +195,14 @@ public final class AreaDisplays {
     previewGridDrawings.put(player.getUniqueId(), new Drawing(entities, anchor));
   }
 
-  /** Redraws the areas for every player in edit mode. */
+  /** Redraws the areas for every player in edit mode, each on their own thread. */
   public static void refreshAllAreas() {
     for (Player player : Bukkit.getOnlinePlayers()) {
-      if (MapToolsUtils.isEditing(player)) refreshAreas(player);
+      SchedulerUtils.runFor(
+          player,
+          () -> {
+            if (MapToolsUtils.isEditing(player)) refreshAreas(player);
+          });
     }
   }
 
@@ -256,6 +261,17 @@ public final class AreaDisplays {
     if (previewGrid != null && isStale(previewGrid, player, GRID_DISTANCE)) {
       drawPreviewGrid(player);
     }
+  }
+
+  /**
+   * Forgets everything drawn without removing it, for a Folia shutdown, where the displays belong
+   * to region threads that have already stopped. They are not saved with the world.
+   */
+  public static void forgetAll() {
+    areaDrawings.clear();
+    previewDrawings.clear();
+    gridDrawings.clear();
+    previewGridDrawings.clear();
   }
 
   /** Removes everything drawn for every player. */
@@ -492,7 +508,7 @@ public final class AreaDisplays {
         if (y == null) continue;
 
         Location location = new Location(anchor.getWorld(), x, y + GRID_DOT_SIZE / 2, z);
-        entities.add(spawn(player, location, dot, color, SOLID_BLOCK));
+        spawn(entities, player, location, dot, color, SOLID_BLOCK);
       }
     }
   }
@@ -599,7 +615,7 @@ public final class AreaDisplays {
         new Transformation(
             offset, rotation, new Vector3f(length, thickness, thickness), new Quaternionf());
     Location location = new Location(world, from.x, from.y, from.z);
-    entities.add(spawn(player, location, transformation, color, block));
+    spawn(entities, player, location, transformation, color, block);
   }
 
   /**
@@ -625,7 +641,7 @@ public final class AreaDisplays {
             new Quaternionf(),
             new Vector3f(1 + 2 * HIGHLIGHT_GROWTH),
             new Quaternionf());
-    entities.add(spawn(player, block.toBlockLocation(), transformation, color, shown));
+    spawn(entities, player, block.toBlockLocation(), transformation, color, shown);
   }
 
   /**
@@ -652,12 +668,18 @@ public final class AreaDisplays {
     return MapToolsUtils.groundBlock(world, x, z);
   }
 
-  private static Display spawn(
+  /**
+   * Spawns a display only the player sees and adds it to the drawing. Skipped where another region
+   * owns the spot, which only happens at the edge of what is drawn around the player.
+   */
+  private static void spawn(
+      List<Display> entities,
       Player player,
       Location location,
       Transformation transformation,
       Color color,
       BlockData block) {
+    if (!Bukkit.isOwnedByCurrentRegion(location)) return;
     World world = location.getWorld();
     BlockDisplay display =
         world.spawn(
@@ -679,11 +701,12 @@ public final class AreaDisplays {
               entity.setViewRange((float) (VIEW_DISTANCE / 64) + 0.5f);
             });
     player.showEntity(IceCream.instance, display);
-    return display;
+    entities.add(display);
   }
 
   private static void remove(Drawing drawing) {
     if (drawing == null) return;
-    drawing.entities().forEach(Display::remove);
+    // After a long teleport, older displays may belong to another region.
+    drawing.entities().forEach(SchedulerUtils::remove);
   }
 }

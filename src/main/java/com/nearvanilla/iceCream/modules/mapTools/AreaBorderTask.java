@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.mapTools;
 
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -23,30 +24,34 @@ public class AreaBorderTask implements Runnable {
 
   @Override
   public void run() {
+    // Runs on the global region; each player is updated on their own thread.
     for (Player player : Bukkit.getOnlinePlayers()) {
-      if (!player.hasPermission(MapToolsUtils.PERMISSION)) {
-        if (MapToolsUtils.isEditing(player)) MapToolsUtils.stopEditing(player);
-        continue;
-      }
-      AreaDisplays.update(player);
-      EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-      if (session == null) continue;
-
-      String mode;
-      if (session.isViewing()) {
-        mode = "Edit mode";
-      } else if (session.isNew()) {
-        mode = session.getMode().label() + " mode" + radiusOf(session);
-      } else {
-        mode =
-            "Editing "
-                + session.getAreaId()
-                + radiusOf(session)
-                + (session.hasChanges() ? " (unsaved changes, /maptools save)" : "");
-      }
-      player.sendActionBar(
-          MiniMessage.miniMessage()
-              .deserialize(STATUS_TEMPLATE, Placeholder.unparsed("mode", mode)));
+      SchedulerUtils.runFor(player, () -> update(player));
     }
+  }
+
+  private static void update(Player player) {
+    if (!player.hasPermission(MapToolsUtils.PERMISSION)) {
+      if (MapToolsUtils.isEditing(player)) MapToolsUtils.stopEditing(player);
+      return;
+    }
+    AreaDisplays.update(player);
+    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
+    if (session == null) return;
+
+    String mode;
+    if (session.isViewing()) {
+      mode = "Edit mode";
+    } else if (session.isNew()) {
+      mode = session.getMode().label() + " mode" + radiusOf(session);
+    } else {
+      mode =
+          "Editing "
+              + session.getAreaId()
+              + radiusOf(session)
+              + (session.hasChanges() ? " (unsaved changes, /maptools save)" : "");
+    }
+    player.sendActionBar(
+        MiniMessage.miniMessage().deserialize(STATUS_TEMPLATE, Placeholder.unparsed("mode", mode)));
   }
 }

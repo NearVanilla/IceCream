@@ -5,6 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -89,5 +92,39 @@ public class StaffModeUtils {
     } catch (IOException e) {
       throw new RuntimeException("Failed to deserialize inventory", e);
     }
+  }
+
+  /** Players turning staff mode off whose teleport back has not landed yet. */
+  private static final Set<UUID> returning = ConcurrentHashMap.newKeySet();
+
+  /**
+   * Marks a player as on their way back from staff mode, until {@link #finishReturning} is called.
+   *
+   * @param player the player
+   */
+  public static void startReturning(Player player) {
+    returning.add(player.getUniqueId());
+  }
+
+  /**
+   * Ends a player's way back from staff mode.
+   *
+   * @param player the player
+   * @return true if the player was still on their way back, so the caller should finish turning
+   *     staff mode off
+   */
+  public static boolean finishReturning(Player player) {
+    return returning.remove(player.getUniqueId());
+  }
+
+  /**
+   * Takes away staff mode's invulnerability and flight.
+   *
+   * @param player the player
+   */
+  public static void dropStaffAbilities(Player player) {
+    player.setInvulnerable(false);
+    player.setFlying(false);
+    player.setAllowFlight(false);
   }
 }

@@ -10,6 +10,7 @@ import com.nearvanilla.iceCream.modules.deathDb.InventorySnapshot;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathRecord;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathRepository;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathSummary;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -142,75 +143,92 @@ public final class DeathPreviewGui implements DeathGui {
     }
     Player target = Bukkit.getPlayer(targetId);
     if (target == null) {
-      staff.closeInventory();
-      staff.sendMessage(
-          line(
-              "<red><name> is offline. They must be online to restore an inventory.</red>",
-              Placeholder.unparsed("name", targetName)));
-      return;
-    }
-    if (target.isDead()) {
-      staff.closeInventory();
-      staff.sendMessage(
-          line(
-              "<red><name> is on the respawn screen. Try again once they have respawned.</red>",
-              Placeholder.unparsed("name", targetName)));
+      notRestored(
+          staff, "<red><name> is offline. They must be online to restore an inventory.</red>");
       return;
     }
     restored = true;
-    InventoryRestorer.restore(target, snapshot);
-    staff.closeInventory();
-    staff.sendMessage(
-        line(
-            "<green>Restored the inventory of <name>.</green>",
-            Placeholder.unparsed("name", targetName)));
-    IceCream.logger.info(staff.getName() + " restored death " + death.id() + " of " + targetName);
+    // The target may be in another region, so restore on their thread and report back on ours.
+    SchedulerUtils.runFor(
+        target,
+        () -> {
+          if (target.isDead()) {
+            SchedulerUtils.runFor(
+                staff,
+                () ->
+                    notRestored(
+                        staff,
+                        "<red><name> is on the respawn screen. Try again once they have respawned."
+                            + "</red>"));
+            return;
+          }
+          InventoryRestorer.restore(target, snapshot);
+          IceCream.logger.info(
+              staff.getName() + " restored death " + death.id() + " of " + targetName);
+          SchedulerUtils.runFor(
+              staff,
+              () -> {
+                staff.closeInventory();
+                staff.sendMessage(
+                    line(
+                        "<green>Restored the inventory of <name>.</green>",
+                        Placeholder.unparsed("name", targetName)));
+              });
+        },
+        () ->
+            SchedulerUtils.runFor(
+                staff,
+                () ->
+                    notRestored(
+                        staff,
+                        "<red><name> is offline. They must be online to restore an inventory."
+                            + "</red>")));
   }
 
-  /**
-   * Loads the record asynchronously, then opens the preview for the viewer on the server thread.
-   */
+  /** Closes the preview and tells staff why nothing was restored, so they can try again. */
+  private void notRestored(Player staff, String template) {
+    restored = false;
+    staff.closeInventory();
+    staff.sendMessage(line(template, Placeholder.unparsed("name", targetName)));
+  }
+
+  /** Loads the record asynchronously, then opens the preview for the viewer on their own thread. */
   public static void open(
       Player viewer, DeathRepository repository, UUID targetId, String targetName, long deathId) {
     repository
         .findRecord(deathId, targetId)
         .whenComplete(
             (result, error) ->
-                Bukkit.getScheduler()
-                    .runTask(
-                        IceCream.instance,
-                        () -> {
-                          if (!viewer.isOnline()) {
-                            return;
-                          }
-                          if (error != null) {
-                            IceCream.logger.log(
-                                Level.SEVERE, "Failed to load death " + deathId, error);
-                            viewer.sendMessage(
-                                line("<red>Could not load that death. Check the console.</red>"));
-                            return;
-                          }
-                          if (result.isEmpty()) {
-                            viewer.sendMessage(
-                                line("<red>That death record no longer exists.</red>"));
-                            return;
-                          }
-                          DeathRecord record = result.get();
-                          ItemStack[] snapshot;
-                          try {
-                            snapshot = InventorySnapshot.deserialize(record.inventory());
-                          } catch (IOException | RuntimeException e) {
-                            IceCream.logger.log(
-                                Level.SEVERE,
-                                "Death " + deathId + " has an unreadable snapshot",
-                                e);
-                            viewer.sendMessage(
-                                line("<red>That record is corrupt and cannot be previewed.</red>"));
-                            return;
-                          }
-                          viewer.openInventory(
-                              new DeathPreviewGui(targetId, targetName, record.summary(), snapshot)
-                                  .getInventory());
-                        }));
+                SchedulerUtils.runFor(
+                    viewer,
+                    () -> {
+                      if (!viewer.isOnline()) {
+                        return;
+                      }
+                      if (error != null) {
+                        IceCream.logger.log(Level.SEVERE, "Failed to load death " + deathId, error);
+                        viewer.sendMessage(
+                            line("<red>Could not load that death. Check the console.</red>"));
+                        return;
+                      }
+                      if (result.isEmpty()) {
+                        viewer.sendMessage(line("<red>That death record no longer exists.</red>"));
+                        return;
+                      }
+                      DeathRecord record = result.get();
+                      ItemStack[] snapshot;
+                      try {
+                        snapshot = InventorySnapshot.deserialize(record.inventory());
+                      } catch (IOException | RuntimeException e) {
+                        IceCream.logger.log(
+                            Level.SEVERE, "Death " + deathId + " has an unreadable snapshot", e);
+                        viewer.sendMessage(
+                            line("<red>That record is corrupt and cannot be previewed.</red>"));
+                        return;
+                      }
+                      viewer.openInventory(
+                          new DeathPreviewGui(targetId, targetName, record.summary(), snapshot)
+                              .getInventory());
+                    }));
   }
 }

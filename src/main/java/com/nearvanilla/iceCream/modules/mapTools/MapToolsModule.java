@@ -5,13 +5,13 @@ import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.modules.mapTools.commands.MapToolsCommand;
 import com.nearvanilla.iceCream.modules.mapTools.events.MapToolsListener;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitTask;
 import xyz.jpenilla.squaremap.api.Squaremap;
 
 /**
@@ -31,10 +31,10 @@ public class MapToolsModule implements Module {
   public static MapAreasStore store;
 
   /** Edit mode sessions, keyed by player. A player is in edit mode while they have one. */
-  public static final Map<UUID, EditSession> sessions = new HashMap<>();
+  public static final Map<UUID, EditSession> sessions = new ConcurrentHashMap<>();
 
   private boolean enabled;
-  private BukkitTask borderTask;
+  private ScheduledTask borderTask;
 
   @Override
   public boolean shouldEnable() {
@@ -77,8 +77,7 @@ public class MapToolsModule implements Module {
       registerCommands();
       registerEvents();
       // Every half second: redraw outlines when needed and update the action bar.
-      borderTask =
-          Bukkit.getScheduler().runTaskTimer(IceCream.instance, new AreaBorderTask(), 10, 10);
+      borderTask = SchedulerUtils.runGlobalTimer(new AreaBorderTask(), 10, 10);
       enabled = true;
     } catch (Exception e) {
       IceCream.logger.log(Level.SEVERE, "Failed to register MapTools module", e);
@@ -95,7 +94,13 @@ public class MapToolsModule implements Module {
   public void unregister() {
     if (borderTask != null) borderTask.cancel();
     borderTask = null;
-    AreaDisplays.clearAll();
+    if (SchedulerUtils.isFolia()) {
+      // Folia stops the region threads first, so the displays cannot be removed here. They are
+      // never saved with the world, so they are gone after the restart.
+      AreaDisplays.forgetAll();
+    } else {
+      AreaDisplays.clearAll();
+    }
     MapToolsUtils.shutdown();
     sessions.clear();
     enabled = false;

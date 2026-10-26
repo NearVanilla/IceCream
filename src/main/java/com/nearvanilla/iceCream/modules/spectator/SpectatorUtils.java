@@ -5,15 +5,23 @@ import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
 import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.utils.FakeMessageUtils;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -46,6 +54,14 @@ public class SpectatorUtils {
 
   private static DiscordSRVIntegration discordSRV;
   private static CarbonChatIntegration carbonChat;
+
+  /**
+   * Who is in spectator mode, and since when, for checks on players this thread does not own. The
+   * player data stays the saved copy and fills this in when a player joins.
+   */
+  private static final Set<UUID> spectating = ConcurrentHashMap.newKeySet();
+
+  private static final Map<UUID, Long> hiddenSince = new ConcurrentHashMap<>();
 
   public static void init(
       DiscordSRVIntegration discordSRVIntegration, CarbonChatIntegration carbonChatIntegration) {
@@ -114,8 +130,24 @@ public class SpectatorUtils {
       discordSRV.setVanishedMetadata(player, false);
 
       // Restore spectating players
-      if (isInSpectatorMode(player)) disableSpectator(player);
+      if (!isInSpectatorMode(player)) continue;
+      try {
+        if (SchedulerUtils.isFolia()) {
+          // Folia stops the region threads before plugins, so a teleport can no longer happen.
+          // The player leaves spectator mode when they next join instead.
+          player
+              .getPersistentDataContainer()
+              .set(SpectatorModule.RESTORE_ON_JOIN_KEY, PersistentDataType.BOOLEAN, true);
+        } else {
+          disableSpectatorNow(player);
+        }
+      } catch (RuntimeException e) {
+        IceCream.logger.log(
+            Level.WARNING, "Failed to take " + player.getName() + " out of spectator mode", e);
+      }
     }
+    spectating.clear();
+    hiddenSince.clear();
     carbonChat.cleanup();
   }
 
@@ -138,18 +170,50 @@ public class SpectatorUtils {
   }
 
   /**
-   * Returns when the given player was hidden by spectator mode, which is the moment other players
-   * last saw them, or 0 if they are not hidden.
+   * Checks if an online player is in spectator mode. Safe to call from any thread, unlike {@link
+   * #isInSpectatorMode}, which reads the player's own data.
    *
-   * @param player the player to check
+   * @param playerId the player to check
+   * @return true if the player is in spectator mode, false otherwise
+   */
+  public static boolean isSpectating(UUID playerId) {
+    return spectating.contains(playerId);
+  }
+
+  /**
+   * Returns when an online player was hidden by spectator mode, which is the moment other players
+   * last saw them, or 0 if they are not hidden. Safe to call from any thread.
+   *
+   * @param playerId the player to check
    * @return the epoch milliseconds at which the player was hidden, or 0 if unknown
    */
-  public static long getHiddenSince(Player player) {
-    Long hiddenSince =
+  public static long getHiddenSince(UUID playerId) {
+    return hiddenSince.getOrDefault(playerId, 0L);
+  }
+
+  /**
+   * Records a player's saved spectator state so other threads can check it.
+   *
+   * @param player the player, on their own thread
+   */
+  public static void track(Player player) {
+    if (!isInSpectatorMode(player)) return;
+    spectating.add(player.getUniqueId());
+    Long since =
         player
             .getPersistentDataContainer()
             .get(SpectatorModule.HIDDEN_SINCE_KEY, PersistentDataType.LONG);
-    return hiddenSince == null ? 0L : hiddenSince;
+    if (since != null) hiddenSince.put(player.getUniqueId(), since);
+  }
+
+  /**
+   * Forgets a player who left or stopped spectating.
+   *
+   * @param playerId the player
+   */
+  public static void untrack(UUID playerId) {
+    spectating.remove(playerId);
+    hiddenSince.remove(playerId);
   }
 
   /**
@@ -255,17 +319,24 @@ public class SpectatorUtils {
     player
         .getPersistentDataContainer()
         .set(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN, true);
+    track(player);
 
     // Mark as vanished for DiscordSRV (suppresses real join/leave messages)
     discordSRV.setVanishedMetadata(player, true);
 
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (onlinePlayer.equals(player)) continue;
+    // Each viewer hides the player on their own thread, since hiding changes the viewer.
+    SchedulerUtils.runForEach(
+            othersThan(player), viewer -> viewer.hidePlayer(IceCream.instance, player))
+        .thenRun(
+            () -> SchedulerUtils.runFor(player, () -> finishEnabling(player, broadcastMessages)));
+  }
 
-      onlinePlayer.hidePlayer(IceCream.instance, player);
-    }
+  /** Switches a player who is now hidden from everyone to spectator mode. */
+  private static void finishEnabling(Player player, boolean broadcastMessages) {
+    // Spectator mode was turned off again while the viewers were hiding the player.
+    if (!isInSpectatorMode(player)) return;
 
-    // Switch to spectator gamemode after hiding — setGameMode triggers a tab list refresh packet
+    // Switch to spectator gamemode after hiding: setGameMode triggers a tab list refresh packet
     // on the next tick, so the player must already be hidden before that fires.
     player.setGameMode(GameMode.SPECTATOR);
 
@@ -288,11 +359,90 @@ public class SpectatorUtils {
    * @param player the player to remove from spectator mode
    */
   public static void disableSpectator(Player player) {
+    disableSpectator(player, true);
+  }
+
+  /**
+   * Disables spectator mode for the given player: takes them back to where they started spectating,
+   * then restores their gamemode and shows them again.
+   *
+   * @param player the player to remove from spectator mode
+   * @param broadcastMessages whether to broadcast fake join messages (in-game and Discord)
+   */
+  public static void disableSpectator(Player player, boolean broadcastMessages) {
+    Location previousLocation = previousLocation(player);
+    if (previousLocation == null) {
+      finishDisabling(player, broadcastMessages);
+      return;
+    }
+    // Teleport before leaving spectator mode, so the player is never inside a wall in survival.
+    player
+        .teleportAsync(previousLocation)
+        .whenComplete(
+            (teleported, error) -> {
+              if (error != null || !Boolean.TRUE.equals(teleported)) {
+                IceCream.logger.warning(
+                    "Could not return " + player.getName() + " to where they started spectating.");
+              }
+              SchedulerUtils.runFor(player, () -> finishDisabling(player, broadcastMessages));
+            });
+  }
+
+  /**
+   * Disables spectator mode straight away, for a Paper shutdown, where an asynchronous teleport
+   * would not land before players are saved.
+   */
+  private static void disableSpectatorNow(Player player) {
+    Location previousLocation = previousLocation(player);
+    if (previousLocation != null) player.teleport(previousLocation);
+    finishDisabling(player, true);
+  }
+
+  /**
+   * Reads where a player started spectating.
+   *
+   * @return the location, or null if none was saved or it cannot be used
+   */
+  private static Location previousLocation(Player player) {
+    String serializedLocation =
+        player
+            .getPersistentDataContainer()
+            .get(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING);
+    if (serializedLocation == null) return null;
+    String[] parts = serializedLocation.split(",", 6);
+    if (parts.length != 6) return null;
+    try {
+      World world = Bukkit.getWorld(parts[0]);
+      if (world == null) return null;
+      double x = Double.parseDouble(parts[1]);
+      double y = Double.parseDouble(parts[2]);
+      double z = Double.parseDouble(parts[3]);
+      float yaw = Float.parseFloat(parts[4]);
+      float pitch = Float.parseFloat(parts[5]);
+      return new Location(world, x, y, z, yaw, pitch);
+    } catch (NumberFormatException e) {
+      IceCream.logger.warning(
+          "Failed to parse stored spectator location for "
+              + player.getName()
+              + ": "
+              + serializedLocation);
+      return null;
+    }
+  }
+
+  /** Takes a player out of spectator mode once they are back where they started. */
+  private static void finishDisabling(Player player, boolean broadcastMessages) {
+    // Spectator mode was already turned off while the player was teleporting.
+    if (!isInSpectatorMode(player)) return;
+
     // Set spectator state in PDC
     player
         .getPersistentDataContainer()
         .set(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
     player.getPersistentDataContainer().remove(SpectatorModule.HIDDEN_SINCE_KEY);
+    player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_LOCATION_KEY);
+    player.getPersistentDataContainer().remove(SpectatorModule.RESTORE_ON_JOIN_KEY);
+    untrack(player.getUniqueId());
 
     // Restore previous gamemode
     String previousGamemodeName =
@@ -311,43 +461,12 @@ public class SpectatorUtils {
     player.setGameMode(previousGamemode);
     player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_GAMEMODE_KEY);
 
-    // Restore pre-spectator location
-    String serializedLocation =
-        player
-            .getPersistentDataContainer()
-            .get(SpectatorModule.PREVIOUS_LOCATION_KEY, PersistentDataType.STRING);
-    player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_LOCATION_KEY);
-    if (serializedLocation != null) {
-      String[] parts = serializedLocation.split(",", 6);
-      if (parts.length == 6) {
-        try {
-          org.bukkit.World world = Bukkit.getWorld(parts[0]);
-          if (world != null) {
-            double x = Double.parseDouble(parts[1]);
-            double y = Double.parseDouble(parts[2]);
-            double z = Double.parseDouble(parts[3]);
-            float yaw = Float.parseFloat(parts[4]);
-            float pitch = Float.parseFloat(parts[5]);
-            player.teleport(new org.bukkit.Location(world, x, y, z, yaw, pitch));
-          }
-        } catch (NumberFormatException e) {
-          IceCream.logger.warning(
-              "Failed to parse stored spectator location for "
-                  + player.getName()
-                  + ": "
-                  + serializedLocation);
-        }
-      }
-    }
-
     // Clear vanished metadata for DiscordSRV
     discordSRV.setVanishedMetadata(player, false);
 
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (onlinePlayer.equals(player)) continue;
-
-      onlinePlayer.showPlayer(IceCream.instance, player);
-    }
+    // Each viewer shows the player on their own thread, since showing changes the viewer.
+    SchedulerUtils.runForEach(
+        othersThan(player), viewer -> viewer.showPlayer(IceCream.instance, player));
 
     // Restore pre-spectator squaremap visibility; only show if they were visible before
     boolean wasHiddenOnMap =
@@ -361,11 +480,20 @@ public class SpectatorUtils {
     }
 
     // Broadcast fake join messages
-    FakeMessageUtils.broadcastFakeMessage(player, joinMessageFormat);
-    discordSRV.sendFakeJoin(player);
+    if (broadcastMessages) {
+      FakeMessageUtils.broadcastFakeMessage(player, joinMessageFormat);
+      discordSRV.sendFakeJoin(player);
+    }
 
     FakeMessageUtils.sendStateToVelocity(player, SPECTATOR_CHANNEL, false);
     hideSpectatorBossbar(player);
+  }
+
+  /** The online players other than the given one. */
+  private static List<Player> othersThan(Player player) {
+    List<Player> others = new ArrayList<>(Bukkit.getOnlinePlayers());
+    others.remove(player);
+    return others;
   }
 
   /**
@@ -377,7 +505,7 @@ public class SpectatorUtils {
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (onlinePlayer.equals(player)) continue;
 
-      if (isInSpectatorMode(onlinePlayer)) {
+      if (isSpectating(onlinePlayer.getUniqueId())) {
         player.hidePlayer(IceCream.instance, onlinePlayer);
       }
     }

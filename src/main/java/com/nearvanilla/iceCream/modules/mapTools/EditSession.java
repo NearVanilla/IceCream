@@ -57,7 +57,8 @@ public class EditSession {
   private Location center;
   private Integer radius;
   private Integer picked;
-  private boolean changed;
+  // Read by other players' saves, on their own threads.
+  private volatile boolean changed;
   private boolean hinted;
 
   /** How many changes can be undone. */

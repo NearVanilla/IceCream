@@ -10,4 +10,5 @@
 - Do not use HTML tags anywhere in documentation. Standard Markdown and plain text must be used exclusively. The only exception is JavaDocs where HTML is explicitly supported and commonly required. HTML reduces readability in raw files, creates formatting inconsistencies, and may render unpredictably across tooling and documentation platforms.
 - Documentation should remain clean, portable, and readable in plain text form. All formatting decisions should prioritize compatibility with Markdown tooling, Git diffs, IDE previews, and static site generators.
 - New modules do not need to be documented in `ARCHITECTURE.md`.
+- Folia is supported. Never use `Bukkit.getScheduler()`; use `SchedulerUtils`. Touch entities other than the event subject or command sender only through `SchedulerUtils.runFor`, change world time, weather and gamerules only through `SchedulerUtils.runGlobal`, use `teleportAsync` instead of `teleport`, and keep module state that several threads reach thread-safe. See the Threading section of `ARCHITECTURE.md`.
 

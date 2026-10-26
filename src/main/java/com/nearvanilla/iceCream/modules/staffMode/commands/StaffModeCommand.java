@@ -13,10 +13,12 @@ import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_M
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.flight.FlightUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -77,6 +79,8 @@ public class StaffModeCommand {
    * @param player the player to enable staff mode for
    */
   private void enableStaffMode(Player player) {
+    // Back into staff mode before the last teleport back landed: keep the staff abilities.
+    StaffModeUtils.finishReturning(player);
     PersistentDataContainer pdc = player.getPersistentDataContainer();
     pdc.set( // Set serialized inventory.
         STAFF_MODE_INVENTORY_KEY,
@@ -144,10 +148,6 @@ public class StaffModeCommand {
       player.getInventory().setContents(deserializedInventory);
     }
 
-    player.setInvulnerable(false);
-    player.setFlying(false);
-    player.setAllowFlight(false);
-
     String world = pdc.get(STAFF_MODE_LOCATION_WORLD, PersistentDataType.STRING);
     Double x = pdc.get(STAFF_MODE_LOCATION_X, PersistentDataType.DOUBLE);
     Double y = pdc.get(STAFF_MODE_LOCATION_Y, PersistentDataType.DOUBLE);
@@ -155,14 +155,37 @@ public class StaffModeCommand {
     Float yaw = pdc.get(STAFF_MODE_LOCATION_YAW, PersistentDataType.FLOAT);
     Float pitch = pdc.get(STAFF_MODE_LOCATION_PITCH, PersistentDataType.FLOAT);
 
-    if (world != null && x != null && y != null && z != null && yaw != null && pitch != null) {
-      Location savedLocation =
-          new Location(IceCream.instance.getServer().getWorld(world), x, y, z, yaw, pitch);
-      player.teleport(savedLocation);
-    }
-
     pdc.remove(STAFF_MODE_INVENTORY_KEY);
     pdc.set(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
+
+    World savedWorld = world == null ? null : IceCream.instance.getServer().getWorld(world);
+    if (savedWorld != null && x != null && y != null && z != null && yaw != null && pitch != null) {
+      Location savedLocation = new Location(savedWorld, x, y, z, yaw, pitch);
+      // Keep flying until the teleport lands, so the player does not drop in the meantime. If they
+      // quit first, the quit listener takes the staff abilities away instead.
+      StaffModeUtils.startReturning(player);
+      player
+          .teleportAsync(savedLocation)
+          .whenComplete(
+              (teleported, error) -> {
+                if (error != null || !Boolean.TRUE.equals(teleported)) {
+                  IceCream.logger.warning(
+                      "Could not return " + player.getName() + " to where staff mode started.");
+                }
+                SchedulerUtils.runFor(
+                    player,
+                    () -> {
+                      if (StaffModeUtils.finishReturning(player)) finishDisabling(player);
+                    });
+              });
+    } else {
+      finishDisabling(player);
+    }
+  }
+
+  /** Makes the player vulnerable again and takes away staff flight, once they are back. */
+  private void finishDisabling(Player player) {
+    StaffModeUtils.dropStaffAbilities(player);
     if (IceCream.config.getBoolean("modules.flight.enabled", false)) {
       FlightUtils.restoreFlight(player);
     }

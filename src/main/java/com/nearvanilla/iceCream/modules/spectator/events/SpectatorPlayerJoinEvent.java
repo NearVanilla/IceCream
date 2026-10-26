@@ -1,15 +1,16 @@
 package com.nearvanilla.iceCream.modules.spectator.events;
 
-import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorUtils;
 import com.nearvanilla.iceCream.utils.FakeMessageUtils;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.persistence.PersistentDataContainer;
 
 /**
  * Handles player join events for spectator mode. Hides all spectating players from the joining
@@ -39,9 +40,21 @@ public class SpectatorPlayerJoinEvent implements Listener {
   @EventHandler
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
+    SpectatorUtils.track(player);
 
     // Hide all spectating players from this player
     SpectatorUtils.hideSpectatingPlayersFrom(player);
+
+    // The server stopped on Folia while this player was spectating. Finish leaving spectator mode
+    // now; they appear to join normally, since they appeared to leave before the restart.
+    // After the join event, so the proxy channel is open for the Velocity state. The flag is
+    // cleared
+    // once they have left spectator mode, so a quick quit tries again on the next join.
+    PersistentDataContainer data = player.getPersistentDataContainer();
+    if (data.has(SpectatorModule.RESTORE_ON_JOIN_KEY)) {
+      SchedulerUtils.runForNextTick(player, () -> SpectatorUtils.disableSpectator(player, false));
+      return;
+    }
 
     // If the joining player is in spectator mode, hide them from others and suppress join message
     if (SpectatorUtils.isInSpectatorMode(player)) {
@@ -50,15 +63,13 @@ public class SpectatorPlayerJoinEvent implements Listener {
       // Re-send vanished=true after 1 tick to ensure the backend→proxy plugin messaging
       // channel is fully negotiated. The call inside enableSpectator fires immediately and
       // may be dropped if the channel isn't open yet during PlayerJoinEvent.
-      Bukkit.getScheduler()
-          .runTask(
-              IceCream.instance,
-              () -> {
-                if (player.isOnline() && SpectatorUtils.isInSpectatorMode(player)) {
-                  FakeMessageUtils.sendStateToVelocity(
-                      player, SpectatorUtils.SPECTATOR_CHANNEL, true);
-                }
-              });
+      SchedulerUtils.runForNextTick(
+          player,
+          () -> {
+            if (player.isOnline() && SpectatorUtils.isInSpectatorMode(player)) {
+              FakeMessageUtils.sendStateToVelocity(player, SpectatorUtils.SPECTATOR_CHANNEL, true);
+            }
+          });
       player.sendMessage(spectatorReminderComponent);
     } else {
       // Explicitly clear any stale spectator state in Velocity. This handles the edge case

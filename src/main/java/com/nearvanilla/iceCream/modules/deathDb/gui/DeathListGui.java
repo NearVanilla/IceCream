@@ -8,6 +8,7 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathPage;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathRepository;
 import com.nearvanilla.iceCream.modules.deathDb.storage.DeathSummary;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,38 +114,36 @@ public final class DeathListGui implements DeathGui {
     }
   }
 
-  /** Loads the page asynchronously, then opens the GUI for the viewer on the server thread. */
+  /** Loads the page asynchronously, then opens the GUI for the viewer on their own thread. */
   public static void open(
       Player viewer, DeathRepository repository, UUID targetId, String targetName, int page) {
     repository
         .findPage(targetId, page, PAGE_SIZE)
         .whenComplete(
             (result, error) ->
-                Bukkit.getScheduler()
-                    .runTask(
-                        IceCream.instance,
-                        () -> {
-                          if (!viewer.isOnline()) {
-                            return;
-                          }
-                          if (error != null) {
-                            IceCream.logger.log(
-                                Level.SEVERE, "Failed to load deaths of " + targetName, error);
-                            viewer.sendMessage(
-                                line(
-                                    "<red>Could not load death records. Check the console.</red>"));
-                            return;
-                          }
-                          if (result.totalRecords() == 0) {
-                            viewer.sendMessage(
-                                line(
-                                    "<gray><name> has no recorded deaths.</gray>",
-                                    Placeholder.unparsed("name", targetName)));
-                            return;
-                          }
-                          viewer.openInventory(
-                              new DeathListGui(repository, targetId, targetName, result)
-                                  .getInventory());
-                        }));
+                SchedulerUtils.runFor(
+                    viewer,
+                    () -> {
+                      if (!viewer.isOnline()) {
+                        return;
+                      }
+                      if (error != null) {
+                        IceCream.logger.log(
+                            Level.SEVERE, "Failed to load deaths of " + targetName, error);
+                        viewer.sendMessage(
+                            line("<red>Could not load death records. Check the console.</red>"));
+                        return;
+                      }
+                      if (result.totalRecords() == 0) {
+                        viewer.sendMessage(
+                            line(
+                                "<gray><name> has no recorded deaths.</gray>",
+                                Placeholder.unparsed("name", targetName)));
+                        return;
+                      }
+                      viewer.openInventory(
+                          new DeathListGui(repository, targetId, targetName, result)
+                              .getInventory());
+                    }));
   }
 }

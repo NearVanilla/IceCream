@@ -4,7 +4,10 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.flight.commands.FlyCommand;
 import com.nearvanilla.iceCream.modules.flight.events.FlightListener;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
+import java.util.logging.Level;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
 
 /** Permission-gated flight with a preference saved across reconnects and respawns. */
 public class FlightModule implements Module {
@@ -44,7 +47,9 @@ public class FlightModule implements Module {
     registerCommands();
     registerEvents();
     isEnabled = true;
-    IceCream.instance.getServer().getOnlinePlayers().forEach(FlightUtils::restoreFlight);
+    for (Player player : IceCream.instance.getServer().getOnlinePlayers()) {
+      SchedulerUtils.runFor(player, () -> FlightUtils.restoreFlight(player));
+    }
     IceCream.logger.info("Flight module has been enabled.");
   }
 
@@ -52,7 +57,16 @@ public class FlightModule implements Module {
     if (!isEnabled) {
       return;
     }
-    IceCream.instance.getServer().getOnlinePlayers().forEach(FlightUtils::suspendFlight);
+    for (Player player : IceCream.instance.getServer().getOnlinePlayers()) {
+      // Runs directly: on Folia this is the shutdown thread, which never runs scheduled tasks but
+      // may still change a player's own abilities before players are saved.
+      try {
+        FlightUtils.suspendFlight(player);
+      } catch (RuntimeException e) {
+        IceCream.logger.log(
+            Level.WARNING, "Failed to suspend the flight of " + player.getName(), e);
+      }
+    }
     isEnabled = false;
   }
 }

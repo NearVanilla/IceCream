@@ -1,9 +1,11 @@
 package com.nearvanilla.iceCream.modules.lightning.commands;
 
 import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.annotations.Argument;
 import org.incendo.cloud.annotations.Command;
@@ -28,6 +30,9 @@ public class StrikeCommand {
 
   protected final Component senderStrikeComponent =
       MiniMessage.miniMessage().deserialize("<green>Success!</green>");
+
+  protected final Component targetOfflineComponent =
+      MiniMessage.miniMessage().deserialize("<red>This player is not online.</red>");
 
   protected final Component strikeFailComponent =
       MiniMessage.miniMessage()
@@ -64,17 +69,21 @@ public class StrikeCommand {
         return;
       }
     } else {
-      commandSourceStack
-          .getSender()
-          .sendMessage(
-              MiniMessage.miniMessage().deserialize("<red>This player is not online.</red>"));
+      commandSourceStack.getSender().sendMessage(targetOfflineComponent);
       return;
     }
     double chance = IceCream.config.getDouble("modules.lightning.chance", 0.5);
     if (Math.random() < chance) {
-      targetPlayer.getWorld().strikeLightning(targetPlayer.getLocation());
-      targetPlayer.sendMessage(victimStrikeComponent);
-      commandSourceStack.getSender().sendMessage(senderStrikeComponent);
+      CommandSender sender = commandSourceStack.getSender();
+      // The target may be in another region, so strike on their thread.
+      SchedulerUtils.runFor(
+          targetPlayer,
+          () -> {
+            targetPlayer.getWorld().strikeLightning(targetPlayer.getLocation());
+            targetPlayer.sendMessage(victimStrikeComponent);
+            sender.sendMessage(senderStrikeComponent);
+          },
+          () -> sender.sendMessage(targetOfflineComponent));
     } else {
       commandSourceStack.getSender().sendMessage(strikeFailComponent);
     }

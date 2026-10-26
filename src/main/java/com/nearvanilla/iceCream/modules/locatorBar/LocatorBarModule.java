@@ -3,6 +3,7 @@ package com.nearvanilla.iceCream.modules.locatorBar;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.locatorBar.commands.LocatorBarCommand;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -76,7 +77,10 @@ public class LocatorBarModule implements Module {
   @Override
   public void register() {
     initKeys();
-    if (shouldEnable()) {
+    if (shouldEnable() && SchedulerUtils.isFolia()) {
+      IceCream.logger.info(
+          "Locator Bar module is disabled: Folia does not run the server waypoint system.");
+    } else if (shouldEnable()) {
       try {
         registerCommands();
         registerEvents();

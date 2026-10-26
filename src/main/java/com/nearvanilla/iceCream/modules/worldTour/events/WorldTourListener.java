@@ -1,7 +1,7 @@
 package com.nearvanilla.iceCream.modules.worldTour.events;
 
-import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -53,22 +53,19 @@ public class WorldTourListener implements Listener {
         player
             .getPersistentDataContainer()
             .get(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN))) {
+      // The global region, as a player's own scheduler stops once they quit.
       var task =
-          IceCream.instance
-              .getServer()
-              .getScheduler()
-              .runTaskLater(
-                  IceCream.instance,
-                  () -> {
-                    module.cancelDisconnectTask(player.getUniqueId());
-                    if (!player.isOnline()) {
-                      player
-                          .getPersistentDataContainer()
-                          .set(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN, false);
-                      player.saveData();
-                    }
-                  },
-                  timeoutTicks);
+          SchedulerUtils.runGlobalLater(
+              () -> {
+                module.cancelDisconnectTask(player.getUniqueId());
+                if (!player.isOnline()) {
+                  player
+                      .getPersistentDataContainer()
+                      .set(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN, false);
+                  player.saveData();
+                }
+              },
+              timeoutTicks);
       module.scheduleDisconnectTask(player.getUniqueId(), task);
     }
   }

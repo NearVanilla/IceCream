@@ -57,9 +57,10 @@ public class SpectatorPrivateMessageCommandEvent implements Listener {
     Player sender = event.getPlayer();
     Player target = findPlayer(parts[1]);
 
-    boolean senderIsSpectator = SpectatorUtils.isInSpectatorMode(sender);
+    boolean senderIsSpectator = SpectatorUtils.isSpectating(sender.getUniqueId());
     boolean senderBypasses = SpectatorUtils.canBypassPrivateMessage(sender);
-    boolean targetIsSpectator = target != null && SpectatorUtils.isInSpectatorMode(target);
+    // The target may be in another region, so check the registry rather than their data.
+    boolean targetIsSpectator = target != null && SpectatorUtils.isSpectating(target.getUniqueId());
     boolean targetBypasses = target != null && SpectatorUtils.canBypassPrivateMessage(target);
 
     if (targetIsSpectator && !senderBypasses) {

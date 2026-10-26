@@ -26,6 +26,7 @@ import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -130,12 +131,21 @@ public final class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
-    deathDbModule.unregister();
-    flightModule.unregister();
-    mapToolsModule.unregister();
-    lootContainerProtectionModule.unregister();
-    onePlayerSleepModule.unregister();
-    spectatorModule.unregister();
-    worldTourModule.unregister();
+    // One module failing to shut down must not stop the others from cleaning up.
+    unregisterSafely("Death DB", deathDbModule::unregister);
+    unregisterSafely("Flight", flightModule::unregister);
+    unregisterSafely("MapTools", mapToolsModule::unregister);
+    unregisterSafely("Loot Container Protection", lootContainerProtectionModule::unregister);
+    unregisterSafely("One Player Sleep", onePlayerSleepModule::unregister);
+    unregisterSafely("Spectator", spectatorModule::unregister);
+    unregisterSafely("World Tour", worldTourModule::unregister);
+  }
+
+  private static void unregisterSafely(String module, Runnable unregister) {
+    try {
+      unregister.run();
+    } catch (RuntimeException e) {
+      logger.log(Level.SEVERE, "Failed to disable the " + module + " module", e);
+    }
   }
 }

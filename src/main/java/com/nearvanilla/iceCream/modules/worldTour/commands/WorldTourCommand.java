@@ -1,15 +1,23 @@
 package com.nearvanilla.iceCream.modules.worldTour.commands;
 
+import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.List;
 import java.util.Locale;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.incendo.cloud.annotations.Argument;
@@ -167,8 +175,8 @@ public class WorldTourCommand {
     Player player = requirePlayer(stack);
     if (player == null) return;
 
-    // A tour is already ongoing — block.
-    if (module.getCurrentHost() != null) {
+    // Become host, unless a tour is already ongoing.
+    if (!module.tryStart(player)) {
       player.sendMessage(
           MiniMessage.miniMessage()
               .deserialize(
@@ -176,14 +184,16 @@ public class WorldTourCommand {
       return;
     }
 
-    // Become host and apply environment.
-    module.setCurrentHost(player);
     module.setGlowing(player);
     player
         .getPersistentDataContainer()
         .set(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN, true);
-    applyTourEnvironment();
-    player.sendMessage(TOUR_STARTED);
+    // The environment can only change on the global region.
+    SchedulerUtils.runGlobal(
+        () -> {
+          module.applyTourEnvironment();
+          player.sendMessage(TOUR_STARTED);
+        });
   }
 
   /**
@@ -263,25 +273,48 @@ public class WorldTourCommand {
     }
 
     Player host = module.getCurrentHost();
+    // The host ran the command, so this thread owns them.
+    Location destination = host.getLocation();
 
-    int count = 0;
-    for (Player online : player.getServer().getOnlinePlayers()) {
-      if (online.equals(host)) continue;
-      if (Boolean.TRUE.equals(
-          online
-              .getPersistentDataContainer()
-              .get(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN))) {
-        online.teleport(host.getLocation());
-        online.sendMessage(TPALL_PARTICIPANT);
-        count++;
-      }
-    }
-    player.sendMessage(TPALL_SUCCESS);
-    if (count > 0) {
-      player.sendMessage(
-          MiniMessage.miniMessage()
-              .deserialize("<green>" + count + " participant(s) teleported.</green>"));
-    }
+    // Each participant checks their own flag on their own thread, then teleports.
+    AtomicInteger count = new AtomicInteger();
+    Queue<CompletableFuture<Boolean>> teleports = new ConcurrentLinkedQueue<>();
+    SchedulerUtils.runForEach(
+            player.getServer().getOnlinePlayers(),
+            online -> {
+              if (online.equals(host)) return;
+              if (Boolean.TRUE.equals(
+                  online
+                      .getPersistentDataContainer()
+                      .get(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN))) {
+                teleports.add(
+                    online
+                        .teleportAsync(destination)
+                        .thenApply(
+                            teleported -> {
+                              if (teleported) {
+                                online.sendMessage(TPALL_PARTICIPANT);
+                                count.incrementAndGet();
+                              }
+                              return teleported;
+                            }));
+              }
+            })
+        .thenCompose(
+            ignored -> CompletableFuture.allOf(teleports.toArray(CompletableFuture[]::new)))
+        .whenComplete(
+            (ignored, error) -> {
+              if (error != null) {
+                IceCream.logger.log(Level.WARNING, "A World Tour teleport failed", error);
+              }
+              player.sendMessage(TPALL_SUCCESS);
+              if (count.get() > 0) {
+                player.sendMessage(
+                    MiniMessage.miniMessage()
+                        .deserialize(
+                            "<green>" + count.get() + " participant(s) teleported.</green>"));
+              }
+            });
   }
 
   /**
@@ -336,9 +369,13 @@ public class WorldTourCommand {
     if (requester != null && requester.isOnline()) {
       module.setCurrentHost(requester);
       module.setGlowing(requester);
-      requester
-          .getPersistentDataContainer()
-          .set(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN, true);
+      // The requester may be in another region.
+      SchedulerUtils.runFor(
+          requester,
+          () ->
+              requester
+                  .getPersistentDataContainer()
+                  .set(WorldTourModule.JOINED_KEY, PersistentDataType.BOOLEAN, true));
       requester.sendMessage(HOST_SET);
       player.sendMessage(
           MiniMessage.miniMessage()
@@ -403,7 +440,8 @@ public class WorldTourCommand {
     }
 
     module.endTour();
-    player.sendMessage(TOUR_ENDED);
+    // Queued after the environment restore, so the message follows it.
+    SchedulerUtils.runGlobal(() -> player.sendMessage(TOUR_ENDED));
   }
 
   /**
@@ -421,11 +459,15 @@ public class WorldTourCommand {
     }
 
     module.endTour();
-    stack
-        .getSender()
-        .sendMessage(
-            MiniMessage.miniMessage()
-                .deserialize("<green>✓ World Tour force-ended. Environment restored.</green>"));
+    // Queued after the environment restore, so the message follows it.
+    SchedulerUtils.runGlobal(
+        () ->
+            stack
+                .getSender()
+                .sendMessage(
+                    MiniMessage.miniMessage()
+                        .deserialize(
+                            "<green>✓ World Tour force-ended. Environment restored.</green>")));
   }
 
   /**
@@ -454,8 +496,12 @@ public class WorldTourCommand {
       return;
     }
 
-    module.setWeather(type);
-    player.sendMessage(WEATHER_CHANGED);
+    String weather = type;
+    SchedulerUtils.runGlobal(
+        () -> {
+          module.setWeather(weather);
+          player.sendMessage(WEATHER_CHANGED);
+        });
   }
 
   /**
@@ -484,8 +530,12 @@ public class WorldTourCommand {
       return;
     }
 
-    module.setTime(module.getTimeTicks(type));
-    player.sendMessage(TIME_CHANGED);
+    long ticks = module.getTimeTicks(type);
+    SchedulerUtils.runGlobal(
+        () -> {
+          module.setTime(ticks);
+          player.sendMessage(TIME_CHANGED);
+        });
   }
 
   /**
@@ -501,10 +551,5 @@ public class WorldTourCommand {
       return null;
     }
     return player;
-  }
-
-  /** Saves the current environment, then applies day time, clear weather, and keepInventory. */
-  private void applyTourEnvironment() {
-    module.applyTourEnvironment();
   }
 }

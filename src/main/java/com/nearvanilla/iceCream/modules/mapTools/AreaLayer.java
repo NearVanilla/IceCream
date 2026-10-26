@@ -37,13 +37,13 @@ final class AreaLayer implements LayerProvider {
     this.priority = priority;
   }
 
-  /** Adds or replaces the marker of a claim. */
-  void put(String id, Marker marker, List<MapPoint> outline) {
+  /** Adds or replaces the marker of a claim. Players in different regions may save at once. */
+  synchronized void put(String id, Marker marker, List<MapPoint> outline) {
     markers.put(id, new Entry(marker, size(outline)));
     sort();
   }
 
-  void remove(String id) {
+  synchronized void remove(String id) {
     markers.remove(id);
     sort();
   }

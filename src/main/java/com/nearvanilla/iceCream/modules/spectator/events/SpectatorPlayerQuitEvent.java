@@ -29,5 +29,6 @@ public class SpectatorPlayerQuitEvent implements Listener {
     if (SpectatorUtils.isInSpectatorMode(player)) {
       event.quitMessage(null);
     }
+    SpectatorUtils.untrack(player.getUniqueId());
   }
 }

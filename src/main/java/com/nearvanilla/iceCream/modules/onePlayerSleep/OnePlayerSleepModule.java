@@ -4,11 +4,14 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.commands.WakeUpCommand;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.events.OnePlayerSleepListener;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
@@ -20,10 +23,13 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.ClockTimeSkipEvent;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Accelerates occupied night clocks while keeping wake requests scoped to individual bed entries.
+ *
+ * <p>World time may only change on the global region, so the sessions and the heartbeat live there.
+ * Bed events arrive on each player's own region and hand their work over; only the pending entries
+ * and the cooldown are shared between threads.
  */
 public class OnePlayerSleepModule implements Module {
   private static final long DAY_TICKS = 24000L;
@@ -31,15 +37,16 @@ public class OnePlayerSleepModule implements Module {
   private static final Component INACTIVE_REQUEST =
       Component.text("That sleep request is no longer active.", NamedTextColor.GRAY);
 
-  private final Map<UUID, UUID> pendingEntries = new HashMap<>();
+  private final Map<UUID, UUID> pendingEntries = new ConcurrentHashMap<>();
   private final Map<UUID, WorldSession> sessions = new HashMap<>();
-  private BukkitTask heartbeat;
+  private ScheduledTask heartbeat;
   private OnePlayerSleepListener listener;
-  private boolean enabled;
+  private volatile boolean enabled;
   private double multiplier;
   private boolean ownTimeWrite;
-  private boolean coolingDown;
-  private long cooldownStartedNanos;
+
+  /** When the keep-the-night cooldown ends; a time already passed means there is none. */
+  private volatile long cooldownEndsNanos = System.nanoTime();
 
   private static final class WorldSession {
     private final Map<UUID, String> sleepers = new HashMap<>();
@@ -93,7 +100,7 @@ public class OnePlayerSleepModule implements Module {
     try {
       registerCommands();
       registerEvents();
-      heartbeat = Bukkit.getScheduler().runTaskTimer(IceCream.instance, this::tick, 1L, 1L);
+      heartbeat = SchedulerUtils.runGlobalTimer(this::tick, 1L, 1L);
       enabled = true;
       IceCream.logger.info("One Player Sleep module has been enabled.");
     } catch (Exception exception) {
@@ -103,10 +110,7 @@ public class OnePlayerSleepModule implements Module {
   }
 
   public boolean isCoolingDown() {
-    if (coolingDown && System.nanoTime() - cooldownStartedNanos >= COOLDOWN_NANOS) {
-      coolingDown = false;
-    }
-    return coolingDown;
+    return System.nanoTime() - cooldownEndsNanos < 0;
   }
 
   public void queueSleepCheck(Player player) {
@@ -115,29 +119,36 @@ public class OnePlayerSleepModule implements Module {
 
   public void forgetPlayer(UUID playerId) {
     pendingEntries.remove(playerId);
-    sessions
-        .values()
-        .removeIf(
-            session -> {
-              session.sleepers.remove(playerId);
-              return session.sleepers.isEmpty();
-            });
+    SchedulerUtils.runGlobal(
+        () ->
+            sessions
+                .values()
+                .removeIf(
+                    session -> {
+                      session.sleepers.remove(playerId);
+                      return session.sleepers.isEmpty();
+                    }));
   }
 
   public void forgetWorld(UUID worldId) {
     pendingEntries.values().removeIf(worldId::equals);
-    sessions.remove(worldId);
+    SchedulerUtils.runGlobal(() -> sessions.remove(worldId));
   }
 
   public void observeTimeChange(ClockTimeSkipEvent event) {
-    if (ownTimeWrite || !enabled) return;
-    if (event.getSkipReason() == ClockTimeSkipEvent.SkipReason.CUSTOM
-        || event.getSkipReason() == ClockTimeSkipEvent.SkipReason.COMMAND) {
-      for (WorldSession session : sessions.values()) {
-        session.rebase = true;
-        session.fractionalExtra = 0;
-      }
-    }
+    ClockTimeSkipEvent.SkipReason reason = event.getSkipReason();
+    // Inline when the event fires on the global region, as time writes do, so the guard holds.
+    SchedulerUtils.runGlobal(
+        () -> {
+          if (ownTimeWrite || !enabled) return;
+          if (reason == ClockTimeSkipEvent.SkipReason.CUSTOM
+              || reason == ClockTimeSkipEvent.SkipReason.COMMAND) {
+            for (WorldSession session : sessions.values()) {
+              session.rebase = true;
+              session.fractionalExtra = 0;
+            }
+          }
+        });
   }
 
   public boolean shouldBlockNightSkip(World world) {
@@ -206,7 +217,6 @@ public class OnePlayerSleepModule implements Module {
 
   private void tick() {
     if (!enabled) return;
-    isCoolingDown();
     confirmEntries();
     if (sessions.isEmpty()) return;
     // Time and wake APIs fire synchronous events. A snapshot survives their state mutations.
@@ -316,6 +326,10 @@ public class OnePlayerSleepModule implements Module {
   }
 
   public void requestWakeUp(Player clicker, String token) {
+    SchedulerUtils.runGlobal(() -> wakeUpOnGlobalRegion(clicker, token));
+  }
+
+  private void wakeUpOnGlobalRegion(Player clicker, String token) {
     if (!enabled || isCoolingDown() || !clicker.isOnline()) {
       clicker.sendMessage(INACTIVE_REQUEST);
       return;
@@ -343,8 +357,7 @@ public class OnePlayerSleepModule implements Module {
       clicker.sendMessage(INACTIVE_REQUEST);
       return;
     }
-    coolingDown = true;
-    cooldownStartedNanos = System.nanoTime();
+    cooldownEndsNanos = System.nanoTime() + COOLDOWN_NANOS;
     sessions.clear();
     pendingEntries.clear();
     Bukkit.broadcast(
@@ -352,13 +365,18 @@ public class OnePlayerSleepModule implements Module {
     for (Player player : new ArrayList<>(Bukkit.getOnlinePlayers())) wakePlayer(player);
   }
 
+  /** Wakes a player on their own region, as Folia's own night skip does. */
   private static void wakePlayer(Player player) {
-    if (!player.isSleeping()) return;
-    player.wakeup(false);
-    if (player.isSleeping()) {
-      IceCream.logger.warning(
-          "Could not wake " + player.getName() + ": another plugin prevented bed leaving.");
-    }
+    SchedulerUtils.runFor(
+        player,
+        () -> {
+          if (!player.isSleeping()) return;
+          player.wakeup(false);
+          if (player.isSleeping()) {
+            IceCream.logger.warning(
+                "Could not wake " + player.getName() + ": another plugin prevented bed leaving.");
+          }
+        });
   }
 
   public void unregister() {
@@ -375,7 +393,10 @@ public class OnePlayerSleepModule implements Module {
     for (WorldSession session : sessions.values()) sleepers.addAll(session.sleepers.keySet());
     sessions.clear();
     pendingEntries.clear();
-    coolingDown = false;
+    cooldownEndsNanos = System.nanoTime();
+    // On Folia this runs after the region threads stopped, and players are disconnected next,
+    // which wakes them anyway.
+    if (SchedulerUtils.isFolia()) return;
     for (UUID id : sleepers) {
       Player player = Bukkit.getPlayer(id);
       if (player != null && player.isOnline()) wakePlayer(player);

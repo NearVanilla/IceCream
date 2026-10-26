@@ -28,4 +28,13 @@ package. Please note that the `register` method should include `registerCommands
 `registerEvents` at some point so that your commands and events are registered with the
 IceCream plugin.
 
+## Step 4 - Threading
+
+IceCream also runs on Folia, where each region of a world has its own thread. Event handlers and
+player commands already run on the right thread for their own player, entity or block. When your
+module touches anything else, such as another player, a block far away, or the world's time and
+weather, use the `SchedulerUtils` class in the `utils` package instead of `Bukkit.getScheduler()`,
+and use `teleportAsync` instead of `teleport`. The Threading section of `ARCHITECTURE.md` lists the
+rules.
+
 If you get stuck at any point, an example module is available for you to reference.

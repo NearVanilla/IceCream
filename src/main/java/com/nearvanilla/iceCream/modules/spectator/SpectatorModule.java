@@ -30,6 +30,9 @@ public class SpectatorModule implements Module {
   public static NamespacedKey PREVIOUS_LOCATION_KEY;
   public static NamespacedKey HIDDEN_SINCE_KEY;
 
+  /** Set at a Folia shutdown, which cannot teleport, to leave spectator mode on the next join. */
+  public static NamespacedKey RESTORE_ON_JOIN_KEY;
+
   private DiscordSRVIntegration discordSRV;
   private CarbonChatIntegration carbonChat;
 
@@ -42,6 +45,7 @@ public class SpectatorModule implements Module {
         new NamespacedKey(IceCream.instance, "spectator.dynmap_hidden_before_spectator");
     PREVIOUS_LOCATION_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_location");
     HIDDEN_SINCE_KEY = new NamespacedKey(IceCream.instance, "spectator.hidden_since");
+    RESTORE_ON_JOIN_KEY = new NamespacedKey(IceCream.instance, "spectator.restore_on_join");
   }
 
   @Override
@@ -91,13 +95,15 @@ public class SpectatorModule implements Module {
 
         carbonChat = new CarbonChatIntegration();
         carbonChat.init(
-            "modules.spectator", SpectatorUtils::isInSpectatorMode, "in spectator mode");
+            "modules.spectator",
+            player -> SpectatorUtils.isSpectating(player.getUniqueId()),
+            "in spectator mode");
 
         // Load SpectatorUtils config before wiring up listeners that depend on its statics.
         SpectatorUtils.init(discordSRV, carbonChat);
 
         carbonChat.initPrivateMessage(
-            SpectatorUtils::isInSpectatorMode,
+            player -> SpectatorUtils.isSpectating(player.getUniqueId()),
             SpectatorUtils::canBypassPrivateMessage,
             SpectatorUtils.getPrivateMessageOfflineMessage());
 

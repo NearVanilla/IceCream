@@ -11,6 +11,7 @@ import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsModule;
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
 import java.util.List;
@@ -715,8 +716,15 @@ public class MapToolsCommand {
     // The middle of the outline: a circle's center, otherwise the average of its corners.
     double x = area.points().stream().mapToDouble(MapPoint::x).average().orElse(0);
     double z = area.points().stream().mapToDouble(MapPoint::z).average().orElse(0);
-    int y = world.getHighestBlockYAt((int) Math.floor(x), (int) Math.floor(z)) + 1;
-    player.teleportAsync(new Location(world, x, y, z, player.getYaw(), player.getPitch()));
+    float yaw = player.getYaw();
+    float pitch = player.getPitch();
+    // The claim may be in another region, so find the ground on the thread that owns it.
+    SchedulerUtils.runAt(
+        new Location(world, x, 0, z),
+        () -> {
+          int y = world.getHighestBlockYAt((int) Math.floor(x), (int) Math.floor(z)) + 1;
+          player.teleportAsync(new Location(world, x, y, z, yaw, pitch));
+        });
   }
 
   /** Creates a claim from typed coordinates, after the player confirms if it is near others. */

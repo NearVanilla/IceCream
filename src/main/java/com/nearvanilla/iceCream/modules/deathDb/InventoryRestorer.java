@@ -10,7 +10,8 @@ public final class InventoryRestorer {
 
   /**
    * Replaces the target's storage, armor and offhand with the snapshot. What they were carrying is
-   * dropped at their feet. Must run on the server thread with a fully deserialized snapshot.
+   * dropped at their feet. Must run on the target's own thread, see {@link
+   * com.nearvanilla.iceCream.utils.SchedulerUtils#runFor}, with a fully deserialized snapshot.
    */
   public static void restore(Player target, ItemStack[] snapshot) {
     PlayerInventory inventory = target.getInventory();

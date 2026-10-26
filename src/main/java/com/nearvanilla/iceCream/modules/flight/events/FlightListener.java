@@ -1,8 +1,8 @@
 package com.nearvanilla.iceCream.modules.flight.events;
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
-import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.flight.FlightUtils;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -41,15 +41,12 @@ public class FlightListener implements Listener {
   }
 
   private void restoreNextTick(Player player) {
-    IceCream.instance
-        .getServer()
-        .getScheduler()
-        .runTask(
-            IceCream.instance,
-            () -> {
-              if (player.isOnline() && !player.isDead()) {
-                FlightUtils.restoreFlight(player);
-              }
-            });
+    SchedulerUtils.runForNextTick(
+        player,
+        () -> {
+          if (player.isOnline() && !player.isDead()) {
+            FlightUtils.restoreFlight(player);
+          }
+        });
   }
 }

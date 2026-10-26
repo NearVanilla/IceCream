@@ -1,6 +1,6 @@
 package com.nearvanilla.iceCream.modules.mapTools;
 
-import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.utils.SchedulerUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -76,13 +76,12 @@ public final class IconMenu implements InventoryHolder {
     if (done) return;
     done = true;
     // Close and reopen the form on the next tick, outside the inventory event.
-    Bukkit.getScheduler()
-        .runTask(
-            IceCream.instance,
-            () -> {
-              player.closeInventory();
-              onPick.accept(icon);
-            });
+    SchedulerUtils.runForNextTick(
+        player,
+        () -> {
+          player.closeInventory();
+          onPick.accept(icon);
+        });
   }
 
   private ItemStack item(String icon) {

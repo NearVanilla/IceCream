@@ -48,6 +48,8 @@ public class FakeMessageUtils {
    * @param state the new hidden state
    */
   public static void sendStateToVelocity(Player player, String channel, boolean state) {
+    // Plugin messages fail once the plugin is disabling; the next join sends the state again.
+    if (!IceCream.instance.isEnabled()) return;
     ByteArrayDataOutput out = ByteStreams.newDataOutput();
     out.writeUTF(player.getUniqueId().toString());
     out.writeBoolean(state);

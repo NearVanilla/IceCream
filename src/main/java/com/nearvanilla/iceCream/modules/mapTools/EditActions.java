@@ -277,6 +277,16 @@ public final class EditActions {
    * @param player the editing player
    */
   public static void apply(Player player) {
+    apply(player, true);
+  }
+
+  /**
+   * Saves the changes of the area the player is editing.
+   *
+   * @param player the editing player
+   * @param checkNearby whether to ask for confirmation first when the claim is close to others
+   */
+  public static void apply(Player player, boolean checkNearby) {
     EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
     if (session == null || !session.isEditingArea()) {
       send(player, "<red>You are not editing a claim.</red>");
@@ -293,13 +303,29 @@ public final class EditActions {
       return;
     }
 
-    session.setChanged(false);
-    // Saving finishes editing this area; go back to edit mode so the next one can be clicked.
-    MapToolsUtils.startEditing(player, EditSession.view());
-    MapToolsUtils.saveArea(area.withGeometry(geometry));
-    player.sendMessage(
-        MM.deserialize(
-            "<green>Saved the changes to <id>.</green>", Placeholder.unparsed("id", area.id())));
+    Runnable save =
+        () -> {
+          // The claim and the session may have changed while the confirmation was open.
+          MapArea current = MapToolsModule.store.getArea(area.id());
+          if (current == null) {
+            send(player, "<red>This claim no longer exists.</red>");
+            return;
+          }
+          if (MapToolsModule.sessions.get(player.getUniqueId()) != session) return;
+          session.setChanged(false);
+          // Saving finishes editing this area; go back to edit mode so the next one can be clicked.
+          MapToolsUtils.startEditing(player, EditSession.view());
+          MapToolsUtils.saveArea(current.withGeometry(geometry));
+          player.sendMessage(
+              MM.deserialize(
+                  "<green>Saved the changes to <id>.</green>",
+                  Placeholder.unparsed("id", area.id())));
+        };
+    if (checkNearby && !area.isMarker()) {
+      AreaForms.confirmNearby(player, geometry, area.id(), save);
+    } else {
+      save.run();
+    }
   }
 
   private static void send(Player player, String message) {

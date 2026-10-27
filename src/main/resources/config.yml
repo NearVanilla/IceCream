@@ -1,4 +1,27 @@
 modules:
+  antiafk:
+    enabled: true
+    # Minutes without deliberate input before the captcha appears. 300 = 5 hours.
+    timeout-minutes: 300
+    # Seconds to type the code before being kicked (15 to 600).
+    answer-seconds: 60
+    # Characters in the code (4 to 12).
+    code-length: 6
+    # Degrees the camera must turn from where it last counted as active (1 to 180).
+    min-rotation-degrees: 20
+    # Sound played when the captcha appears and again near the end. Leave empty for none.
+    sound: 'minecraft:block.note_block.pling'
+    # Tell everyone when a player is kicked for being AFK.
+    announce-kick: true
+    messages:
+      title: '<red>Are you still there?</red>'
+      subtitle: '<gray>Type <white><code></white> in chat</gray>'
+      prompt: '<gold>AFK check:</gold> <gray>type <white><code></white> in chat within <seconds> seconds. Only you can see it.</gray>'
+      actionbar: '<gray>Type <white><code></white> in chat <dark_gray>(<seconds>s)</dark_gray></gray>'
+      wrong: '<red>That is not the code. Type <white><code></white></red>'
+      success: '<green>Thanks, enjoy your game!</green>'
+      kick-reason: '<red>You were kicked for being AFK.</red>'
+      kick-announcement: '<gray><player> was kicked for being AFK.</gray>'
   deathlocation:
     enabled: true
   deathdb:

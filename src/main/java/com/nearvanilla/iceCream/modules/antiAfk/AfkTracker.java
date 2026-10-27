@@ -117,8 +117,8 @@ public final class AfkTracker {
   }
 
   /**
-   * Closes the captcha if the answer matches and the deadline has not passed, then resets the
-   * timer.
+   * Closes the captcha if the answer matches and resets the timer. An answer that arrives after the
+   * deadline still counts until {@link #tryExpire} has closed the captcha.
    *
    * @return true when this call closed the captcha
    */
@@ -126,14 +126,12 @@ public final class AfkTracker {
     Session session = sessions.get(playerId);
     if (session == null) return false;
     Challenge challenge = session.challenge.get();
-    if (challenge == null
-        || clock.getAsLong() >= challenge.deadlineMs()
-        || !CaptchaGenerator.matches(challenge.code(), answer)
-        || !session.challenge.compareAndSet(challenge, null)) {
-      return false;
-    }
+    if (challenge == null || !CaptchaGenerator.matches(challenge.code(), answer)) return false;
+    // Reset the timer before closing the captcha, otherwise the heartbeat could see no captcha and
+    // an expired timer in between and open a new one. If the expiry wins instead, the player is
+    // kicked anyway.
     session.lastActiveMs = clock.getAsLong();
-    return true;
+    return session.challenge.compareAndSet(challenge, null);
   }
 
   /**

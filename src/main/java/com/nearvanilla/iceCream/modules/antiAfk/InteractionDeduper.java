@@ -13,16 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2026-10-27
  */
 public final class InteractionDeduper {
-  private final Map<UUID, String> lastFingerprints = new ConcurrentHashMap<>();
+  private final Map<UUID, Object> lastFingerprints = new ConcurrentHashMap<>();
 
   /**
    * Records an interaction.
    *
    * @param playerId the player who interacted
-   * @param fingerprint a description of the interaction, such as action, target and held item
+   * @param fingerprint a value describing the interaction, such as action, target and held item,
+   *     compared with {@link Object#equals}
    * @return true when it differs from the player's previous interaction
    */
-  public boolean isNew(UUID playerId, String fingerprint) {
+  public boolean isNew(UUID playerId, Object fingerprint) {
     return !fingerprint.equals(lastFingerprints.put(playerId, fingerprint));
   }
 

@@ -87,12 +87,29 @@ class AfkTrackerTest {
   }
 
   @Test
-  void answerAfterTheDeadlineFails() {
+  void answerAfterTheDeadlineCountsUntilTheCaptchaExpires() {
     now.addAndGet(TIMEOUT);
     tracker.issue(ALICE, "ABC234", WINDOW);
     now.addAndGet(WINDOW);
-    assertFalse(tracker.tryResolve(ALICE, "ABC234"));
+    assertTrue(tracker.tryResolve(ALICE, "ABC234"));
+    assertFalse(tracker.tryExpire(ALICE));
+  }
+
+  @Test
+  void answerAfterTheCaptchaExpiredFails() {
+    now.addAndGet(TIMEOUT);
+    tracker.issue(ALICE, "ABC234", WINDOW);
+    now.addAndGet(WINDOW);
     assertTrue(tracker.tryExpire(ALICE));
+    assertFalse(tracker.tryResolve(ALICE, "ABC234"));
+  }
+
+  @Test
+  void resolvingNeverLeavesThePlayerDueWithoutACaptcha() {
+    now.addAndGet(TIMEOUT * 3);
+    tracker.issue(ALICE, "ABC234", WINDOW);
+    assertTrue(tracker.tryResolve(ALICE, "ABC234"));
+    assertFalse(tracker.isDue(ALICE, TIMEOUT));
   }
 
   @Test

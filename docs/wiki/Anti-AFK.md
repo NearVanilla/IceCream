@@ -2,7 +2,7 @@
 
 Players who stay AFK for too long are asked to type a short code in chat. Anyone who doesn't type it in time is kicked. It replaces the old Captcha AFK plugin.
 
-Permission: `icecream.modules.antiafk.exempt` skips the check entirely. Players in spectator mode are also skipped.
+Permission: `icecream.modules.antiafk.exempt` skips the check entirely. Operators don't have it by default, so grant it explicitly to staff who should be exempt. Players in spectator mode are also skipped.
 
 ## How it works
 

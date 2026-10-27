@@ -45,6 +45,9 @@ public final class AntiAfkManager {
   private BukkitTask heartbeat;
   // Read from the async chat thread.
   private volatile boolean running;
+  // The player this module is kicking right now, and whether the kick went through.
+  private UUID kicking;
+  private boolean kickConfirmed;
 
   public AntiAfkManager(AntiAfkConfig config) {
     this.config = config;
@@ -53,7 +56,6 @@ public final class AntiAfkManager {
     this.chatGate =
         new ChatGate(
             tracker,
-            clock,
             new ChatGate.Listener() {
               @Override
               public void onCorrect(UUID playerId) {
@@ -90,7 +92,6 @@ public final class AntiAfkManager {
     interactions.clear();
     views.clear();
     reminded.clear();
-    chatGate.clear();
   }
 
   public void startTracking(Player player) {
@@ -108,15 +109,18 @@ public final class AntiAfkManager {
     views.reset(id);
     reminded.remove(id);
     interactions.forget(id);
-    chatGate.forget(id);
   }
 
   public void markActive(Player player) {
     if (running) tracker.markActive(player.getUniqueId());
   }
 
-  /** Counts an interaction as activity only when it differs from the player's previous one. */
-  public void markInteraction(Player player, String fingerprint) {
+  /**
+   * Counts an interaction as activity only when it differs from the player's previous one.
+   *
+   * @param fingerprint a value describing the interaction, compared with {@link Object#equals}
+   */
+  public void markInteraction(Player player, Object fingerprint) {
     if (running && interactions.isNew(player.getUniqueId(), fingerprint)) markActive(player);
   }
 
@@ -129,17 +133,22 @@ public final class AntiAfkManager {
 
   /**
    * Marks the player as AFK straight away, so they are shown a captcha now instead of after the
-   * timeout. A player on the death screen gets the captcha's time to respawn before being kicked.
+   * timeout. Players on the death screen are skipped, because respawning counts as activity.
    *
-   * @return false when the player is exempt or already has a captcha open
+   * @return false when the player is exempt, dead or already has a captcha open
    */
   public boolean setAfk(Player player) {
-    if (!running || isExempt(player)) return false;
+    if (!running || isExempt(player) || player.isDead()) return false;
     UUID id = player.getUniqueId();
     if (!tracker.isTracked(id)) startTracking(player);
     if (!tracker.markIdle(id, config.timeoutMs())) return false;
-    if (!player.isDead()) issueCaptcha(player);
+    issueCaptcha(player);
     return true;
+  }
+
+  /** Records that a kick went through, called for every kick that was not cancelled. */
+  public void kickConfirmed(Player player) {
+    if (player.getUniqueId().equals(kicking)) kickConfirmed = true;
   }
 
   /**
@@ -237,7 +246,19 @@ public final class AntiAfkManager {
 
   private void kick(Player player) {
     stopTracking(player);
-    player.kick(presenter.kickReason(), PlayerKickEvent.Cause.IDLING);
+    // The kick event fires during kick(), so the listener reports back before it returns.
+    kicking = player.getUniqueId();
+    kickConfirmed = false;
+    try {
+      player.kick(presenter.kickReason(), PlayerKickEvent.Cause.IDLING);
+    } finally {
+      kicking = null;
+    }
+    if (!kickConfirmed) {
+      // Another plugin cancelled the kick. The next heartbeat starts a fresh timer.
+      presenter.clear(player);
+      return;
+    }
     if (config.announceKick()) Bukkit.broadcast(presenter.kickAnnouncement(player.getName()));
   }
 }

@@ -29,7 +29,6 @@ class ChatGateTest {
     gate =
         new ChatGate(
             tracker,
-            now::get,
             new ChatGate.Listener() {
               @Override
               public void onCorrect(UUID playerId) {
@@ -73,36 +72,19 @@ class ChatGateTest {
   }
 
   @Test
-  void sameMessageFromTheSecondHookReusesTheVerdict() {
-    openCaptcha();
-    assertEquals(Verdict.HIDE_CORRECT, gate.onChat(ALICE, "ABC234"));
-    now.addAndGet(50);
-    assertEquals(Verdict.HIDE_CORRECT, gate.onChat(ALICE, "ABC234"));
-    assertEquals(List.of("correct"), events);
-  }
-
-  @Test
-  void passIsCachedSoALateCaptchaCannotHideTheSameMessage() {
-    assertEquals(Verdict.PASS, gate.onChat(ALICE, "ABC234"));
+  void sameMessageIsHiddenOnceACaptchaOpens() {
+    assertEquals(Verdict.PASS, gate.onChat(ALICE, "ok"));
     tracker.issue(ALICE, "ABC234", WINDOW);
-    assertEquals(Verdict.PASS, gate.onChat(ALICE, "ABC234"));
-    assertEquals(List.of(), events);
+    assertEquals(Verdict.HIDE_WRONG, gate.onChat(ALICE, "ok"));
+    assertEquals(List.of("wrong"), events);
   }
 
   @Test
-  void differentMessageIsEvaluatedAgain() {
+  void eachMessageIsEvaluated() {
     openCaptcha();
+    gate.onChat(ALICE, "wrong");
     gate.onChat(ALICE, "wrong");
     assertEquals(Verdict.HIDE_CORRECT, gate.onChat(ALICE, "ABC234"));
-    assertEquals(List.of("wrong", "correct"), events);
-  }
-
-  @Test
-  void sameMessageAfterTheWindowIsEvaluatedAgain() {
-    openCaptcha();
-    gate.onChat(ALICE, "wrong");
-    now.addAndGet(ChatGate.DEDUPE_WINDOW_MS);
-    gate.onChat(ALICE, "wrong");
-    assertEquals(List.of("wrong", "wrong"), events);
+    assertEquals(List.of("wrong", "wrong", "correct"), events);
   }
 }

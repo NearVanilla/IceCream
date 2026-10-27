@@ -72,6 +72,18 @@ public final class AfkTracker {
     return true;
   }
 
+  /**
+   * Treats the player as inactive for at least {@code timeoutMs}, so they are due straight away.
+   *
+   * @return false when the player is not tracked or already has a captcha open
+   */
+  public boolean markIdle(UUID playerId, long timeoutMs) {
+    Session session = sessions.get(playerId);
+    if (session == null || session.challenge.get() != null) return false;
+    session.lastActiveMs = Math.min(session.lastActiveMs, clock.getAsLong() - timeoutMs);
+    return true;
+  }
+
   /** Returns how long the player has been inactive, or 0 when they are not tracked. */
   public long idleMs(UUID playerId) {
     Session session = sessions.get(playerId);

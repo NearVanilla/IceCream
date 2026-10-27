@@ -1,6 +1,6 @@
 package com.nearvanilla.iceCream.modules.antiAfk.events;
 
-import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkModule;
+import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkManager;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -27,35 +27,36 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 /**
- * Feeds deliberate player input to the anti-AFK module. Passive movement (water, vehicles, pistons)
- * is never counted. Cancelled events still count, because the player still pressed something.
+ * Feeds deliberate player input to the anti-AFK manager. Passive movement (water, vehicles,
+ * pistons) is never counted. Cancelled events still count, because the player still pressed
+ * something.
  *
  * @author 105hua
  * @version 1.0
  * @since 2026-10-27
- * @see AntiAfkModule
+ * @see AntiAfkManager
  */
 public class AntiAfkListener implements Listener {
-  private final AntiAfkModule module;
+  private final AntiAfkManager manager;
 
-  public AntiAfkListener(AntiAfkModule module) {
-    this.module = module;
+  public AntiAfkListener(AntiAfkManager manager) {
+    this.manager = manager;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onJoin(PlayerJoinEvent event) {
-    module.startTracking(event.getPlayer());
+    manager.startTracking(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onQuit(PlayerQuitEvent event) {
-    module.stopTracking(event.getPlayer());
+    manager.stopTracking(event.getPlayer());
   }
 
   // LOWEST so the answer is cancelled before chat plugins format or send it.
   @EventHandler(priority = EventPriority.LOWEST)
   public void onChat(AsyncChatEvent event) {
-    if (module.shouldHideChat(event.getPlayer(), event.originalMessage())) {
+    if (manager.shouldHideChat(event.getPlayer(), event.originalMessage())) {
       event.setCancelled(true);
       event.viewers().clear();
     }
@@ -63,37 +64,37 @@ public class AntiAfkListener implements Listener {
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onInput(PlayerInputEvent event) {
-    module.markActive(event.getPlayer());
+    manager.markActive(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onCommand(PlayerCommandPreprocessEvent event) {
-    module.markActive(event.getPlayer());
+    manager.markActive(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onInventoryClick(InventoryClickEvent event) {
-    if (event.getWhoClicked() instanceof Player player) module.markActive(player);
+    if (event.getWhoClicked() instanceof Player player) manager.markActive(player);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onInventoryDrag(InventoryDragEvent event) {
-    if (event.getWhoClicked() instanceof Player player) module.markActive(player);
+    if (event.getWhoClicked() instanceof Player player) manager.markActive(player);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onItemHeld(PlayerItemHeldEvent event) {
-    module.markActive(event.getPlayer());
+    manager.markActive(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onSwapHands(PlayerSwapHandItemsEvent event) {
-    module.markActive(event.getPlayer());
+    manager.markActive(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onDrop(PlayerDropItemEvent event) {
-    module.markActive(event.getPlayer());
+    manager.markActive(event.getPlayer());
   }
 
   // Only the main hand counts, otherwise the two hands' events would alternate and always look new.
@@ -103,14 +104,14 @@ public class AntiAfkListener implements Listener {
     Block block = event.getClickedBlock();
     String target = block == null ? "-" : block.getX() + "," + block.getY() + "," + block.getZ();
     String item = event.getItem() == null ? "-" : event.getItem().getType().name();
-    module.markInteraction(event.getPlayer(), event.getAction() + "|" + target + "|" + item);
+    manager.markInteraction(event.getPlayer(), event.getAction() + "|" + target + "|" + item);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onInteractEntity(PlayerInteractEntityEvent event) {
     if (event.getHand() != EquipmentSlot.HAND) return;
     Player player = event.getPlayer();
-    module.markInteraction(
+    manager.markInteraction(
         player,
         "ENTITY|"
             + event.getRightClicked().getType()
@@ -120,27 +121,27 @@ public class AntiAfkListener implements Listener {
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onRespawn(PlayerRespawnEvent event) {
-    module.markActive(event.getPlayer());
-    module.resetView(event.getPlayer());
+    manager.markActive(event.getPlayer());
+    manager.resetView(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onTeleport(PlayerTeleportEvent event) {
-    module.resetView(event.getPlayer());
+    manager.resetView(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onChangedWorld(PlayerChangedWorldEvent event) {
-    module.resetView(event.getPlayer());
+    manager.resetView(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onMount(EntityMountEvent event) {
-    if (event.getEntity() instanceof Player player) module.resetView(player);
+    if (event.getEntity() instanceof Player player) manager.resetView(player);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   public void onDismount(EntityDismountEvent event) {
-    if (event.getEntity() instanceof Player player) module.resetView(player);
+    if (event.getEntity() instanceof Player player) manager.resetView(player);
   }
 }

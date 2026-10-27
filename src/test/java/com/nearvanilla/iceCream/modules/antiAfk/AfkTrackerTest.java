@@ -114,6 +114,29 @@ class AfkTrackerTest {
   }
 
   @Test
+  void markingIdleMakesThePlayerDueImmediately() {
+    assertTrue(tracker.markIdle(ALICE, TIMEOUT));
+    assertTrue(tracker.isDue(ALICE, TIMEOUT));
+    assertEquals(TIMEOUT, tracker.idleMs(ALICE));
+  }
+
+  @Test
+  void markingIdleNeverShortensTheIdleTime() {
+    now.addAndGet(TIMEOUT * 3);
+    assertTrue(tracker.markIdle(ALICE, TIMEOUT));
+    assertEquals(TIMEOUT * 3, tracker.idleMs(ALICE));
+  }
+
+  @Test
+  void markingIdleFailsWithAnOpenCaptchaOrUntrackedPlayer() {
+    now.addAndGet(TIMEOUT);
+    tracker.issue(ALICE, "ABC234", WINDOW);
+    assertFalse(tracker.markIdle(ALICE, TIMEOUT));
+    tracker.remove(ALICE);
+    assertFalse(tracker.markIdle(ALICE, TIMEOUT));
+  }
+
+  @Test
   void removeDropsAllState() {
     now.addAndGet(TIMEOUT);
     tracker.issue(ALICE, "ABC234", WINDOW);

@@ -10,9 +10,9 @@ import java.util.List;
 import org.bukkit.inventory.MerchantRecipe;
 
 /**
- * WanderingTradesModule is a module that adds "Mini Blocks" to wandering traders upon spawning. It
- * registers the event "WanderingTradesCreatureSpawnEvent" to handle the spawning of wandering
- * traders and populates their trades with custom heads.
+ * WanderingTradesModule is a module that adds "Mini Blocks" to wandering traders upon spawning and,
+ * optionally, as stonecutter recipes. It registers the event "WanderingTradesCreatureSpawnEvent" to
+ * handle the spawning of wandering traders and populates their trades with custom heads.
  *
  * @author Demonstrations
  * @version 1.0
@@ -57,10 +57,15 @@ public class WanderingTradesModule implements Module {
         registerEvents();
 
         // Load head trades from the JSON file in the JAR.
+        List<HeadTradeData> trades;
         try (InputStream in = IceCream.instance.getResource("data/wandering_trades.json")) {
           if (in == null)
             throw new FileNotFoundException("Failed to copy Wandering Trades config from JAR.");
-          HeadUtils.loadHeadTrades(in);
+          trades = HeadUtils.loadHeadTrades(in);
+        }
+
+        if (IceCream.config.getBoolean("modules.wanderingtrades.stonecutter", true)) {
+          HeadUtils.registerStonecutterRecipes(trades);
         }
 
         isEnabled = true;
@@ -72,5 +77,11 @@ public class WanderingTradesModule implements Module {
     } else {
       IceCream.logger.info("Wandering Trades module is disabled.");
     }
+  }
+
+  /** Removes the module's stonecutter recipes. */
+  public void unregister() {
+    HeadUtils.unregisterStonecutterRecipes();
+    isEnabled = false;
   }
 }

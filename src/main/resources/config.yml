@@ -47,6 +47,7 @@ modules:
     enabled: true
     min-heads: 5
     max-heads: 10
+    stonecutter: true
   staffmode:
     enabled: true
   spectator:

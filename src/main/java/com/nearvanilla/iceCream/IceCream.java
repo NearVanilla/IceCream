@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream;
 
+import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkModule;
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
 import com.nearvanilla.iceCream.modules.deathDb.DeathDbModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
@@ -55,6 +56,7 @@ public final class IceCream extends JavaPlugin {
   public static PaperCommandManager<CommandSourceStack> commandManager;
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
+  private final AntiAfkModule antiAfkModule = new AntiAfkModule();
   private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
       new BonemealableSporeBlossomsModule();
   private final DeathDbModule deathDbModule = new DeathDbModule();
@@ -117,6 +119,8 @@ public final class IceCream extends JavaPlugin {
     wanderingTradesModule.register();
     staffModeModule.register();
     spectatorModule.register();
+    // After spectator, which creates the key used to skip spectating players.
+    antiAfkModule.register();
     flightModule.register();
     readOnlyLecternModule.register();
     worldTourModule.register();
@@ -130,6 +134,7 @@ public final class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    antiAfkModule.unregister();
     deathDbModule.unregister();
     flightModule.unregister();
     mapToolsModule.unregister();

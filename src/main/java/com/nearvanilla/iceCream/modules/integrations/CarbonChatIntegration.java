@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import net.draycia.carbon.api.CarbonChat;
 import net.draycia.carbon.api.CarbonChatProvider;
@@ -14,13 +15,15 @@ import net.draycia.carbon.api.event.events.CarbonPrivateChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
  * Shared integration with CarbonChat to restrict hidden players (spectating or vanished) to allowed
  * chat channels only. Each module holds its own instance configured with the appropriate config
- * prefix, hidden-state check, and display name for error messages.
+ * prefix, hidden-state check, and display name for error messages. Modules can also use {@link
+ * #initChatFilter(BiPredicate)} on its own to cancel chosen messages.
  *
  * <p>Originally implemented by Dynant as part of {@link
  * com.nearvanilla.iceCream.modules.vanish.integrations}, generalized here for reuse across modules.
@@ -33,6 +36,7 @@ import org.bukkit.entity.Player;
 public class CarbonChatIntegration {
 
   private CarbonEventSubscription<CarbonChatEvent> subscription = null;
+  private CarbonEventSubscription<CarbonChatEvent> filterSubscription = null;
   private CarbonEventSubscription<CarbonPrivateChatEvent> privateMessageSubscription = null;
   private CarbonChat carbonChat = null;
   private final Set<String> allowedChannels = new HashSet<>();
@@ -66,11 +70,51 @@ public class CarbonChatIntegration {
     }
   }
 
+  /**
+   * Cancels CarbonChat messages that a module wants to keep out of chat, if CarbonChat is present.
+   * This does not need {@link #init(String, Predicate, String)}. The subscription is disposed by
+   * {@link #cleanup()}.
+   *
+   * @param shouldCancel returns true when the message from the given player, as plain text, should
+   *     be cancelled
+   */
+  public void initChatFilter(BiPredicate<UUID, String> shouldCancel) {
+    if (Bukkit.getPluginManager().getPlugin("CarbonChat") == null) {
+      IceCream.logger.info("CarbonChat not found, skipping chat filter.");
+      return;
+    }
+    if (filterSubscription != null) {
+      return;
+    }
+
+    try {
+      filterSubscription =
+          CarbonChatProvider.carbonChat()
+              .eventHandler()
+              .subscribe(
+                  CarbonChatEvent.class,
+                  event -> {
+                    String text =
+                        PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
+                    if (shouldCancel.test(event.sender().uuid(), text)) {
+                      event.cancelled(true);
+                    }
+                  });
+      IceCream.logger.info("CarbonChat chat filter enabled.");
+    } catch (Exception e) {
+      IceCream.logger.warning("Failed to hook into CarbonChat: " + e.getMessage());
+    }
+  }
+
   /** Unregisters the CarbonChat event subscriptions. */
   public void cleanup() {
     if (subscription != null) {
       subscription.dispose();
       subscription = null;
+    }
+    if (filterSubscription != null) {
+      filterSubscription.dispose();
+      filterSubscription = null;
     }
     if (privateMessageSubscription != null) {
       privateMessageSubscription.dispose();

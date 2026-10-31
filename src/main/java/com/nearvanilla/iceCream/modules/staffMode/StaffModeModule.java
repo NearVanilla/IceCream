@@ -3,12 +3,13 @@ package com.nearvanilla.iceCream.modules.staffMode;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.staffMode.commands.StaffModeCommand;
+import com.nearvanilla.iceCream.modules.staffMode.events.StaffModeFoodLevelChangeEvent;
 import com.nearvanilla.iceCream.modules.staffMode.events.StaffModePlayerJoinEvent;
 import org.bukkit.NamespacedKey;
 
 /**
- * StaffModeModule is a demonstration of how to create a module in the IceCream plugin. It registers
- * a simple command and an event listener that welcomes players when they join the server.
+ * Registers the staff mode command, restores staff flight on join, and prevents hunger loss while
+ * staff mode is enabled.
  *
  * @author Demonstrations
  * @version 1.0
@@ -64,6 +65,10 @@ public class StaffModeModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new StaffModePlayerJoinEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new StaffModeFoodLevelChangeEvent(), IceCream.instance);
   }
 
   @Override

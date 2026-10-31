@@ -26,6 +26,7 @@ import com.nearvanilla.iceCream.modules.vineGrowth.VineGrowthModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
+import com.nearvanilla.iceCream.utils.ConfigUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -96,12 +97,8 @@ public final class IceCream extends JavaPlugin {
             .buildOnEnable(this);
     annotationParser = new AnnotationParser<>(commandManager, CommandSourceStack.class);
     this.saveDefaultConfig();
-    config = this.getConfig();
-    if (config.contains("modules.vanish")) {
-      logger.warning(
-          "Detected deprecated 'modules.vanish' config section. This module has been"
-              + " removed. Please remove this section from your config.");
-    }
+    config = ConfigUtils.addMissingDefaults(this);
+    ConfigUtils.warnUnknownModules(this);
     // Register modules
     bonemealableSporeBlossomsModule.register();
     deathDbModule.register();

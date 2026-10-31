@@ -91,7 +91,10 @@ public class WanderfulItems {
       recipe.shape(shapeList.toArray(new String[0]));
 
       if (ingredientsConfig != null) {
+        String shape = String.join("", shapeList);
         for (String key : ingredientsConfig.getKeys(false)) {
+          // Skip symbols not in the shape, such as a default ingredient added back to the config.
+          if (shape.indexOf(key.charAt(0)) < 0) continue;
           String materialName = ingredientsConfig.getString(key);
           Material material = Material.valueOf(materialName);
           recipe.setIngredient(key.charAt(0), material);

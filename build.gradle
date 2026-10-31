@@ -37,6 +37,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    testImplementation("io.papermc.paper:paper-api:26.3.build.200-stable")
 }
 
 def targetJavaVersion = 25

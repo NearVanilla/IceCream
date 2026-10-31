@@ -35,7 +35,7 @@ Under `modules.antiafk` in `config.yml`:
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `true` | Turns the module on or off |
-| `timeout-minutes` | `300` | Minutes without activity before the code appears (at least 1) |
+| `timeout-minutes` | `300` | Minutes without activity before the code appears (at least 0.25, which is 15 seconds) |
 | `answer-seconds` | `60` | Seconds to type the code (15 to 600) |
 | `code-length` | `6` | Characters in the code (4 to 12) |
 | `min-rotation-degrees` | `20` | How far the camera must turn to count (1 to 180) |

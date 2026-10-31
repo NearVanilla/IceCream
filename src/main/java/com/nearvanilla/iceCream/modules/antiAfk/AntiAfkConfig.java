@@ -34,7 +34,7 @@ public record AntiAfkConfig(
    * @return the settings, or null when a value is invalid (the reason is logged)
    */
   public static AntiAfkConfig load() {
-    Double timeoutMinutes = readNumber("timeout-minutes", 300, 1, Double.MAX_VALUE);
+    Double timeoutMinutes = readNumber("timeout-minutes", 300, 0.25, Double.MAX_VALUE);
     Double answerSeconds = readNumber("answer-seconds", 60, 15, 600);
     Double codeLength = readNumber("code-length", 6, 4, 12);
     Double rotation = readNumber("min-rotation-degrees", 20, 1, 180);

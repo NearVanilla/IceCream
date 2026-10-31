@@ -1,7 +1,7 @@
 modules:
   antiafk:
     enabled: true
-    # Minutes without deliberate input before the captcha appears. 300 = 5 hours.
+    # Minutes without deliberate input before the captcha appears (at least 0.25). 300 = 5 hours.
     timeout-minutes: 300
     # Seconds to type the code before being kicked (15 to 600).
     answer-seconds: 60

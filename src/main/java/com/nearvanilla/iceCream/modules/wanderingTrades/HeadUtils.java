@@ -4,39 +4,48 @@ import static com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesMo
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.libs.JsonLoader;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.inventory.meta.SkullMeta;
 import tools.jackson.core.type.TypeReference;
 
 /**
  * HeadUtils is a utility class for managing custom player heads. It provides methods to load head
- * trades and create custom heads with specified properties such as display name, texture, and
- * amount.
+ * trades, register stonecutter recipes, and create custom heads with specified properties such as
+ * display name, texture, and amount.
  *
  * @author Demonstrations
  * @version 1.0
  * @since 2025-08-17
  */
 public final class HeadUtils {
+  private static final List<NamespacedKey> stonecutterRecipeKeys = new ArrayList<>();
+
   private HeadUtils() {}
 
   /**
    * Loads head trades from the input stream and populates the head trade pool.
    *
    * @param input The input stream containing head trade data in JSON format.
+   * @return The parsed head trade data.
    * @throws Exception If an error occurs while loading the head trades.
    */
-  public static void loadHeadTrades(InputStream input) throws Exception {
+  public static List<HeadTradeData> loadHeadTrades(InputStream input) throws Exception {
     List<HeadTradeData> trades = JsonLoader.load(input, new TypeReference<>() {});
     headTradePool.clear();
     for (HeadTradeData data : trades) {
@@ -47,6 +56,41 @@ public final class HeadUtils {
       if (secondary != null) recipe.addIngredient(new ItemStack(secondary, 1));
       headTradePool.add(recipe);
     }
+    return trades;
+  }
+
+  /**
+   * Registers a stonecutter recipe for every head trade, turning the trade's secondary cost block
+   * into the same heads the wandering trader sells.
+   *
+   * @param trades The head trade data returned by {@link #loadHeadTrades}.
+   */
+  public static void registerStonecutterRecipes(List<HeadTradeData> trades) {
+    unregisterStonecutterRecipes();
+    for (HeadTradeData data : trades) {
+      Material block = Material.matchMaterial(data.secondaryCost);
+      if (block == null) {
+        IceCream.logger.warning(
+            "Skipping stonecutter recipe for "
+                + data.name
+                + ": unknown block "
+                + data.secondaryCost);
+        continue;
+      }
+      String id =
+          "miniblock/"
+              + data.name.replace("\"", "").toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "_");
+      NamespacedKey key = new NamespacedKey(IceCream.instance, id);
+      ItemStack head = createCustomHead(data.name, data.texture, data.headCount);
+      if (Bukkit.addRecipe(new StonecuttingRecipe(key, head, block)))
+        stonecutterRecipeKeys.add(key);
+    }
+  }
+
+  /** Removes all stonecutter recipes registered by {@link #registerStonecutterRecipes}. */
+  public static void unregisterStonecutterRecipes() {
+    for (NamespacedKey key : stonecutterRecipeKeys) Bukkit.removeRecipe(key);
+    stonecutterRecipeKeys.clear();
   }
 
   /**
@@ -72,7 +116,10 @@ public final class HeadUtils {
     TextComponent headName =
         Component.text(displayName.replace("\"", "")).decoration(TextDecoration.ITALIC, false);
     meta.customName(headName);
-    PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+    // Derive the UUID from the texture so heads from different sources and restarts stack.
+    PlayerProfile profile =
+        Bukkit.createProfile(
+            UUID.nameUUIDFromBytes(textureBase64.getBytes(StandardCharsets.UTF_8)));
     profile.setProperty(new ProfileProperty("textures", textureBase64));
     meta.setPlayerProfile(profile);
     head.setItemMeta(meta);

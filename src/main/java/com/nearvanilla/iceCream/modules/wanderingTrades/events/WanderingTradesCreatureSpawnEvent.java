@@ -3,6 +3,7 @@ package com.nearvanilla.iceCream.modules.wanderingTrades.events;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.wanderingTrades.HeadUtils;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.bukkit.entity.WanderingTrader;
@@ -53,10 +54,11 @@ public class WanderingTradesCreatureSpawnEvent implements Listener {
       return;
     }
 
-    for (int i = 0; i < headTrades; i++) {
-      int randomIndex = ThreadLocalRandom.current().nextInt(pool.size());
-      MerchantRecipe randomHeadTrade = pool.get(randomIndex);
-      trades.addFirst(randomHeadTrade);
+    // Shuffle a copy so each head trade is offered at most once.
+    List<MerchantRecipe> shuffled = new ArrayList<>(pool);
+    Collections.shuffle(shuffled, ThreadLocalRandom.current());
+    for (MerchantRecipe headTrade : shuffled.subList(0, Math.min(headTrades, shuffled.size()))) {
+      trades.addFirst(headTrade);
     }
     trader.setRecipes(trades);
   }

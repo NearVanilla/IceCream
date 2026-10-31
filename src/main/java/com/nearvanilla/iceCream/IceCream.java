@@ -137,5 +137,6 @@ public final class IceCream extends JavaPlugin {
     onePlayerSleepModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();
+    wanderingTradesModule.unregister();
   }
 }

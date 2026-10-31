@@ -24,8 +24,10 @@ repositories {
     }
 }
 
+def paperApi = "io.papermc.paper:paper-api:26.3.build.200-stable"
+
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.3.build.200-stable")
+    compileOnly(paperApi)
     implementation("org.incendo:cloud-paper:2.0.1")
     implementation("org.incendo:cloud-annotations:2.1.0")
     implementation("tools.jackson.core:jackson-core:3.2.1")
@@ -37,6 +39,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    testImplementation(paperApi)
 }
 
 def targetJavaVersion = 25

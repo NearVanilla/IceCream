@@ -7,7 +7,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 
 /**
- * Suppresses advancement broadcast messages for players in spectator mode.
+ * Suppresses advancement broadcast messages for players in spectator mode, as a backstop for
+ * advancements that complete without a cancellable criterion grant.
  *
  * @author 105hua
  * @version 1.0

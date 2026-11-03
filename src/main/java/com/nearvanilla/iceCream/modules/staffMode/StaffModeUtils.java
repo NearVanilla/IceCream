@@ -25,6 +25,21 @@ import org.bukkit.persistence.PersistentDataType;
 public class StaffModeUtils {
 
   /**
+   * Checks whether a player currently has staff mode enabled.
+   *
+   * @param player The player to check.
+   * @return true if staff mode is enabled for the player, false if it is not or the staff mode keys
+   *     have not been initialized yet.
+   */
+  public static boolean isInStaffMode(Player player) {
+    return StaffModeModule.STAFF_MODE_TOGGLE_KEY != null
+        && Boolean.TRUE.equals(
+            player
+                .getPersistentDataContainer()
+                .get(StaffModeModule.STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN));
+  }
+
+  /**
    * Serializes a players inventory to a byte array and saves it into the players PDC.
    *
    * @param inventory The inventory to be serialized.

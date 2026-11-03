@@ -10,4 +10,5 @@
 - Do not use HTML tags anywhere in documentation. Standard Markdown and plain text must be used exclusively. The only exception is JavaDocs where HTML is explicitly supported and commonly required. HTML reduces readability in raw files, creates formatting inconsistencies, and may render unpredictably across tooling and documentation platforms.
 - Documentation should remain clean, portable, and readable in plain text form. All formatting decisions should prioritize compatibility with Markdown tooling, Git diffs, IDE previews, and static site generators.
 - New modules do not need to be documented in `ARCHITECTURE.md`.
+- Run `./gradlew build` (which runs the tests) right before committing, and check that no tests were skipped. MockBukkit skips tests that hit unimplemented methods instead of failing them.
 

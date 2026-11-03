@@ -25,6 +25,11 @@ repositories {
 }
 
 def paperApi = "io.papermc.paper:paper-api:26.3.build.200-stable"
+def mockito = "org.mockito:mockito-core:5.24.0"
+
+configurations {
+    mockitoAgent
+}
 
 dependencies {
     compileOnly(paperApi)
@@ -40,6 +45,11 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.xerial:sqlite-jdbc:3.49.1.0")
     testImplementation(paperApi)
+    testImplementation(mockito)
+    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.3:4.119.0")
+    mockitoAgent(mockito) {
+        transitive = false
+    }
 }
 
 def targetJavaVersion = 25
@@ -83,6 +93,8 @@ runServer {
 
 test {
     useJUnitPlatform()
+    // Resolve the agent path lazily, only when tests actually run.
+    jvmArgumentProviders.add({ ["-javaagent:${configurations.mockitoAgent.asPath}".toString()] } as CommandLineArgumentProvider)
 }
 
 shadowJar {

@@ -1,6 +1,6 @@
 package com.nearvanilla.iceCream.modules.staffMode.events;
 
-import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
+import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
@@ -8,8 +8,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 /**
  * Restores flight and reminds players whose persisted staff mode is enabled when they join.
@@ -39,9 +37,7 @@ public class StaffModePlayerJoinEvent implements Listener {
   @EventHandler(priority = EventPriority.HIGHEST)
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
-    PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-    if (Boolean.TRUE.equals(
-        playerContainer.get(StaffModeModule.STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN))) {
+    if (StaffModeUtils.isInStaffMode(player)) {
       player.setAllowFlight(true);
       player.setFlying(true);
       player.sendMessage(staffModeMutedReminderComponent);

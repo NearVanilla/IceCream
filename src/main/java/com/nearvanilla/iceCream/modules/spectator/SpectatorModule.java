@@ -6,6 +6,7 @@ import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
 import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.modules.spectator.commands.SpectatorCommand;
+import com.nearvanilla.iceCream.modules.spectator.events.SpectatorAdvancementCriterionGrantEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerQuitEvent;
@@ -69,6 +70,10 @@ public class SpectatorModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new SpectatorPlayerQuitEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new SpectatorAdvancementCriterionGrantEvent(), IceCream.instance);
     IceCream.instance
         .getServer()
         .getPluginManager()

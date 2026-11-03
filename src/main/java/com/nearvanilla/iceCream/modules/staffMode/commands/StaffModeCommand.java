@@ -58,12 +58,7 @@ public class StaffModeCommand {
       commandSourceStack.getSender().sendMessage("This command can only be used by players.");
       return;
     }
-    PersistentDataContainer pdc = player.getPersistentDataContainer();
-
-    boolean isStaffModeEnabled =
-        Boolean.TRUE.equals(pdc.get(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN));
-
-    if (!pdc.has(STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN) || !isStaffModeEnabled) {
+    if (!StaffModeUtils.isInStaffMode(player)) {
       enableStaffMode(player);
     } else {
       disableStaffMode(player);

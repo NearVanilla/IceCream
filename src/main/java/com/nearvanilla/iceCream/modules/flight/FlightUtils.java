@@ -1,6 +1,6 @@
 package com.nearvanilla.iceCream.modules.flight;
 
-import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
+import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -17,11 +17,7 @@ public class FlightUtils {
   public static boolean hasOtherFlight(Player player) {
     return player.getGameMode() == GameMode.CREATIVE
         || player.getGameMode() == GameMode.SPECTATOR
-        || (StaffModeModule.STAFF_MODE_TOGGLE_KEY != null
-            && player
-                .getPersistentDataContainer()
-                .getOrDefault(
-                    StaffModeModule.STAFF_MODE_TOGGLE_KEY, PersistentDataType.BOOLEAN, false));
+        || StaffModeUtils.isInStaffMode(player);
   }
 
   public static void setEnabled(Player player, boolean enabled) {

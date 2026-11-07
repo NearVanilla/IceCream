@@ -12,6 +12,8 @@ import static com.nearvanilla.iceCream.modules.staffMode.StaffModeModule.STAFF_M
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.flight.FlightUtils;
+import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
+import com.nearvanilla.iceCream.modules.spectator.SpectatorUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
@@ -42,6 +44,10 @@ public class StaffModeCommand {
   protected final Component staffModeDisabled =
       MiniMessage.miniMessage().deserialize("<red>Staff mode has been disabled.</red>");
 
+  protected final Component staffModeBlockedBySpectator =
+      MiniMessage.miniMessage()
+          .deserialize("<red>You cannot toggle staff mode while in spectator mode.</red>");
+
   /**
    * The logic for the staff mode command, toggling staff mode for the player who executed it and
    * sending them a message.
@@ -56,6 +62,10 @@ public class StaffModeCommand {
   public void staffModeCommand(CommandSourceStack commandSourceStack) {
     if (!(commandSourceStack.getSender() instanceof Player player)) {
       commandSourceStack.getSender().sendMessage("This command can only be used by players.");
+      return;
+    }
+    if (SpectatorModule.SPECTATOR_TOGGLE_KEY != null && SpectatorUtils.isInSpectatorMode(player)) {
+      player.sendMessage(staffModeBlockedBySpectator);
       return;
     }
     if (!StaffModeUtils.isInStaffMode(player)) {

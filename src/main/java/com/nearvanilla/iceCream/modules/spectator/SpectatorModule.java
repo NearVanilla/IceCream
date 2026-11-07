@@ -11,6 +11,7 @@ import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancem
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerQuitEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPrivateMessageCommandEvent;
+import com.nearvanilla.iceCream.modules.spectator.events.SpectatorTabCompleteEvent;
 import org.bukkit.NamespacedKey;
 
 /**
@@ -82,6 +83,10 @@ public class SpectatorModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new SpectatorPrivateMessageCommandEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new SpectatorTabCompleteEvent(), IceCream.instance);
   }
 
   @Override

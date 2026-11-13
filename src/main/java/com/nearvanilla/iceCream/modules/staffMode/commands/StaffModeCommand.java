@@ -55,7 +55,7 @@ public class StaffModeCommand {
    * @param commandSourceStack The command source stack, containing a sender, executor and location,
    *     where applicable.
    */
-  @Command("staffmode|staff|sm")
+  @Command("staffmode|sm")
   @CommandDescription("Toggles staff mode.")
   @Permission("icecream.modules.staffmode.staffmode")
   @SuppressWarnings("unused")

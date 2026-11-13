@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream.modules.spectator.commands;
 
 import com.nearvanilla.iceCream.modules.spectator.SpectatorUtils;
+import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -25,8 +26,14 @@ public class SpectatorCommand {
   protected final Component spectatorDisabled =
       MiniMessage.miniMessage().deserialize("<red>You are no longer in spectator mode.</red>");
 
+  protected final Component spectatorBlockedByStaffMode =
+      MiniMessage.miniMessage()
+          .deserialize("<red>You cannot enter spectator mode while in staff mode.</red>");
+
   /**
-   * Toggles spectator mode for the player who executed the command.
+   * Toggles spectator mode for the player who executed the command. Entering spectator mode is
+   * refused while the player is in staff mode, because staff mode has cleared their inventory and
+   * the two saved states are easy to mistake for item loss.
    *
    * @param commandSourceStack The command source stack containing the sender.
    */
@@ -40,13 +47,19 @@ public class SpectatorCommand {
       return;
     }
 
-    boolean isInSpectatorMode = SpectatorUtils.isInSpectatorMode(player);
-
-    if (isInSpectatorMode) {
+    if (SpectatorUtils.isInSpectatorMode(player)) {
+      // Leaving is always allowed. /staffmode is blocked while spectating, so a player who is
+      // already in both modes would otherwise have no way out.
       disableSpectator(player);
-    } else {
-      enableSpectator(player);
+      return;
     }
+
+    if (StaffModeUtils.isInStaffMode(player)) {
+      player.sendMessage(spectatorBlockedByStaffMode);
+      return;
+    }
+
+    enableSpectator(player);
   }
 
   /**

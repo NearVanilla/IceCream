@@ -79,6 +79,85 @@ processResources {
     }
 }
 
+// Runs git and returns its output, or null when git is missing or the command fails, so a build
+// outside a git checkout still succeeds.
+def gitOutput = { String... args ->
+    try {
+        def execution = providers.exec {
+            commandLine(['git'] + args.toList())
+            ignoreExitValue = true
+        }
+        return execution.result.get().exitValue == 0 ? execution.standardOutput.asText.get().trim() : null
+    } catch (Exception ignored) {
+        return null
+    }
+}
+
+// Picks the first value that is set, falling back to "unknown". Closures are only called when
+// reached, so git is not run for a value that has an override.
+def firstKnown = { Object... candidates ->
+    for (candidate in candidates) {
+        def value = candidate instanceof Closure ? candidate() : candidate
+        if (value != null && !value.toString().isBlank()) {
+            return value.toString()
+        }
+    }
+    return 'unknown'
+}
+
+def env = { String name -> providers.environmentVariable(name).orNull }
+
+// Supplies the build time when the task runs, so a reused configuration cache cannot freeze it.
+abstract class BuildTimeSource implements org.gradle.api.provider.ValueSource<String, org.gradle.api.provider.ValueSourceParameters.None> {
+    @Override
+    String obtain() {
+        return java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
+    }
+}
+
+// Describes the build inside the JAR, read at runtime by the info module.
+def buildInfoDir = layout.buildDirectory.dir('generated/build-info')
+def generateBuildInfo = tasks.register('generateBuildInfo', WriteProperties) {
+    destinationFile = buildInfoDir.map { it.file('build-info.properties') }
+    property('version', providers.provider { project.version.toString() })
+    property('build.number', providers.provider {
+        firstKnown(findProperty('buildNumber'), env('GITHUB_RUN_NUMBER'), 'local')
+    })
+    property('build.time', providers.of(BuildTimeSource) {})
+    // Git comes before GITHUB_SHA so the id always matches the subject and time, which only git
+    // can supply.
+    property('git.commit.id', providers.provider {
+        firstKnown(findProperty('gitCommitId'), { gitOutput('rev-parse', 'HEAD') }, env('GITHUB_SHA'))
+    })
+    property('git.commit.subject', providers.provider {
+        firstKnown(findProperty('gitCommitSubject'), { gitOutput('log', '-1', '--format=%s') })
+    })
+    property('git.commit.time', providers.provider {
+        firstKnown(findProperty('gitCommitTime'), { gitOutput('log', '-1', '--format=%cI') })
+    })
+    property('git.branch', providers.provider {
+        // symbolic-ref fails on a detached HEAD, which leaves the branch unknown instead of "HEAD".
+        firstKnown(findProperty('gitBranch'), env('GITHUB_HEAD_REF'), env('GITHUB_REF_NAME'),
+                { gitOutput('symbolic-ref', '--short', '-q', 'HEAD') })
+    })
+    property('git.dirty', providers.provider {
+        def status = gitOutput('status', '--porcelain')
+        status == null ? 'unknown' : (!status.isEmpty()).toString()
+    })
+}
+
+// Part of the main output, so the JARs and the tests all see the same generated file.
+sourceSets.main.output.dir(buildInfoDir, builtBy: generateBuildInfo)
+
+// The build time changes on every build. Ignoring it here stops that from rerunning the tests.
+normalization {
+    runtimeClasspath {
+        properties('**/build-info.properties') {
+            ignoreProperty('build.time')
+        }
+    }
+}
+
 runServer {
     minecraftVersion("26.3")
     jvmArgs("-Dcom.mojang.eula.agree=true")

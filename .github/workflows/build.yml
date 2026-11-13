@@ -24,6 +24,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # On pull requests, build the PR's own head commit instead of GitHub's temporary merge
+          # commit, so "/icecream info" reports a commit that exists on the PR branch.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up JDK
         uses: actions/setup-java@v4

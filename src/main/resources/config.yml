@@ -66,6 +66,8 @@ modules:
     require-player-kill: true
   isslimechunk:
     enabled: true
+  info:
+    enabled: true
   wanderingtrades:
     enabled: true
     min-heads: 5

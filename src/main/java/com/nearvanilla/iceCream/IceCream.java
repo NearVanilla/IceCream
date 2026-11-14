@@ -23,6 +23,7 @@ import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
 import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
+import com.nearvanilla.iceCream.modules.trialVaultReset.TrialVaultResetModule;
 import com.nearvanilla.iceCream.modules.vineGrowth.VineGrowthModule;
 import com.nearvanilla.iceCream.modules.wanderful.WanderfulModule;
 import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
@@ -85,6 +86,7 @@ public final class IceCream extends JavaPlugin {
   private final OnePlayerSleepModule onePlayerSleepModule = new OnePlayerSleepModule();
   private final LootContainerProtectionModule lootContainerProtectionModule =
       new LootContainerProtectionModule();
+  private final TrialVaultResetModule trialVaultResetModule = new TrialVaultResetModule();
   private final VineGrowthModule vineGrowthModule = new VineGrowthModule();
   private final MapToolsModule mapToolsModule = new MapToolsModule();
 
@@ -128,6 +130,7 @@ public final class IceCream extends JavaPlugin {
     playerSeenModule.register();
     onePlayerSleepModule.register();
     lootContainerProtectionModule.register();
+    trialVaultResetModule.register();
     vineGrowthModule.register();
     mapToolsModule.register();
   }
@@ -139,6 +142,7 @@ public final class IceCream extends JavaPlugin {
     flightModule.unregister();
     mapToolsModule.unregister();
     lootContainerProtectionModule.unregister();
+    trialVaultResetModule.unregister();
     onePlayerSleepModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();

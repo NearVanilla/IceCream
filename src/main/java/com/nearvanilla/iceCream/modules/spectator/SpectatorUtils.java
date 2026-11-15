@@ -153,6 +153,22 @@ public class SpectatorUtils {
   }
 
   /**
+   * Records when the given player was hidden by spectator mode, unless a time is already stored.
+   * An earlier stored time is kept, because auto spectator stores the player's quit time before
+   * spectator mode is enabled on join.
+   *
+   * @param player the player being hidden
+   * @param nowMillis the current time in epoch milliseconds
+   */
+  public static void recordHiddenSince(Player player, long nowMillis) {
+    if (getHiddenSince(player) > 0) return;
+
+    player
+        .getPersistentDataContainer()
+        .set(SpectatorModule.HIDDEN_SINCE_KEY, PersistentDataType.LONG, nowMillis);
+  }
+
+  /**
    * Returns whether the given player is allowed to send and receive private messages that would
    * otherwise be blocked by the spectator module's interception. Holders of the spectator toggle
    * permission are treated as staff and can communicate with spectating players.
@@ -243,12 +259,7 @@ public class SpectatorUtils {
       }
 
       // Record the moment others last saw them
-      player
-          .getPersistentDataContainer()
-          .set(
-              SpectatorModule.HIDDEN_SINCE_KEY,
-              PersistentDataType.LONG,
-              System.currentTimeMillis());
+      recordHiddenSince(player, System.currentTimeMillis());
     }
 
     // Set spectator state in PDC

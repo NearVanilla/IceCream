@@ -45,16 +45,19 @@ public class AutoSpectatorListener implements Listener {
   @EventHandler(priority = EventPriority.LOW)
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
-    if (!AutoSpectator.shouldAutoSpectate(player, System.currentTimeMillis())) return;
-
+    boolean autoSpectate = AutoSpectator.shouldAutoSpectate(player, System.currentTimeMillis());
     PersistentDataContainer data = player.getPersistentDataContainer();
+    Long lastQuit = data.get(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG);
+    // The quit time is only valid for this join. A crash records no quit, and a time left over from
+    // an earlier session would hide a player who was visible minutes before the crash.
+    data.remove(SpectatorModule.LAST_QUIT_KEY);
+    if (!autoSpectate) return;
+
     data.set(SpectatorModule.SPECTATOR_TOGGLE_KEY, PersistentDataType.BOOLEAN, true);
     // Others last saw this player when they quit, so /seen should report that time rather than
     // the moment they rejoined. enableSpectator keeps a hidden-since time that is already stored.
-    Long lastQuit = data.get(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG);
-    if (lastQuit != null) {
-      SpectatorUtils.recordHiddenSince(player, lastQuit);
-    }
+    // shouldAutoSpectate is only true when a quit time was stored.
+    SpectatorUtils.recordHiddenSince(player, lastQuit);
     player.sendMessage(autoSpectatorNotice);
   }
 

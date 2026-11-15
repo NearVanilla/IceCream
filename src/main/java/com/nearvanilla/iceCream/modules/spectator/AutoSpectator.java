@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream.modules.spectator;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -116,6 +117,18 @@ public final class AutoSpectator {
     player
         .getPersistentDataContainer()
         .set(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG, nowMillis);
+  }
+
+  /**
+   * Records a quit time for every online staff member. Called when the module shuts down, because
+   * Paper disables plugins before it removes players, so no quit event reaches the listener.
+   *
+   * @param nowMillis the current time in epoch milliseconds
+   */
+  public static void recordQuitForOnlinePlayers(long nowMillis) {
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      recordQuit(player, nowMillis);
+    }
   }
 
   /**

@@ -158,6 +158,27 @@ class AutoSpectatorTest {
   }
 
   @Test
+  void recordQuitForOnlinePlayersRecordsStaffOnly() {
+    // Paper disables plugins before players are removed at shutdown, so no quit event reaches the
+    // listener and the module records the time itself.
+    PlayerMock staff = server.addPlayer("Staff");
+    grantPermission(staff);
+    PlayerMock player = server.addPlayer("Player");
+
+    AutoSpectator.recordQuitForOnlinePlayers(NOW);
+
+    assertEquals(
+        NOW,
+        staff
+            .getPersistentDataContainer()
+            .get(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG));
+    assertFalse(
+        player
+            .getPersistentDataContainer()
+            .has(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG));
+  }
+
+  @Test
   void negativeOfflineMinutesFallsBackToDefault() {
     AutoSpectator.configure(true, -5);
 

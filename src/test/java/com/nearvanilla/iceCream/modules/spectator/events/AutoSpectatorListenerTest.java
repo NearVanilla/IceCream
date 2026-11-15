@@ -94,6 +94,30 @@ class AutoSpectatorListenerTest {
   }
 
   @Test
+  void joinClearsLastQuitSoACrashCannotReuseIt() {
+    // A crash records no quit, so a quit time left over from an earlier session would measure the
+    // time away from the wrong moment and hide a player who was visible minutes ago.
+    PlayerMock autoSpectated = staffAwayAWhile(true);
+    join(autoSpectated);
+
+    PlayerMock visible = server.addPlayer("Other");
+    visible.addAttachment(MockBukkit.createMockPlugin(), AutoSpectator.PERMISSION, true);
+    visible
+        .getPersistentDataContainer()
+        .set(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG, 1L);
+    join(visible);
+
+    assertFalse(
+        autoSpectated
+            .getPersistentDataContainer()
+            .has(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG));
+    assertFalse(
+        visible
+            .getPersistentDataContainer()
+            .has(SpectatorModule.LAST_QUIT_KEY, PersistentDataType.LONG));
+  }
+
+  @Test
   void joinLeavesNonOptedInPlayerAlone() {
     PlayerMock player = staffAwayAWhile(false);
 

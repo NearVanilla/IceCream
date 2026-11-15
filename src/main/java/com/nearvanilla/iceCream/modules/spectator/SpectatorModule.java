@@ -140,6 +140,8 @@ public class SpectatorModule implements Module {
   public void unregister() {
     if (!isEnabled) return;
 
+    // Paper disables plugins before it removes players, so the quit listener never sees a shutdown.
+    AutoSpectator.recordQuitForOnlinePlayers(System.currentTimeMillis());
     SpectatorUtils.cleanup();
   }
 }

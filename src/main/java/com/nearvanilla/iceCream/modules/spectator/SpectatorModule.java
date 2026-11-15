@@ -31,6 +31,8 @@ public class SpectatorModule implements Module {
   public static NamespacedKey MAP_WAS_HIDDEN_KEY;
   public static NamespacedKey PREVIOUS_LOCATION_KEY;
   public static NamespacedKey HIDDEN_SINCE_KEY;
+  public static NamespacedKey AUTO_SPECTATOR_KEY;
+  public static NamespacedKey LAST_QUIT_KEY;
 
   private DiscordSRVIntegration discordSRV;
   private CarbonChatIntegration carbonChat;
@@ -44,6 +46,8 @@ public class SpectatorModule implements Module {
         new NamespacedKey(IceCream.instance, "spectator.dynmap_hidden_before_spectator");
     PREVIOUS_LOCATION_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_location");
     HIDDEN_SINCE_KEY = new NamespacedKey(IceCream.instance, "spectator.hidden_since");
+    AUTO_SPECTATOR_KEY = new NamespacedKey(IceCream.instance, "spectator.auto_enabled");
+    LAST_QUIT_KEY = new NamespacedKey(IceCream.instance, "spectator.last_quit");
   }
 
   @Override
@@ -110,6 +114,8 @@ public class SpectatorModule implements Module {
             SpectatorUtils::isInSpectatorMode,
             SpectatorUtils::canBypassPrivateMessage,
             SpectatorUtils.getPrivateMessageOfflineMessage());
+
+        AutoSpectator.init();
 
         registerCommands();
         registerEvents();

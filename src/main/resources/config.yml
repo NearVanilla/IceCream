@@ -107,6 +107,13 @@ modules:
     max-distance: 5
   lootcontainerprotection:
     enabled: true
+  trialvaultreset:
+    enabled: true
+    # Minutes after looting a vault before a player can use a key to reset it. 1440 = 24 hours.
+    reset-delay-minutes: 1440
+    messages:
+      reset: '<green>This vault has been reset for you. Use your key again.</green>'
+      waiting: '<gray>You can reuse this vault in <white><time></white>.</gray>'
   wanderful:
     enabled: true
     item_frame:

@@ -1,10 +1,12 @@
 package com.nearvanilla.iceCream.modules.spectator.commands;
 
+import com.nearvanilla.iceCream.modules.spectator.AutoSpectator;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.annotations.Command;
 import org.incendo.cloud.annotations.CommandDescription;
@@ -29,6 +31,53 @@ public class SpectatorCommand {
   protected final Component spectatorBlockedByStaffMode =
       MiniMessage.miniMessage()
           .deserialize("<red>You cannot enter spectator mode while in staff mode.</red>");
+
+  protected final Component autoSpectatorDisabled =
+      MiniMessage.miniMessage().deserialize("<red>Auto spectator is off.</red>");
+
+  protected final Component autoSpectatorFeatureOff =
+      MiniMessage.miniMessage()
+          .deserialize(
+              "<gray>Auto spectator is turned off on this server, so this setting has no effect"
+                  + " for now.</gray>");
+
+  /**
+   * Builds the message confirming that auto spectator is on, including the configured offline time.
+   *
+   * @return the confirmation component
+   */
+  protected Component autoSpectatorEnabledMessage() {
+    return MiniMessage.miniMessage()
+        .deserialize(
+            "<aqua>Auto spectator is on. You will join in spectator mode after <minutes> minutes"
+                + " away.</aqua>",
+            Placeholder.unparsed(
+                "minutes", String.valueOf(AutoSpectator.getOfflineMillis() / 60_000L)));
+  }
+
+  /**
+   * Toggles auto spectator for the player who executed the command. When it is on, the player joins
+   * in spectator mode after being offline for the configured time.
+   *
+   * @param commandSourceStack The command source stack containing the sender.
+   */
+  @Command("spectator|spec|s auto")
+  @CommandDescription("Toggles joining in spectator mode after time away.")
+  @Permission("icecream.modules.spectator")
+  @SuppressWarnings("unused")
+  public void autoCommand(CommandSourceStack commandSourceStack) {
+    if (!(commandSourceStack.getSender() instanceof Player player)) {
+      commandSourceStack.getSender().sendMessage("This command can only be used by players.");
+      return;
+    }
+
+    boolean enabled = AutoSpectator.toggleAuto(player);
+    player.sendMessage(enabled ? autoSpectatorEnabledMessage() : autoSpectatorDisabled);
+
+    if (!AutoSpectator.isFeatureEnabled()) {
+      player.sendMessage(autoSpectatorFeatureOff);
+    }
+  }
 
   /**
    * Toggles spectator mode for the player who executed the command. Entering spectator mode is

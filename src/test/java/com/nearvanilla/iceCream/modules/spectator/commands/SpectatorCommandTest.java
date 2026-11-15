@@ -1,12 +1,15 @@
 package com.nearvanilla.iceCream.modules.spectator.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
+import com.nearvanilla.iceCream.modules.spectator.AutoSpectator;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
@@ -30,7 +33,9 @@ class SpectatorCommandTest {
   void setUp() {
     server = MockBukkit.mock();
     SpectatorModule.SPECTATOR_TOGGLE_KEY = new NamespacedKey("icecream", "spectator.enabled");
+    SpectatorModule.AUTO_SPECTATOR_KEY = new NamespacedKey("icecream", "spectator.auto_enabled");
     StaffModeModule.STAFF_MODE_TOGGLE_KEY = new NamespacedKey("icecream", "staff_mode.enabled");
+    AutoSpectator.configure(true, 30);
     // Entering and leaving spectator mode talk to the plugin instance, DiscordSRV and the proxy,
     // none of which exist here, so those two calls are replaced. The state check stays real.
     spectatorUtils = mockStatic(SpectatorUtils.class);
@@ -42,6 +47,7 @@ class SpectatorCommandTest {
     spectatorUtils.close();
     MockBukkit.unmock();
     SpectatorModule.SPECTATOR_TOGGLE_KEY = null;
+    SpectatorModule.AUTO_SPECTATOR_KEY = null;
     StaffModeModule.STAFF_MODE_TOGGLE_KEY = null;
   }
 
@@ -64,6 +70,12 @@ class SpectatorCommandTest {
     CommandSourceStack source = mock(CommandSourceStack.class);
     when(source.getSender()).thenReturn(player);
     command.spectatorCommand(source);
+  }
+
+  private void auto(PlayerMock player) {
+    CommandSourceStack source = mock(CommandSourceStack.class);
+    when(source.getSender()).thenReturn(player);
+    command.autoCommand(source);
   }
 
   @Test
@@ -94,5 +106,39 @@ class SpectatorCommandTest {
     toggle(player);
 
     spectatorUtils.verify(() -> SpectatorUtils.enableSpectator(player));
+  }
+
+  @Test
+  void autoCommandTurnsOnThenOff() {
+    PlayerMock player = player(false, false);
+
+    auto(player);
+    assertEquals(command.autoSpectatorEnabledMessage(), player.nextComponentMessage());
+    assertTrue(AutoSpectator.isAutoEnabled(player));
+
+    auto(player);
+    assertEquals(command.autoSpectatorDisabled, player.nextComponentMessage());
+    assertFalse(AutoSpectator.isAutoEnabled(player));
+  }
+
+  @Test
+  void autoCommandWarnsWhenFeatureIsOff() {
+    AutoSpectator.configure(false, 30);
+    PlayerMock player = player(false, false);
+
+    auto(player);
+
+    assertEquals(command.autoSpectatorEnabledMessage(), player.nextComponentMessage());
+    assertEquals(command.autoSpectatorFeatureOff, player.nextComponentMessage());
+  }
+
+  @Test
+  void autoCommandDoesNotChangeSpectatorMode() {
+    PlayerMock player = player(false, false);
+
+    auto(player);
+
+    spectatorUtils.verify(() -> SpectatorUtils.enableSpectator(any()), never());
+    spectatorUtils.verify(() -> SpectatorUtils.disableSpectator(any()), never());
   }
 }

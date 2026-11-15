@@ -153,8 +153,8 @@ public class SpectatorUtils {
   }
 
   /**
-   * Records when the given player was hidden by spectator mode, unless a time is already stored.
-   * An earlier stored time is kept, because auto spectator stores the player's quit time before
+   * Records when the given player was hidden by spectator mode, unless a time is already stored. An
+   * earlier stored time is kept, because auto spectator stores the player's quit time before
    * spectator mode is enabled on join.
    *
    * @param player the player being hidden

@@ -214,8 +214,13 @@ test {
     afterSuite { desc, result ->
         if (desc.parent == null) {
             println "Tests: ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped"
-            if (!skippedTests.isEmpty()) {
-                throw new GradleException("Skipped tests are not allowed:\n" + skippedTests.join("\n"))
+            // The list names the skipped tests. The count also catches a skip that was never
+            // reported test by test.
+            if (!skippedTests.isEmpty() || result.skippedTestCount > 0) {
+                def names = skippedTests.isEmpty() ?
+                        "${result.skippedTestCount} skipped, none reported by name".toString() :
+                        skippedTests.join("\n")
+                throw new GradleException("Skipped tests are not allowed:\n" + names)
             }
         }
     }

@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.HandlerList;
 import org.incendo.cloud.annotations.AnnotationParser;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.plugin.MockBukkitPluginLoader;
@@ -125,13 +126,21 @@ public final class IceCreamFixture {
   }
 
   /**
-   * Resets every static field on {@link IceCream} to null and deletes the temporary data folder.
+   * Unregisters every listener registered against the installed plugin, resets every static field
+   * on {@link IceCream} to null and deletes the temporary data folder.
+   *
+   * <p>The listeners have to go because Bukkit keeps them in static handler lists that survive
+   * {@code MockBukkit.unmock()}, so a listener registered in one test would otherwise fire in every
+   * later test of the same run.
    *
    * <p>Does nothing if nothing is installed. Deleting the folder is best effort: a file that is
    * still open, such as a database a module did not close, can block its deletion on Windows, in
    * which case it stays in the operating system's temporary directory.
    */
   public static void uninstall() {
+    if (IceCream.instance != null) {
+      HandlerList.unregisterAll(IceCream.instance);
+    }
     IceCream.instance = null;
     IceCream.config = null;
     IceCream.logger = null;

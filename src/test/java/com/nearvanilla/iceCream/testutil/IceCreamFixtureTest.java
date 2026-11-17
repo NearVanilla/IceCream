@@ -199,6 +199,27 @@ class IceCreamFixtureTest {
   }
 
   @Test
+  void uninstallUnregistersTheListenersOfTheInstalledPlugin() {
+    IceCreamFixture.install(server, "");
+    AtomicBoolean joined = new AtomicBoolean();
+    server
+        .getPluginManager()
+        .registerEvents(
+            new Listener() {
+              @EventHandler
+              public void onJoin(PlayerJoinEvent event) {
+                joined.set(true);
+              }
+            },
+            IceCream.instance);
+
+    IceCreamFixture.uninstall();
+    server.addPlayer();
+
+    assertFalse(joined.get());
+  }
+
+  @Test
   void uninstallDeletesTheDataFolder() {
     IceCreamFixture.install(server, "");
     File folder = IceCreamFixture.dataFolder();

@@ -16,6 +16,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 /**
  * Utility class for spectator mode functionality. Provides methods to enable/disable spectator
@@ -29,6 +31,10 @@ public class SpectatorUtils {
 
   /** The plugin messaging channel identifier for spectator communication with Velocity. */
   public static final String SPECTATOR_CHANNEL = "icecream:spectator";
+
+  private static final PotionEffect SPECTATOR_NIGHT_VISION =
+      new PotionEffect(
+          PotionEffectType.NIGHT_VISION, PotionEffect.INFINITE_DURATION, 0, false, false, false);
 
   /** Bossbar shown to all players in spectator mode. */
   private static BossBar spectatorBossbar;
@@ -279,6 +285,7 @@ public class SpectatorUtils {
     // Switch to spectator gamemode after hiding — setGameMode triggers a tab list refresh packet
     // on the next tick, so the player must already be hidden before that fires.
     player.setGameMode(GameMode.SPECTATOR);
+    player.addPotionEffect(SPECTATOR_NIGHT_VISION);
 
     // Hide from squaremap
     SquaremapIntegration.hidePlayer(player);
@@ -321,6 +328,7 @@ public class SpectatorUtils {
     }
     player.setGameMode(previousGamemode);
     player.getPersistentDataContainer().remove(SpectatorModule.PREVIOUS_GAMEMODE_KEY);
+    player.removePotionEffect(PotionEffectType.NIGHT_VISION);
 
     // Restore pre-spectator location
     String serializedLocation =

@@ -17,8 +17,8 @@ import org.bukkit.NamespacedKey;
 
 /**
  * SpectatorModule provides spectator mode functionality for staff members. When in spectator mode,
- * players are set to SPECTATOR gamemode, hidden from other players, removed from squaremap, and
- * DiscordSRV broadcasts fake leave/join messages.
+ * players are set to SPECTATOR gamemode with night vision, hidden from other players, removed from
+ * squaremap, and DiscordSRV broadcasts fake leave/join messages. Night vision is removed on exit.
  *
  * @author 105hua
  * @version 1.0

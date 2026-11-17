@@ -56,6 +56,14 @@ class FlightListenerTest {
     MockBukkit.unmock();
   }
 
+  // MockBukkit's disconnect() clears the player's permission attachments. Without the permission a
+  // restore would suspend flight, which also leaves allowFlight false, so the permission is granted
+  // again to make only the online check keep the player from being restored.
+  private void allowFlyingAfterDisconnect() {
+    player.addAttachment(IceCream.instance, FlightUtils.PERMISSION, true);
+    assertTrue(player.hasPermission(FlightUtils.PERMISSION));
+  }
+
   private PlayerJoinEvent join() {
     return new PlayerJoinEvent(player, Component.text("joined"));
   }
@@ -100,6 +108,7 @@ class FlightListenerTest {
   void joiningDoesNotRestoreFlightForAPlayerWhoLeftBeforeTheTick() {
     listener.onJoin(join());
     player.disconnect();
+    allowFlyingAfterDisconnect();
 
     server.getScheduler().performTicks(1);
 
@@ -192,6 +201,7 @@ class FlightListenerTest {
   void changingWorldDoesNotRestoreFlightForAPlayerWhoLeftBeforeTheTick() {
     listener.onWorldChange(new PlayerChangedWorldEvent(player, world));
     player.disconnect();
+    allowFlyingAfterDisconnect();
 
     server.getScheduler().performTicks(1);
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,7 +13,10 @@ import static org.mockito.Mockito.verify;
 
 import com.nearvanilla.iceCream.IceCream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -71,6 +75,47 @@ class IceCreamFixtureTest {
     assertSame(IceCream.logger, plugin.getLogger());
     assertSame(IceCream.config, plugin.getConfig());
     assertEquals(42, plugin.getConfig().getInt("answer"));
+  }
+
+  @Test
+  void instanceProvidesTheNamespaceForNamespacedKeys() {
+    IceCreamFixture.install(server, "");
+
+    NamespacedKey key = new NamespacedKey(IceCream.instance, "x");
+
+    assertEquals("icecream", key.getNamespace());
+    assertEquals("x", key.getKey());
+  }
+
+  @Test
+  void instanceOpensPluginResources() throws IOException {
+    IceCreamFixture.install(server, "");
+
+    try (InputStream stream = IceCream.instance.getResource("config.yml")) {
+      assertNotNull(stream);
+      assertTrue(stream.read() >= 0);
+    }
+  }
+
+  @Test
+  void instanceReturnsAFreshStreamForEachResourceRequest() throws IOException {
+    IceCreamFixture.install(server, "");
+
+    try (InputStream first = IceCream.instance.getResource("data/wandering_trades.json");
+        InputStream second = IceCream.instance.getResource("data/wandering_trades.json")) {
+      assertNotNull(first);
+      assertNotNull(second);
+      assertNotSame(first, second);
+      first.readAllBytes();
+      assertTrue(second.read() >= 0);
+    }
+  }
+
+  @Test
+  void instanceReturnsNullForAMissingResource() {
+    IceCreamFixture.install(server, "");
+
+    assertNull(IceCream.instance.getResource("missing.yml"));
   }
 
   @Test

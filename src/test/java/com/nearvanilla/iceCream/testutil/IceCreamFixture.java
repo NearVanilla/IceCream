@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.testutil;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,13 +30,17 @@ import org.mockbukkit.mockbukkit.plugin.MockBukkitPluginLoader;
  *
  * <p>The installed plugin is a Mockito mock of {@link IceCream}, not a loaded plugin. It is stubbed
  * only as far as MockBukkit and the modules need: it reports the given server, logger and config,
- * is enabled, is named {@code IceCream} and has a temporary data folder. That is enough to register
- * listeners with {@code server.getPluginManager().registerEvents(listener, IceCream.instance)} and
- * to schedule tasks with {@code server.getScheduler().runTask(IceCream.instance, task)}. Anything
- * else on the mock returns the Mockito default (null, zero or an empty collection), so stub it
- * further in the test if a module needs more. {@code IceCream.annotationParser} is also a Mockito
- * mock, so a module can call {@code IceCream.annotationParser.parse(new XCommand())} and the test
- * can verify the call. {@code IceCream.commandManager} is left null.
+ * is enabled, is named {@code IceCream}, uses {@code icecream} as its namespace and has a temporary
+ * data folder. Its {@code getResource(name)} opens the named file from the plugin's resources (for
+ * example {@code config.yml} or {@code data/wandering_trades.json}), returning a fresh stream on
+ * each call and null for a missing file, like the real plugin. That is enough to register listeners
+ * with {@code server.getPluginManager().registerEvents(listener, IceCream.instance)}, to schedule
+ * tasks with {@code server.getScheduler().runTask(IceCream.instance, task)} and to build keys with
+ * {@code new NamespacedKey(IceCream.instance, "name")}. Anything else on the mock returns the
+ * Mockito default (null, zero or an empty collection), so stub it further in the test if a module
+ * needs more. {@code IceCream.annotationParser} is also a Mockito mock, so a module can call {@code
+ * IceCream.annotationParser.parse(new XCommand())} and the test can verify the call. {@code
+ * IceCream.commandManager} is left null.
  *
  * <p>Install in a setup method after {@code MockBukkit.mock()}, and uninstall in a teardown method
  * before {@code MockBukkit.unmock()}, so the plugin never outlives the server it points at:
@@ -104,6 +109,11 @@ public final class IceCreamFixture {
     when(plugin.getConfig()).thenReturn(config);
     when(plugin.isEnabled()).thenReturn(true);
     when(plugin.getName()).thenReturn("IceCream");
+    when(plugin.namespace()).thenReturn("icecream");
+    when(plugin.getResource(anyString()))
+        .thenAnswer(
+            invocation ->
+                IceCream.class.getClassLoader().getResourceAsStream(invocation.getArgument(0)));
     stubPluginLoader(plugin);
     when(plugin.getDataFolder()).thenReturn(dataFolder.toFile());
 

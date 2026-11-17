@@ -52,7 +52,8 @@ dependencies {
     testImplementation(mockito)
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.3:4.119.0")
     // The DiscordSRV jar bundles an old SnakeYAML that breaks Bukkit's YamlConfiguration. Declaring
-    // SnakeYAML first puts Paper's version ahead of it on the test classpath.
+    // SnakeYAML first puts Paper's version ahead of it on the test classpath. Re-check this pin and
+    // the log4j-core line below when bumping paperApi or DiscordSRV.
     testImplementation("org.yaml:snakeyaml:2.2")
     testImplementation(squaremapApi)
     testImplementation(discordSrv)
@@ -235,8 +236,8 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                // Placeholder until the real minimum is set.
-                minimum = 0.0
+                // Line coverage was 79.7 percent when this was set, rounded down to the nearest 5.
+                minimum = 0.75
             }
         }
     }

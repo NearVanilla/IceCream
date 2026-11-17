@@ -29,3 +29,10 @@ package. Please note that the `register` method should include `registerCommands
 IceCream plugin.
 
 If you get stuck at any point, an example module is available for you to reference.
+
+## Testing
+
+New modules ship with unit tests. Add a test class for the module class and for each command and
+event class, in the matching package under `src/test/java`. The module test checklist, the shared
+test helpers and the rules every test follows are described in [testing.md](testing.md). The
+`example` module has a test for each of its classes that you can copy.

@@ -11,4 +11,5 @@
 - Documentation should remain clean, portable, and readable in plain text form. All formatting decisions should prioritize compatibility with Markdown tooling, Git diffs, IDE previews, and static site generators.
 - New modules do not need to be documented in `ARCHITECTURE.md`.
 - Run `./gradlew build` (which runs the tests) right before committing, and check that no tests were skipped. MockBukkit skips tests that hit unimplemented methods instead of failing them.
+- New modules and behaviour changes ship with unit tests. See `docs/testing.md` for the patterns and rules.
 

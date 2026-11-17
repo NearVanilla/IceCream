@@ -97,6 +97,9 @@ modules:
         - staff
         - staffchat
         - sc
+    auto-spectator:
+      enabled: true
+      offline-minutes: 30
   desertmobs:
     enabled: true
     spawn:

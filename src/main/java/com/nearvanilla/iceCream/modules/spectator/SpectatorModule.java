@@ -6,6 +6,7 @@ import com.nearvanilla.iceCream.modules.integrations.CarbonChatIntegration;
 import com.nearvanilla.iceCream.modules.integrations.DiscordSRVIntegration;
 import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.modules.spectator.commands.SpectatorCommand;
+import com.nearvanilla.iceCream.modules.spectator.events.AutoSpectatorListener;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorAdvancementCriterionGrantEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerAdvancementDoneEvent;
 import com.nearvanilla.iceCream.modules.spectator.events.SpectatorPlayerJoinEvent;
@@ -31,6 +32,8 @@ public class SpectatorModule implements Module {
   public static NamespacedKey MAP_WAS_HIDDEN_KEY;
   public static NamespacedKey PREVIOUS_LOCATION_KEY;
   public static NamespacedKey HIDDEN_SINCE_KEY;
+  public static NamespacedKey AUTO_SPECTATOR_KEY;
+  public static NamespacedKey LAST_QUIT_KEY;
 
   private DiscordSRVIntegration discordSRV;
   private CarbonChatIntegration carbonChat;
@@ -44,6 +47,8 @@ public class SpectatorModule implements Module {
         new NamespacedKey(IceCream.instance, "spectator.dynmap_hidden_before_spectator");
     PREVIOUS_LOCATION_KEY = new NamespacedKey(IceCream.instance, "spectator.previous_location");
     HIDDEN_SINCE_KEY = new NamespacedKey(IceCream.instance, "spectator.hidden_since");
+    AUTO_SPECTATOR_KEY = new NamespacedKey(IceCream.instance, "spectator.auto_enabled");
+    LAST_QUIT_KEY = new NamespacedKey(IceCream.instance, "spectator.last_quit");
   }
 
   @Override
@@ -87,6 +92,10 @@ public class SpectatorModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new SpectatorTabCompleteEvent(), IceCream.instance);
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new AutoSpectatorListener(), IceCream.instance);
   }
 
   @Override
@@ -111,6 +120,8 @@ public class SpectatorModule implements Module {
             SpectatorUtils::canBypassPrivateMessage,
             SpectatorUtils.getPrivateMessageOfflineMessage());
 
+        AutoSpectator.init();
+
         registerCommands();
         registerEvents();
 
@@ -129,6 +140,8 @@ public class SpectatorModule implements Module {
   public void unregister() {
     if (!isEnabled) return;
 
+    // Paper disables plugins before it removes players, so the quit listener never sees a shutdown.
+    AutoSpectator.recordQuitForOnlinePlayers(System.currentTimeMillis());
     SpectatorUtils.cleanup();
   }
 }

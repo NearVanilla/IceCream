@@ -2,14 +2,16 @@ package com.nearvanilla.iceCream.testutil;
 
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.mockbukkit.mockbukkit.inventory.SimpleInventoryViewMock;
 
 /**
  * Helpers for testing inventory click events with MockBukkit, whose default inventory view does not
- * implement {@code convertSlot}, which {@code InventoryClickEvent}'s constructor calls, and copies
- * the cursor item in a way that drops its data components.
+ * implement {@code convertSlot}, which {@code InventoryClickEvent}'s constructor calls, or {@code
+ * getInventory(int)}, which {@code getClickedInventory} calls, and copies the cursor item in a way
+ * that drops its data components.
  */
 public final class InventoryTestUtils {
 
@@ -38,14 +40,32 @@ public final class InventoryTestUtils {
    * @return a view of the given type with an empty cursor
    */
   public static InventoryView craftingView(HumanEntity player, InventoryType type) {
-    return new IdentitySlotView(player, type);
+    return new IdentitySlotView(player, player.getInventory(), type, false);
+  }
+
+  /**
+   * Creates the view a player has open when they look into a container: the container on top and
+   * their own inventory below. An {@code InventoryClickEvent} can be constructed from it, and its
+   * cursor starts as an empty item. A raw slot in the container is the slot itself, and a raw slot
+   * below it counts from the first slot of the player's inventory, so a click there has a slot that
+   * is also a valid slot of the container, as on a real server.
+   *
+   * @param player the player the view belongs to
+   * @param top the container shown on top
+   * @return a chest view of the container
+   */
+  public static InventoryView containerView(HumanEntity player, Inventory top) {
+    return new IdentitySlotView(player, top, InventoryType.CHEST, true);
   }
 
   private static final class IdentitySlotView extends SimpleInventoryViewMock {
     private ItemStack cursor = ItemStack.empty();
 
-    IdentitySlotView(HumanEntity player, InventoryType type) {
-      super(player, player.getInventory(), player.getInventory(), type);
+    private final boolean container;
+
+    IdentitySlotView(HumanEntity player, Inventory top, InventoryType type, boolean container) {
+      super(player, top, player.getInventory(), type);
+      this.container = container;
     }
 
     @Override
@@ -60,7 +80,19 @@ public final class InventoryTestUtils {
 
     @Override
     public int convertSlot(int rawSlot) {
-      return rawSlot;
+      if (!container) return rawSlot;
+      int topSize = getTopInventory().getSize();
+      return rawSlot < topSize ? rawSlot : rawSlot - topSize;
+    }
+
+    // MockBukkit does not implement this, which InventoryClickEvent#getClickedInventory calls.
+    @Override
+    public Inventory getInventory(int rawSlot) {
+      int topSize = getTopInventory().getSize();
+      if (rawSlot < 0) return null;
+      if (rawSlot < topSize) return getTopInventory();
+      if (rawSlot < topSize + getBottomInventory().getSize()) return getBottomInventory();
+      return null;
     }
   }
 }

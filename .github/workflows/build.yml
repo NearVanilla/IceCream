@@ -39,8 +39,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build plugin
-        run: ./gradlew build --no-daemon
+      - name: Build plugin (tests run in tests.yml)
+        run: ./gradlew build -x test --no-daemon
 
       - name: Comment on PR Failure
         if: failure() && github.event_name == 'pull_request'

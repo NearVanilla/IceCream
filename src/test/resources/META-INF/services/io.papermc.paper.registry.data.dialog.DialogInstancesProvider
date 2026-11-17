@@ -1,0 +1,2 @@
+# Test-only dialog factories, see com.nearvanilla.iceCream.testutil.DialogTestUtils and docs/testing.md
+com.nearvanilla.iceCream.testutil.DialogTestUtils$Provider

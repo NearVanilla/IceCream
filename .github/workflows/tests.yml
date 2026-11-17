@@ -1,0 +1,115 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - 'src/main/resources/**'
+      - 'src/test/resources/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'gradle.properties'
+      - 'src/main/resources/**'
+      - 'src/test/resources/**'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # On pull requests, test the PR's own head commit instead of GitHub's temporary merge
+          # commit, matching the build check.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'corretto'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
+
+      # Publishing a check run needs a token with checks: write, which fork pull requests do not get.
+      - name: Publish test results
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: 'build/test-results/test/*.xml'
+          detailed_summary: true
+          include_passed: false
+
+      - name: Summarize coverage
+        if: always()
+        run: |
+          CSV=build/reports/jacoco/test/jacocoTestReport.csv
+          if [ -f "$CSV" ]; then
+            awk -F',' '
+              { sub(/\r$/, "") }
+              NR == 1 { for (i = 1; i <= NF; i++) col[$i] = i; next }
+              {
+                line_missed += $col["LINE_MISSED"]
+                line_covered += $col["LINE_COVERED"]
+                branch_missed += $col["BRANCH_MISSED"]
+                branch_covered += $col["BRANCH_COVERED"]
+              }
+              END {
+                line_total = line_missed + line_covered
+                branch_total = branch_missed + branch_covered
+                line_pct = line_total > 0 ? 100 * line_covered / line_total : 0
+                branch_pct = branch_total > 0 ? 100 * branch_covered / branch_total : 0
+                printf "## Coverage\n\n"
+                printf "| Metric | Covered | Total | Percentage |\n"
+                printf "| --- | ---: | ---: | ---: |\n"
+                printf "| Lines | %d | %d | %.2f%% |\n", line_covered, line_total, line_pct
+                printf "| Branches | %d | %d | %.2f%% |\n", branch_covered, branch_total, branch_pct
+              }
+            ' "$CSV" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment on PR Failure
+        if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ❌ Unit Test Check Failed
+
+            The unit tests or the coverage minimum failed with the changes in this pull request.
+            Please check the logs and the uploaded test reports for details.
+
+            📝 [Check the workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/
+            build/reports/jacoco/
+          retention-days: 7

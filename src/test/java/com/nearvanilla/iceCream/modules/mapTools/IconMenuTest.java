@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.mapTools;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.plainText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -19,7 +20,6 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -69,7 +69,7 @@ class IconMenuTest {
   }
 
   private static String name(ItemStack item) {
-    return PlainTextComponentSerializer.plainText().serialize(item.getItemMeta().displayName());
+    return plainText(item.getItemMeta().displayName());
   }
 
   private void tick() {
@@ -85,9 +85,7 @@ class IconMenuTest {
     IconMenu menu = open(null);
 
     assertSame(menu.getInventory(), player.getOpenInventory().getTopInventory());
-    assertEquals(
-        "Pick an icon",
-        PlainTextComponentSerializer.plainText().serialize(player.getOpenInventory().title()));
+    assertEquals("Pick an icon", plainText(player.getOpenInventory().title()));
   }
 
   @Test
@@ -211,9 +209,7 @@ class IconMenuTest {
     assertTrue(pin.getItemMeta().getEnchantmentGlintOverride());
     assertEquals(
         List.of("Selected"),
-        pin.getItemMeta().lore().stream()
-            .map(line -> PlainTextComponentSerializer.plainText().serialize(line))
-            .toList());
+        pin.getItemMeta().lore().stream().map(line -> plainText(line)).toList());
     assertEquals(NamedTextColor.GRAY, pin.getItemMeta().lore().getFirst().color());
   }
 

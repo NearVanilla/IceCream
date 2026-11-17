@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import com.nearvanilla.iceCream.testutil.MessageTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,9 @@ import org.mockbukkit.mockbukkit.entity.PlayerMock;
 /**
  * A listener is tested by registering it with the mock server and then causing the event it
  * handles. Going through the server means the test also proves that the {@code @EventHandler}
- * annotation is picked up, not just that the method body works.
+ * annotation is picked up, not just that the method body works. {@link IceCreamFixture} provides
+ * the plugin to register against, and {@link MessageTestUtils} reads what the player received as
+ * plain text.
  */
 class ExampleEventTest {
   private ServerMock server;
@@ -36,10 +37,6 @@ class ExampleEventTest {
     MockBukkit.unmock();
   }
 
-  private String plain(Component component) {
-    return PlainTextComponentSerializer.plainText().serialize(component);
-  }
-
   @Test
   void welcomesAPlayerWhoJoins() {
     // MockBukkit fires a PlayerJoinEvent for every player it adds, so adding the player is what
@@ -47,7 +44,7 @@ class ExampleEventTest {
     PlayerMock player = server.addPlayer();
 
     assertEquals(
-        "Welcome to the server! This is an example event.", plain(player.nextComponentMessage()));
+        "Welcome to the server! This is an example event.", MessageTestUtils.nextMessage(player));
     assertNull(player.nextComponentMessage());
   }
 

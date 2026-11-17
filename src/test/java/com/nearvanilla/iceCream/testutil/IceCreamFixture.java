@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.incendo.cloud.annotations.AnnotationParser;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.plugin.MockBukkitPluginLoader;
@@ -116,6 +117,7 @@ public final class IceCreamFixture {
             invocation ->
                 IceCream.class.getClassLoader().getResourceAsStream(invocation.getArgument(0)));
     stubPluginLoader(plugin);
+    stubDescription(plugin);
     when(plugin.getDataFolder()).thenReturn(dataFolder.toFile());
 
     IceCream.config = config;
@@ -171,11 +173,21 @@ public final class IceCreamFixture {
     when(plugin.getPluginLoader()).thenReturn(new MockBukkitPluginLoader());
   }
 
+  // MockBukkit's plugin manager reads the plugin's description to name it in the error it raises
+  // when a listener throws. Without one, that lookup throws a NullPointerException that hides the
+  // listener's own exception.
+  @SuppressWarnings("deprecation")
+  private static void stubDescription(IceCream plugin) {
+    when(plugin.getDescription())
+        .thenReturn(new PluginDescriptionFile("IceCream", "test", IceCream.class.getName()));
+  }
+
   private static void deleteRecursively(Path folder) {
     try (Stream<Path> paths = Files.walk(folder)) {
       paths.sorted(Comparator.reverseOrder()).forEach(IceCreamFixture::deleteQuietly);
-    } catch (IOException ignored) {
-      // Best effort, the folder is in the operating system's temporary directory.
+    } catch (IOException | UncheckedIOException ignored) {
+      // Best effort, the folder is in the operating system's temporary directory. Walking the
+      // folder throws the unchecked kind when a directory cannot be read halfway through.
     }
   }
 

@@ -345,7 +345,10 @@ class OnePlayerSleepModuleWakeRequestTest {
     stubborn.refuseToWake(true);
     String token = announced(sleeper);
     String stubbornToken = announced(stubborn);
-    module.requestWakeUp(watcher, token);
+    // The stubborn sleeper stays in bed, which logs a warning that is not what this test is about.
+    try (LogCapture ignored = LogCapture.of(IceCream.logger)) {
+      module.requestWakeUp(watcher, token);
+    }
     ageCooldown(module, Duration.ofSeconds(11));
     watcher.nextComponentMessage();
 
@@ -361,7 +364,10 @@ class OnePlayerSleepModuleWakeRequestTest {
     String token = announced(sleeper);
     stubborn.goToBed();
     module.queueSleepCheck(stubborn);
-    module.requestWakeUp(watcher, token);
+    // The stubborn sleeper stays in bed, which logs a warning that is not what this test is about.
+    try (LogCapture ignored = LogCapture.of(IceCream.logger)) {
+      module.requestWakeUp(watcher, token);
+    }
     ageCooldown(module, Duration.ofSeconds(11));
     watcher.nextComponentMessage();
 
@@ -375,7 +381,10 @@ class OnePlayerSleepModuleWakeRequestTest {
     sleeper.refuseToWake(true);
     String token = announced(sleeper);
     tick();
-    module.requestWakeUp(watcher, token);
+    // The sleeper stays in bed, which logs a warning that is not what this test is about.
+    try (LogCapture ignored = LogCapture.of(IceCream.logger)) {
+      module.requestWakeUp(watcher, token);
+    }
     ageCooldown(module, Duration.ofSeconds(11));
 
     long before = world.getFullTime();

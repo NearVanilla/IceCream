@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.deathLocation;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,7 +10,6 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import java.util.ArrayList;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -98,8 +98,7 @@ class DeathLocationModuleTest {
 
     kill(player);
 
-    String message =
-        PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage());
+    String message = nextMessage(player);
     assertTrue(message.startsWith("You died at <"), message);
   }
 

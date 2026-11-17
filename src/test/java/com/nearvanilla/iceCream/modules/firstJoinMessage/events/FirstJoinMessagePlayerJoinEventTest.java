@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.firstJoinMessage.events;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.plainText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,7 +9,6 @@ import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +61,7 @@ class FirstJoinMessagePlayerJoinEventTest {
     List<String> messages = new ArrayList<>();
     Component message;
     while ((message = player.nextComponentMessage()) != null) {
-      messages.add(PlainTextComponentSerializer.plainText().serialize(message));
+      messages.add(plainText(message));
     }
     return messages;
   }

@@ -1,10 +1,12 @@
 package com.nearvanilla.iceCream.testutil;
 
+import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.mockbukkit.mockbukkit.inventory.SimpleInventoryViewMock;
 
 /**
@@ -46,9 +48,9 @@ public final class InventoryTestUtils {
   /**
    * Creates the view a player has open when they look into a container: the container on top and
    * their own inventory below. An {@code InventoryClickEvent} can be constructed from it, and its
-   * cursor starts as an empty item. A raw slot in the container is the slot itself, and a raw slot
-   * below it counts from the first slot of the player's inventory, so a click there has a slot that
-   * is also a valid slot of the container, as on a real server.
+   * cursor starts as an empty item. A raw slot in the container is the slot itself. The rows below
+   * it map straight to the player's slots 0 to 35, which is simpler than a real server, where they
+   * map to slots 9 to 35 and then the hotbar slots 0 to 8.
    *
    * @param player the player the view belongs to
    * @param top the container shown on top
@@ -56,6 +58,25 @@ public final class InventoryTestUtils {
    */
   public static InventoryView containerView(HumanEntity player, Inventory top) {
     return new IdentitySlotView(player, top, InventoryType.CHEST, true);
+  }
+
+  /**
+   * Counts how many items of a material a player carries in total: the storage slots, the armor
+   * slots and the off hand. A test that moves a stack around can assert this total instead of where
+   * each item ended up.
+   *
+   * @param inventory the player's inventory
+   * @param material the material to count
+   * @return the summed amount of every stack of the material
+   */
+  public static int countOf(PlayerInventory inventory, Material material) {
+    int total = 0;
+    for (ItemStack stack : inventory.getContents()) {
+      if (stack != null && stack.getType() == material) {
+        total += stack.getAmount();
+      }
+    }
+    return total;
   }
 
   private static final class IdentitySlotView extends SimpleInventoryViewMock {

@@ -3,7 +3,6 @@ package com.nearvanilla.iceCream.modules.readOnlyLectern.commands;
 import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -16,8 +15,6 @@ import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.LecternTestUtils;
 import com.nearvanilla.iceCream.testutil.LecternTestUtils.LookingPlayer;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -229,11 +226,7 @@ class ToggleLecternCommandTest {
 
     toggle(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "Only players can use this command.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("Only players can use this command.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertEquals(-1, player.requestedDistance());
     assertNull(nextMessage(player));

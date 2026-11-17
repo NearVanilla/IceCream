@@ -1,8 +1,8 @@
 package com.nearvanilla.iceCream.modules.muteDeaths.commands;
 
 import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.plainText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -147,11 +146,7 @@ class MuteDeathsCommandTest {
 
     run(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "This command can only be used by players.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("This command can only be used by players.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertNull(storedPreference(player));
     assertNull(nextMessage(player));
@@ -173,7 +168,7 @@ class MuteDeathsCommandTest {
     verify(broken).sendMessage(message.capture());
     assertEquals(
         "An error occurred while trying to mute death messages. Please contact the server manager.",
-        PlainTextComponentSerializer.plainText().serialize(message.getValue()));
+        plainText(message.getValue()));
     verify(container, never()).set(any(), any(), any());
   }
 }

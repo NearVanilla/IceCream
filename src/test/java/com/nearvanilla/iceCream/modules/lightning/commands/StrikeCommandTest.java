@@ -1,7 +1,7 @@
 package com.nearvanilla.iceCream.modules.lightning.commands;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -10,8 +10,6 @@ import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
 import java.util.List;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -73,11 +71,6 @@ class StrikeCommandTest {
     CommandSourceStack source = mock(CommandSourceStack.class);
     when(source.getSender()).thenReturn(from);
     command.strikeCommand(source, target);
-  }
-
-  private String nextMessage(PlayerMock target) {
-    Component message = target.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
   }
 
   private int lightningCount() {
@@ -157,11 +150,7 @@ class StrikeCommandTest {
 
     strike(console, victim);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "You must be a player to use this command.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("You must be a player to use this command.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertNull(nextMessage(victim));
     assertEquals(0, lightningCount());

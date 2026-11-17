@@ -102,8 +102,8 @@ public final class CommandTestUtils {
   /**
    * Finds the commands that clicking parts of a message would run.
    *
-   * @param message the message
-   * @return the commands, in the order they appear in the message
+   * @param message the message, which may be null
+   * @return the commands, in the order they appear in the message, empty when there are none
    */
   public static List<String> clickCommands(Component message) {
     return clicks(message, ClickEvent.Action.RUN_COMMAND);
@@ -128,9 +128,14 @@ public final class CommandTestUtils {
 
   private static void collectClicks(
       Component component, ClickEvent.Action action, List<String> values) {
+    if (component == null) {
+      return;
+    }
     ClickEvent click = component.clickEvent();
-    if (click != null && click.action() == action) {
-      values.add(((ClickEvent.Payload.Text) click.payload()).value());
+    if (click != null
+        && click.action() == action
+        && click.payload() instanceof ClickEvent.Payload.Text text) {
+      values.add(text.value());
     }
     for (Component child : component.children()) collectClicks(child, action, values);
   }

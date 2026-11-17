@@ -1,8 +1,8 @@
 package com.nearvanilla.iceCream.modules.hat;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,8 +15,6 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.hat.commands.HatCommand;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.InventoryTestUtils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -121,10 +119,7 @@ class HatModuleTest {
     InventoryClickEvent event = clickHelmetSlotWithDirt(player);
 
     assertTrue(event.isCancelled());
-    Component message = player.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "[Hat] Item set as hat.", PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("[Hat] Item set as hat.", nextMessage(player));
     assertNull(player.nextComponentMessage());
   }
 

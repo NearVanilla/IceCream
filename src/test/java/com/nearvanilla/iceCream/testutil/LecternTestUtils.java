@@ -103,15 +103,6 @@ public final class LecternTestUtils {
     }
 
     /**
-     * Changes the block the player looks at.
-     *
-     * @param target the block, or null for nothing
-     */
-    public void lookAt(Block target) {
-      this.target = target;
-    }
-
-    /**
      * Returns the maximum distance the last {@code getTargetBlockExact} call asked for.
      *
      * @return the distance, or -1 if the player was never asked

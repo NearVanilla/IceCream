@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.playerHeadDrops.events;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.plainText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,7 +11,6 @@ import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -63,16 +63,19 @@ class PlayerDeathHeadDropEventTest {
     return killer;
   }
 
-  private PlayerDeathEvent die(ItemStack... existingDrops) {
+  private PlayerDeathEvent deathEvent(ItemStack... existingDrops) {
     List<ItemStack> drops = new ArrayList<>(List.of(existingDrops));
-    PlayerDeathEvent event =
-        new PlayerDeathEvent(
-            victim,
-            DamageSource.builder(DamageType.GENERIC).build(),
-            drops,
-            0,
-            Component.text("Victim died"),
-            false);
+    return new PlayerDeathEvent(
+        victim,
+        DamageSource.builder(DamageType.GENERIC).build(),
+        drops,
+        0,
+        Component.text("Victim died"),
+        false);
+  }
+
+  private PlayerDeathEvent die(ItemStack... existingDrops) {
+    PlayerDeathEvent event = deathEvent(existingDrops);
     listener.onPlayerDeath(event);
     return event;
   }
@@ -81,10 +84,6 @@ class PlayerDeathHeadDropEventTest {
     return event.getDrops().stream()
         .filter(item -> item.getType() == Material.PLAYER_HEAD)
         .toList();
-  }
-
-  private String plain(Component component) {
-    return PlainTextComponentSerializer.plainText().serialize(component);
   }
 
   @Test
@@ -113,7 +112,32 @@ class PlayerDeathHeadDropEventTest {
     List<Component> lore = head.getItemMeta().lore();
     assertNotNull(lore);
     assertEquals(1, lore.size());
-    assertEquals("Killed by Killer", plain(lore.getFirst()));
+    assertEquals("Killed by Killer", plainText(lore.getFirst()));
+  }
+
+  @Test
+  void dropsTheHeadForARealDeathEventOnTheServer() {
+    config("1.0", "true");
+    killer(true);
+    server.getPluginManager().registerEvents(listener, IceCream.instance);
+    PlayerDeathEvent event = deathEvent();
+
+    server.getPluginManager().callEvent(event);
+
+    assertEquals(1, heads(event).size());
+  }
+
+  @Test
+  void dropsNoHeadWhenAnotherPluginAlreadyCancelledTheDeath() {
+    config("1.0", "true");
+    killer(true);
+    server.getPluginManager().registerEvents(listener, IceCream.instance);
+    PlayerDeathEvent event = deathEvent();
+    event.setCancelled(true);
+
+    server.getPluginManager().callEvent(event);
+
+    assertTrue(event.getDrops().isEmpty());
   }
 
   @Test

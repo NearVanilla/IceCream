@@ -119,11 +119,6 @@ public final class DialogTestUtils {
     public ShownDialog lastDialog() {
       return dialogs.isEmpty() ? null : dialogs.getLast();
     }
-
-    /** Forgets the dialogs shown so far. */
-    public void clearDialogs() {
-      dialogs.clear();
-    }
   }
 
   /** A dialog the way a test reads it: its title, body text, inputs and buttons. */

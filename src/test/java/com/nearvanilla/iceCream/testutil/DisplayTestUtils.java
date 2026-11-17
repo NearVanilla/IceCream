@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -107,16 +106,6 @@ public final class DisplayTestUtils {
     public List<BlockDisplay> displays() {
       Collection<BlockDisplay> displays = getEntitiesByClass(BlockDisplay.class);
       return List.copyOf(displays);
-    }
-
-    /**
-     * Returns the live block displays showing a block of the given type.
-     *
-     * @param block the block type
-     * @return the displays
-     */
-    public List<BlockDisplay> displays(Material block) {
-      return displays().stream().filter(d -> d.getBlock().getMaterial() == block).toList();
     }
 
     /**

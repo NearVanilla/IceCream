@@ -1,8 +1,8 @@
 package com.nearvanilla.iceCream.modules.flight.commands;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -14,8 +14,6 @@ import com.nearvanilla.iceCream.modules.flight.FlightUtils;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
@@ -56,11 +54,6 @@ class FlyCommandTest {
     CommandSourceStack source = mock(CommandSourceStack.class);
     when(source.getSender()).thenReturn(sender);
     command.fly(source);
-  }
-
-  private String nextMessage(PlayerMock target) {
-    Component message = target.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
   }
 
   private boolean hasSavedPreference() {
@@ -169,11 +162,7 @@ class FlyCommandTest {
 
     fly(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "This command can only be used by players.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("This command can only be used by players.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertNull(nextMessage(player));
   }

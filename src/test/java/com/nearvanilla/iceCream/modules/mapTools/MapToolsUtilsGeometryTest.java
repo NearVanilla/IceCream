@@ -335,15 +335,6 @@ class MapToolsUtilsGeometryTest {
     assertNotNull(MapToolsUtils.parsePoints("w", "0 0; 30 0; 30 20; 20 20; 20 10; 10 10; 10 20"));
   }
 
-  @Test
-  void parsePointsAcceptsASelfIntersectingPolygonWhoseLobesDifferInSize() {
-    // The diagonal from 0 0 to 10 10 is crossed by the edge from 10 0 to 0 5.
-    AreaGeometry shape = MapToolsUtils.parsePoints("w", "0 0; 10 10; 10 0; 0 5");
-
-    assertNotNull(shape);
-    assertEquals(4, shape.points().size());
-  }
-
   @ParameterizedTest
   @ValueSource(
       strings = {

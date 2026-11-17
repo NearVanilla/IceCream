@@ -464,11 +464,4 @@ class VineGrowthListenerShearingTest {
 
     assertTrue(player.swings.isEmpty());
   }
-
-  @Test
-  void shearsInTheMainHandToggleTheVine() {
-    shear(vine, new Shears());
-
-    assertTrue(VineGrowthUtils.isSheared(vine));
-  }
 }

@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.example;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.example.commands.ExampleCommand;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
+import com.nearvanilla.iceCream.testutil.MessageTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,12 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
+/**
+ * A module is tested with {@link IceCreamFixture}, which installs a mocked plugin with the given
+ * configuration, so {@code shouldEnable()} reads a real config. Whether {@code register()} wired
+ * the listener is proved by causing its event and reading what the player received, using {@link
+ * MessageTestUtils}, not by verifying calls on a mock.
+ */
 class ExampleModuleTest {
   private static final String ENABLED = "modules:\n  example:\n    enabled: true\n";
 
@@ -88,7 +96,8 @@ class ExampleModuleTest {
 
     PlayerMock player = server.addPlayer();
 
-    assertTrue(player.nextComponentMessage() != null);
+    assertEquals(
+        "Welcome to the server! This is an example event.", MessageTestUtils.nextMessage(player));
   }
 
   @Test

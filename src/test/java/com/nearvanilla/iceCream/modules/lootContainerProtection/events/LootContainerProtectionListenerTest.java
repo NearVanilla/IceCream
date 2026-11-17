@@ -189,6 +189,27 @@ class LootContainerProtectionListenerTest {
     assertEquals("minecraft:chests/simple_dungeon", savedTable(chest));
   }
 
+  // The event holds a snapshot taken before vanilla finished generating. Saving the table on that
+  // snapshot and updating it would write its stale copy of the chest back over the block.
+  @Test
+  void keepsChangesMadeToTheChestAfterTheEventSnapshotWasTaken() {
+    Block chest = lootChest();
+    InventoryHolder snapshot = (InventoryHolder) chest.getState();
+    NamespacedKey marker = new NamespacedKey(IceCream.instance, "marker");
+    TileState live = (TileState) chest.getState(false);
+    live.getPersistentDataContainer().set(marker, PersistentDataType.STRING, "kept");
+    live.update(false, false);
+
+    fire(lootGenerated(snapshot, dungeonTable));
+
+    assertEquals("minecraft:chests/simple_dungeon", savedTable(chest));
+    assertEquals(
+        "kept",
+        ((TileState) chest.getState())
+            .getPersistentDataContainer()
+            .get(marker, PersistentDataType.STRING));
+  }
+
   @Test
   void savesTheTableOfAChestWhoseAssignedTableWasAlreadyConsumed() {
     Block chest = ordinaryChest();

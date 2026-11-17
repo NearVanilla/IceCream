@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.firstJoinMessage;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -8,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,9 +85,7 @@ class FirstJoinMessageModuleTest {
 
     PlayerMock player = server.addPlayer("Newbie");
 
-    assertEquals(
-        "Welcome Newbie",
-        PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage()));
+    assertEquals("Welcome Newbie", nextMessage(player));
   }
 
   @Test

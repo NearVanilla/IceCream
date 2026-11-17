@@ -73,6 +73,8 @@ class SeenCommandTest {
     return message;
   }
 
+  // The moment the given time ago. The command reads the clock again a moment later, so the tests
+  // allow up to one second between the two clock reads, see PlayerSeenUtilsTest.
   private static long ago(Duration duration) {
     return System.currentTimeMillis() - duration.toMillis();
   }

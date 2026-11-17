@@ -1,7 +1,6 @@
 package com.nearvanilla.iceCream.testutil;
 
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
-import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.testutil.DisplayTestUtils.DisplayWorld;
 import com.nearvanilla.iceCream.testutil.DisplayTestUtils.Viewer;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils.Scenario;
@@ -203,31 +202,8 @@ public final class DisplayScenario implements AutoCloseable {
         && Math.abs(scale.z() - thickness) < TOLERANCE;
   }
 
-  /**
-   * Tells whether the display is at the given block, whatever its height.
-   *
-   * @param display the display
-   * @param x the block x
-   * @param z the block z
-   * @return true if the display is in that column
-   */
-  public static boolean inColumn(BlockDisplay display, int x, int z) {
-    return display.getLocation().getBlockX() == x && display.getLocation().getBlockZ() == z;
-  }
-
   @Override
   public void close() {
     scenario.close();
-  }
-
-  /**
-   * Returns the ground block at the given column, to compare drawn locations against.
-   *
-   * @param x the block x
-   * @param z the block z
-   * @return the block the module treats as ground, or null if the chunk is not loaded
-   */
-  public Location ground(int x, int z) {
-    return MapToolsUtils.groundBlock(world, x, z);
   }
 }

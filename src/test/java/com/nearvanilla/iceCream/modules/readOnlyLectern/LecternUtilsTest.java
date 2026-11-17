@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.readOnlyLectern;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.plainText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,7 +16,6 @@ import com.nearvanilla.iceCream.testutil.LecternTestUtils;
 import com.nearvanilla.iceCream.testutil.LecternTestUtils.LookingPlayer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -73,10 +73,6 @@ class LecternUtilsTest {
     return ((TileState) block.getState())
         .getPersistentDataContainer()
         .get(ReadOnlyLecternModule.READ_ONLY_KEY, PersistentDataType.BOOLEAN);
-  }
-
-  private String plain(Component component) {
-    return PlainTextComponentSerializer.plainText().serialize(component);
   }
 
   // isReadOnly
@@ -282,7 +278,7 @@ class LecternUtilsTest {
   void buildMessageReadsMiniMessageTags() {
     Component message = LecternUtils.buildMessage("<red>This lectern is read-only.</red>");
 
-    assertEquals("This lectern is read-only.", plain(message));
+    assertEquals("This lectern is read-only.", plainText(message));
     assertEquals(NamedTextColor.RED, message.color());
   }
 
@@ -290,7 +286,7 @@ class LecternUtilsTest {
   void buildMessageKeepsPlainText() {
     Component message = LecternUtils.buildMessage("Hello there");
 
-    assertEquals("Hello there", plain(message));
+    assertEquals("Hello there", plainText(message));
     assertNull(message.color());
   }
 
@@ -299,6 +295,6 @@ class LecternUtilsTest {
     Component message = LecternUtils.buildMessage("");
 
     assertNotNull(message);
-    assertEquals("", plain(message));
+    assertEquals("", plainText(message));
   }
 }

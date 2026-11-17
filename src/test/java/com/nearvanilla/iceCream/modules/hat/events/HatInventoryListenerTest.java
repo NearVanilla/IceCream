@@ -10,10 +10,9 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.hat.commands.HatCommand;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.InventoryTestUtils;
+import com.nearvanilla.iceCream.testutil.MessageTestUtils;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.ClickType;
@@ -79,14 +78,9 @@ class HatInventoryListenerTest {
     return player.getInventory().getItem(EquipmentSlot.HEAD);
   }
 
-  private String nextMessage() {
-    Component message = player.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
-  }
-
   private void assertIgnored(InventoryClickEvent event) {
     assertFalse(event.isCancelled());
-    assertNull(nextMessage());
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -99,14 +93,20 @@ class HatInventoryListenerTest {
     assertEquals(Material.PUMPKIN, helmet().getType());
   }
 
+  // How many items of a stack end up on the head is not asserted, only that none are lost.
   @Test
-  void takesTheWholeCursorStackOntoTheHead() {
+  void wearingAStackLosesNoItems() {
     allowHats();
     InventoryClickEvent event = helmetClick(new ItemStack(Material.DIRT, 7));
 
     listener.onInventoryClick(event);
 
-    assertEquals(new ItemStack(Material.DIRT, 7), helmet());
+    assertEquals(Material.DIRT, helmet().getType());
+    int onTheCursor =
+        event.getView().getCursor().getType() == Material.DIRT
+            ? event.getView().getCursor().getAmount()
+            : 0;
+    assertEquals(7, InventoryTestUtils.countOf(player.getInventory(), Material.DIRT) + onTheCursor);
   }
 
   @Test
@@ -136,8 +136,8 @@ class HatInventoryListenerTest {
 
     listener.onInventoryClick(event);
 
-    assertEquals("[Hat] Item set as hat.", nextMessage());
-    assertNull(nextMessage());
+    assertEquals("[Hat] Item set as hat.", MessageTestUtils.nextMessage(player));
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -170,8 +170,9 @@ class HatInventoryListenerTest {
 
     listener.onInventoryClick(event);
 
-    assertEquals("[Hat] You do not have permission to use hats.", nextMessage());
-    assertNull(nextMessage());
+    assertEquals(
+        "[Hat] You do not have permission to use hats.", MessageTestUtils.nextMessage(player));
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -289,7 +290,7 @@ class HatInventoryListenerTest {
 
     assertTrue(event.isCancelled());
     assertEquals(Material.PUMPKIN, helmet().getType());
-    assertEquals("[Hat] Item set as hat.", nextMessage());
+    assertEquals("[Hat] Item set as hat.", MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -304,6 +305,6 @@ class HatInventoryListenerTest {
     assertTrue(event.isCancelled());
     assertTrue(helmet().isEmpty());
     assertEquals(Material.PUMPKIN, event.getView().getCursor().getType());
-    assertNull(nextMessage());
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 }

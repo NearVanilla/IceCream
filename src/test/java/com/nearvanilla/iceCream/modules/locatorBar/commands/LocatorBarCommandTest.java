@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.locatorBar.commands;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,8 +12,6 @@ import com.nearvanilla.iceCream.modules.locatorBar.LocatorBarModule;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -70,11 +69,6 @@ class LocatorBarCommandTest {
     CommandSourceStack source = mock(CommandSourceStack.class);
     when(source.getSender()).thenReturn(sender);
     command.toggleLocatorBar(source);
-  }
-
-  private String nextMessage(PlayerMock target) {
-    Component message = target.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
   }
 
   private AttributeInstance receiveRange(PlayerMock target) {
@@ -220,11 +214,7 @@ class LocatorBarCommandTest {
 
     toggle(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "This command can only be used by players.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("This command can only be used by players.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertNull(nextMessage(player));
   }

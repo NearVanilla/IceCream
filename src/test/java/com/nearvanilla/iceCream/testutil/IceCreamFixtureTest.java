@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
+import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
 class IceCreamFixtureTest {
   private ServerMock server;
@@ -154,6 +157,39 @@ class IceCreamFixtureTest {
     server.addPlayer();
 
     assertTrue(joined.get());
+  }
+
+  // MockBukkit names the plugin in the error it raises for a failing listener. Without a plugin
+  // description that lookup fails first and hides the listener's own exception.
+  @Test
+  void aListenerThatThrowsSurfacesItsOwnException() {
+    IceCreamFixture.install(server, "");
+    PlayerMock player = server.addPlayer();
+    server
+        .getPluginManager()
+        .registerEvents(
+            new Listener() {
+              @EventHandler
+              public void onJoin(PlayerJoinEvent event) {
+                throw new IllegalStateException("boom");
+              }
+            },
+            IceCream.instance);
+
+    Throwable thrown =
+        assertThrows(
+            Throwable.class,
+            () ->
+                server
+                    .getPluginManager()
+                    .callEvent(new PlayerJoinEvent(player, Component.text("joined"))));
+
+    assertFalse(thrown instanceof NullPointerException);
+    Throwable cause = thrown;
+    while (cause.getCause() != null && !"boom".equals(cause.getMessage())) {
+      cause = cause.getCause();
+    }
+    assertEquals("boom", cause.getMessage());
   }
 
   @Test

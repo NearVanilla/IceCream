@@ -48,8 +48,9 @@ class PlayerSeenUtilsTest {
     IceCreamFixture.install(server, configYaml);
   }
 
-  // The moment the given time ago. The method under test reads the clock itself a few milliseconds
-  // later, so each duration is chosen to sit at least a second inside the unit it should read as.
+  // The moment the given time ago. The method under test reads the clock again a moment later, so
+  // the tests allow up to one second between the two clock reads. A duration that lands exactly on
+  // a unit, such as 1 second or 1 minute, reads as that unit only while the reads stay that close.
   private static long ago(Duration duration) {
     return System.currentTimeMillis() - duration.toMillis();
   }

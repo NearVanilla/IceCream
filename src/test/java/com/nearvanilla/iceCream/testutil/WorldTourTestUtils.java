@@ -1,15 +1,10 @@
 package com.nearvanilla.iceCream.testutil;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -89,9 +84,7 @@ public final class WorldTourTestUtils {
    * @return a mocked source whose sender is the given one
    */
   public static CommandSourceStack source(CommandSender sender) {
-    CommandSourceStack source = mock(CommandSourceStack.class);
-    when(source.getSender()).thenReturn(sender);
-    return source;
+    return CommandTestUtils.stack(sender);
   }
 
   /**
@@ -112,24 +105,7 @@ public final class WorldTourTestUtils {
    * @return the commands of every run-command click in the message, empty when there are none
    */
   public static List<String> clickCommands(Component message) {
-    List<String> commands = new ArrayList<>();
-    collectClickCommands(message, commands);
-    return commands;
-  }
-
-  private static void collectClickCommands(Component message, List<String> commands) {
-    if (message == null) {
-      return;
-    }
-    ClickEvent click = message.clickEvent();
-    if (click != null
-        && click.action() == ClickEvent.Action.RUN_COMMAND
-        && click.payload() instanceof ClickEvent.Payload.Text text) {
-      commands.add(text.value());
-    }
-    for (Component child : message.children()) {
-      collectClickCommands(child, commands);
-    }
+    return CommandTestUtils.clickCommands(message);
   }
 
   /**

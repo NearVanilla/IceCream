@@ -1,14 +1,12 @@
 package com.nearvanilla.iceCream.modules.isSlimeChunk.commands;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.junit.jupiter.api.AfterEach;
@@ -43,11 +41,6 @@ class isSlimeChunkCommandTest {
     CommandSourceStack source = mock(CommandSourceStack.class);
     when(source.getSender()).thenReturn(sender);
     command.exampleCommand(source);
-  }
-
-  private String nextMessage(PlayerMock target) {
-    Component message = target.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
   }
 
   private void standInChunk(int blockX, int blockZ, boolean slime) {
@@ -93,11 +86,7 @@ class isSlimeChunkCommandTest {
 
     run(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
-    assertEquals(
-        "This command can only be used by players.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+    assertEquals("This command can only be used by players.", nextMessage(console));
     assertNull(console.nextComponentMessage());
     assertNull(player.nextComponentMessage());
   }

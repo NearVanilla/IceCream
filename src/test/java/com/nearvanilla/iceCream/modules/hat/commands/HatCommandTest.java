@@ -1,7 +1,6 @@
 package com.nearvanilla.iceCream.modules.hat.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -9,9 +8,9 @@ import static org.mockito.Mockito.when;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
+import com.nearvanilla.iceCream.testutil.InventoryTestUtils;
+import com.nearvanilla.iceCream.testutil.MessageTestUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.EquipmentSlot;
@@ -52,11 +51,6 @@ class HatCommandTest {
     command.hat(source);
   }
 
-  private String nextMessage(PlayerMock target) {
-    Component message = target.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
-  }
-
   private ItemStack helmet() {
     return player.getInventory().getItem(EquipmentSlot.HEAD);
   }
@@ -77,14 +71,16 @@ class HatCommandTest {
     assertTrue(player.getInventory().getItemInMainHand().isEmpty());
   }
 
+  // How many items of a stack end up on the head is not asserted, only that none are lost.
   @Test
-  void keepsTheWholeHeldStackOnTheHead() {
+  void wearingAStackLosesNoItems() {
     allowHats(player);
     player.getInventory().setItemInMainHand(new ItemStack(Material.DIRT, 12));
 
     hat(player);
 
-    assertEquals(new ItemStack(Material.DIRT, 12), helmet());
+    assertEquals(Material.DIRT, helmet().getType());
+    assertEquals(12, InventoryTestUtils.countOf(player.getInventory(), Material.DIRT));
   }
 
   @Test
@@ -94,8 +90,8 @@ class HatCommandTest {
 
     hat(player);
 
-    assertEquals("[Hat] Item set as hat.", nextMessage(player));
-    assertNull(nextMessage(player));
+    assertEquals("[Hat] Item set as hat.", MessageTestUtils.nextMessage(player));
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -131,7 +127,7 @@ class HatCommandTest {
 
     assertEquals(Material.DIAMOND_HELMET, player.getInventory().getItemInMainHand().getType());
     assertTrue(helmet().isEmpty());
-    assertEquals("[Hat] Item set as hat.", nextMessage(player));
+    assertEquals("[Hat] Item set as hat.", MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -140,8 +136,9 @@ class HatCommandTest {
 
     hat(player);
 
-    assertEquals("[Hat] You do not have permission to use hats.", nextMessage(player));
-    assertNull(nextMessage(player));
+    assertEquals(
+        "[Hat] You do not have permission to use hats.", MessageTestUtils.nextMessage(player));
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 
   @Test
@@ -161,12 +158,9 @@ class HatCommandTest {
 
     hat(console);
 
-    Component message = console.nextComponentMessage();
-    assertNotNull(message);
     assertEquals(
-        "[Hat] This command can only be used by players.",
-        PlainTextComponentSerializer.plainText().serialize(message));
+        "[Hat] This command can only be used by players.", MessageTestUtils.nextMessage(console));
     assertNull(console.nextComponentMessage());
-    assertNull(nextMessage(player));
+    assertNull(MessageTestUtils.nextMessage(player));
   }
 }

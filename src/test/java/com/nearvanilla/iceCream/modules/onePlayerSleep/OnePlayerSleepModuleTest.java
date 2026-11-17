@@ -429,7 +429,10 @@ class OnePlayerSleepModuleTest {
     module.queueSleepCheck(stubborn);
     server.getScheduler().performOneTick();
     String token = wakeToken(watcher.nextComponentMessage());
-    module.unregister();
+    // The stubborn sleeper stays in bed, which logs a warning that is not what this test is about.
+    try (LogCapture ignored = LogCapture.of(IceCream.logger)) {
+      module.unregister();
+    }
     module.register();
 
     module.requestWakeUp(watcher, token);

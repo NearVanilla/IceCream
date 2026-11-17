@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.deathLocation.events;
 
+import static com.nearvanilla.iceCream.testutil.MessageTestUtils.nextMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -7,7 +8,6 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import java.util.ArrayList;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -52,18 +52,13 @@ class DeathLocationListenerTest {
         false);
   }
 
-  private String nextMessage() {
-    Component message = player.nextComponentMessage();
-    return message == null ? null : PlainTextComponentSerializer.plainText().serialize(message);
-  }
-
   @Test
   void sendsTheDeathCoordinatesToTheDyingPlayer() {
     player.teleport(new Location(world, 120.5, 64.0, -30.5));
 
     listener.onPlayerDeath(death(Component.text("Victim died")));
 
-    assertEquals("You died at <120, 64, -31>", nextMessage());
+    assertEquals("You died at <120, 64, -31>", nextMessage(player));
   }
 
   @Test
@@ -73,15 +68,17 @@ class DeathLocationListenerTest {
     listener.onPlayerDeath(death(Component.text("Victim died")));
 
     // Block coordinates floor toward negative infinity, so -0.4 is block -1 and -12.9 is -13.
-    assertEquals("You died at <-1, -13, 7>", nextMessage());
+    assertEquals("You died at <-1, -13, 7>", nextMessage(player));
   }
 
   @Test
   void sendsExactlyOneMessage() {
+    player.teleport(new Location(world, 1.5, 70.0, 2.5));
+
     listener.onPlayerDeath(death(Component.text("Victim died")));
 
-    nextMessage();
-    assertNull(nextMessage());
+    assertEquals("You died at <1, 70, 2>", nextMessage(player));
+    assertNull(nextMessage(player));
   }
 
   @Test
@@ -107,12 +104,23 @@ class DeathLocationListenerTest {
   }
 
   @Test
+  void sendsNothingWhenAnotherPluginAlreadyCancelledTheDeath() {
+    server.getPluginManager().registerEvents(listener, IceCream.instance);
+    PlayerDeathEvent event = death(Component.text("Victim died"));
+    event.setCancelled(true);
+
+    server.getPluginManager().callEvent(event);
+
+    assertNull(nextMessage(player));
+  }
+
+  @Test
   void firesForARealDeathEventOnTheServer() {
     server.getPluginManager().registerEvents(listener, IceCream.instance);
     player.teleport(new Location(world, 1, 2, 3));
 
     server.getPluginManager().callEvent(death(Component.text("Victim died")));
 
-    assertEquals("You died at <1, 2, 3>", nextMessage());
+    assertEquals("You died at <1, 2, 3>", nextMessage(player));
   }
 }

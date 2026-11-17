@@ -14,8 +14,6 @@ import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleUtils;
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.junit.jupiter.api.AfterEach;
@@ -72,9 +70,9 @@ class PhantomToggleCommandTest {
   }
 
   private String consoleMessage(ConsoleCommandSenderMock console) {
-    Component message = console.nextComponentMessage();
+    String message = nextMessage(console);
     assertNotNull(message);
-    return PlainTextComponentSerializer.plainText().serialize(message);
+    return message;
   }
 
   @Test

@@ -50,7 +50,6 @@ class MapToolsListenerIconMenuTest {
   private Inventory top;
   private InventoryView view;
 
-  @SuppressWarnings("unchecked")
   @BeforeEach
   void setUp() throws IOException {
     drawing = DisplayScenario.open("");

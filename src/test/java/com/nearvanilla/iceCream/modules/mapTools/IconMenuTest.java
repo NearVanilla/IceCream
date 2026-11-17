@@ -12,12 +12,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.nearvanilla.iceCream.testutil.IceCreamFixture;
-import java.awt.image.BufferedImage;
-import java.io.File;
+import com.nearvanilla.iceCream.testutil.MapToolsTestUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.imageio.ImageIO;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -61,15 +59,7 @@ class IconMenuTest {
 
   /** Loads icons with these names, in file name order. */
   private void icons(String... names) throws IOException {
-    File folder = new File(IceCreamFixture.dataFolder(), "map-icons");
-    assertTrue(folder.isDirectory() || folder.mkdirs());
-    for (String name : names) {
-      ImageIO.write(
-          new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB),
-          "png",
-          new File(folder, name + ".png"));
-    }
-    MapIcons.load(squaremap, folder);
+    MapIcons.load(squaremap, MapToolsTestUtils.writeIcons(names));
   }
 
   private IconMenu open(String current) {

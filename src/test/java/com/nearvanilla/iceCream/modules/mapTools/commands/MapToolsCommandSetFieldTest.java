@@ -4,9 +4,6 @@ import static com.nearvanilla.iceCream.testutil.CommandTestUtils.stack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.nearvanilla.iceCream.modules.mapTools.EditSession;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
@@ -16,26 +13,18 @@ import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.modules.mapTools.commands.MapToolsCommand.Kind;
 import com.nearvanilla.iceCream.testutil.DialogTestUtils.DialogPlayer;
 import com.nearvanilla.iceCream.testutil.DialogTestUtils.ShownDialog;
-import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils.Scenario;
 import com.nearvanilla.iceCream.testutil.MessageTestUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
-import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockbukkit.mockbukkit.command.ConsoleCommandSenderMock;
-import xyz.jpenilla.squaremap.api.Registry;
-import xyz.jpenilla.squaremap.api.Squaremap;
-import xyz.jpenilla.squaremap.api.WorldIdentifier;
 
 /** Changing one detail of a claim or marker with {@code /maptools set <kind> <id> <field>}. */
 class MapToolsCommandSetFieldTest {
@@ -97,20 +86,9 @@ class MapToolsCommandSetFieldTest {
   }
 
   /** Loads icons with these names, which markers can then use. */
-  @SuppressWarnings("unchecked")
   private void icons(String... names) throws IOException {
-    File folder = new File(IceCreamFixture.dataFolder(), "map-icons");
-    assertTrue(folder.mkdirs());
-    for (String name : names) {
-      ImageIO.write(
-          new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB),
-          "png",
-          new File(folder, name + ".png"));
-    }
-    Squaremap api = mock(Squaremap.class);
-    when(api.iconRegistry()).thenReturn(mock(Registry.class));
-    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(Optional.empty());
-    MapToolsUtils.init(api);
+    MapToolsTestUtils.writeIcons(names);
+    MapToolsUtils.init(MapToolsTestUtils.emptySquaremap());
   }
 
   // Looking up and checking the field

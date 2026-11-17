@@ -4,32 +4,22 @@ import static com.nearvanilla.iceCream.testutil.CommandTestUtils.context;
 import static com.nearvanilla.iceCream.testutil.CommandTestUtils.stack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.testutil.DialogTestUtils.DialogPlayer;
-import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils.Scenario;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
-import javax.imageio.ImageIO;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.incendo.cloud.context.CommandContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import xyz.jpenilla.squaremap.api.Registry;
-import xyz.jpenilla.squaremap.api.Squaremap;
-import xyz.jpenilla.squaremap.api.WorldIdentifier;
 
 /** What the commands suggest while a player types them. */
 class MapToolsCommandSuggestionsTest {
@@ -275,20 +265,8 @@ class MapToolsCommandSuggestionsTest {
 
   @Test
   void anIconSuggestsTheIconNames() throws IOException {
-    File folder = new File(IceCreamFixture.dataFolder(), "map-icons");
-    assertTrue(folder.mkdirs());
-    for (String name : new String[] {"pin", "star"}) {
-      ImageIO.write(
-          new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB),
-          "png",
-          new File(folder, name + ".png"));
-    }
-    Squaremap api = mock(Squaremap.class);
-    @SuppressWarnings("unchecked")
-    Registry<BufferedImage> icons = mock(Registry.class);
-    when(api.iconRegistry()).thenReturn(icons);
-    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(Optional.empty());
-    MapToolsUtils.init(api);
+    MapToolsTestUtils.writeIcons("pin", "star");
+    MapToolsUtils.init(MapToolsTestUtils.emptySquaremap());
 
     assertEquals(
         List.of("pin", "star"),

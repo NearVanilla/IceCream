@@ -1,5 +1,9 @@
 package com.nearvanilla.iceCream.testutil;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.mapTools.AreaDisplays;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore;
@@ -8,15 +12,22 @@ import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsModule;
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.testutil.DialogTestUtils.DialogPlayer;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import javax.imageio.ImageIO;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.world.WorldMock;
+import xyz.jpenilla.squaremap.api.Registry;
+import xyz.jpenilla.squaremap.api.Squaremap;
+import xyz.jpenilla.squaremap.api.WorldIdentifier;
 
 /**
  * Helpers for testing the map tools module with MockBukkit: worlds with real keys, a store backed
@@ -190,6 +201,44 @@ public final class MapToolsTestUtils {
    */
   public static File storeFile() {
     return new File(IceCreamFixture.dataFolder(), "map-areas.json");
+  }
+
+  /**
+   * Writes one small PNG icon per name into the {@code map-icons} folder of the fixture's data
+   * folder, creating the folder if it is missing. The folder is where the module looks for icons,
+   * so they are loaded by {@code MapToolsUtils.init} or {@code MapIcons.load}.
+   *
+   * @param names the icon names, without the {@code .png} extension
+   * @return the icon folder
+   * @throws IOException if an icon cannot be written
+   */
+  public static File writeIcons(String... names) throws IOException {
+    File folder = new File(IceCreamFixture.dataFolder(), "map-icons");
+    if (!folder.isDirectory() && !folder.mkdirs()) {
+      throw new IOException("Could not create " + folder);
+    }
+    for (String name : names) {
+      ImageIO.write(
+          new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB),
+          "png",
+          new File(folder, name + ".png"));
+    }
+    return folder;
+  }
+
+  /**
+   * Creates a squaremap API as a Mockito mock that has an icon registry and maps no world, so
+   * {@code MapToolsUtils.init} loads the icons and adds no layers. A test that wants a world mapped
+   * stubs {@code getWorldIfEnabled} on the returned mock.
+   *
+   * @return the squaremap mock
+   */
+  @SuppressWarnings("unchecked")
+  public static Squaremap emptySquaremap() {
+    Squaremap api = mock(Squaremap.class);
+    when(api.iconRegistry()).thenReturn(mock(Registry.class));
+    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(Optional.empty());
+    return api;
   }
 
   /**

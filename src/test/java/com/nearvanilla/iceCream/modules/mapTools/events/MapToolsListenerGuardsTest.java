@@ -21,6 +21,7 @@ import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.testutil.DisplayScenario;
 import com.nearvanilla.iceCream.testutil.DisplayTestUtils.Viewer;
 import com.nearvanilla.iceCream.testutil.MapToolsTestUtils;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -389,15 +390,10 @@ class MapToolsListenerGuardsTest {
     Registry<LayerProvider> layers = mock(Registry.class);
     MapWorld mapWorld = mock(MapWorld.class);
     when(mapWorld.layerRegistry()).thenReturn(layers);
-    Squaremap api = mock(Squaremap.class);
-    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(java.util.Optional.empty());
-    @SuppressWarnings("unchecked")
-    Registry<java.awt.image.BufferedImage> icons = mock(Registry.class);
-    when(api.iconRegistry()).thenReturn(icons);
+    Squaremap api = MapToolsTestUtils.emptySquaremap();
     MapToolsUtils.init(api);
     verify(layers, never()).register(any(Key.class), any(LayerProvider.class));
-    when(api.getWorldIfEnabled(any(WorldIdentifier.class)))
-        .thenReturn(java.util.Optional.of(mapWorld));
+    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(Optional.of(mapWorld));
 
     fire(new WorldLoadEvent(drawing.scenario().nether()));
 

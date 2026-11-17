@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -21,14 +20,10 @@ import com.nearvanilla.iceCream.modules.mapTools.MapToolsUtils;
 import com.nearvanilla.iceCream.testutil.DialogTestUtils.ShownDialog;
 import com.nearvanilla.iceCream.testutil.DisplayScenario;
 import com.nearvanilla.iceCream.testutil.DisplayTestUtils.Viewer;
-import com.nearvanilla.iceCream.testutil.IceCreamFixture;
 import com.nearvanilla.iceCream.testutil.InventoryTestUtils;
-import java.awt.image.BufferedImage;
-import java.io.File;
+import com.nearvanilla.iceCream.testutil.MapToolsTestUtils;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
-import javax.imageio.ImageIO;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -42,9 +37,6 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import xyz.jpenilla.squaremap.api.Registry;
-import xyz.jpenilla.squaremap.api.Squaremap;
-import xyz.jpenilla.squaremap.api.WorldIdentifier;
 
 /**
  * The icon menu seen through the listener. The menu is opened the way players open it: from the
@@ -63,18 +55,8 @@ class MapToolsListenerIconMenuTest {
   void setUp() throws IOException {
     drawing = DisplayScenario.open("");
     alex = drawing.viewer();
-    File folder = new File(IceCreamFixture.dataFolder(), "map-icons");
-    assertTrue(folder.mkdirs());
-    for (String name : new String[] {"alpha", "beta"}) {
-      ImageIO.write(
-          new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB),
-          "png",
-          new File(folder, name + ".png"));
-    }
-    Squaremap api = mock(Squaremap.class);
-    when(api.iconRegistry()).thenReturn(mock(Registry.class));
-    when(api.getWorldIfEnabled(any(WorldIdentifier.class))).thenReturn(Optional.empty());
-    MapToolsUtils.init(api);
+    MapToolsTestUtils.writeIcons("alpha", "beta");
+    MapToolsUtils.init(MapToolsTestUtils.emptySquaremap());
 
     MapToolsUtils.startEditing(alex, EditSession.create(Mode.MARKER));
     AreaForms.openCreate(alex);

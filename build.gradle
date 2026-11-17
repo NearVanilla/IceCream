@@ -3,6 +3,7 @@ plugins {
     id 'xyz.jpenilla.run-paper' version '3.0.2'
     id 'com.gradleup.shadow' version '9.6.1'
     id 'com.diffplug.spotless' version '8.9.0'
+    id 'jacoco'
 }
 
 group = 'com.nearvanilla'
@@ -26,6 +27,9 @@ repositories {
 
 def paperApi = "io.papermc.paper:paper-api:26.3.build.200-stable"
 def mockito = "org.mockito:mockito-core:5.24.0"
+def squaremapApi = "xyz.jpenilla:squaremap-api:1.4.3"
+def discordSrv = "com.discordsrv:discordsrv:1.30.5"
+def carbonChatApi = "de.hexaoxi:carbonchat-api:3.0.0-beta.37"
 
 configurations {
     mockitoAgent
@@ -37,9 +41,9 @@ dependencies {
     implementation("org.incendo:cloud-annotations:2.1.0")
     implementation("tools.jackson.core:jackson-core:3.2.1")
     implementation("tools.jackson.core:jackson-databind:3.2.1")
-    compileOnly("xyz.jpenilla:squaremap-api:1.4.3")
-    compileOnly("com.discordsrv:discordsrv:1.30.5")
-    compileOnly("de.hexaoxi:carbonchat-api:3.0.0-beta.37")
+    compileOnly(squaremapApi)
+    compileOnly(discordSrv)
+    compileOnly(carbonChatApi)
     testImplementation(platform("org.junit:junit-bom:6.1.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -47,6 +51,12 @@ dependencies {
     testImplementation(paperApi)
     testImplementation(mockito)
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.3:4.119.0")
+    // The DiscordSRV jar bundles an old SnakeYAML that breaks Bukkit's YamlConfiguration. Declaring
+    // SnakeYAML first puts Paper's version ahead of it on the test classpath.
+    testImplementation("org.yaml:snakeyaml:2.2")
+    testImplementation(squaremapApi)
+    testImplementation(discordSrv)
+    testImplementation(carbonChatApi)
     mockitoAgent(mockito) {
         transitive = false
     }
@@ -170,11 +180,67 @@ runServer {
     }
 }
 
+jacoco {
+    // 0.8.14 is the first version that reads Java 25 class files.
+    toolVersion = "0.8.14"
+}
+
 test {
     useJUnitPlatform()
     // Resolve the agent path lazily, only when tests actually run.
     jvmArgumentProviders.add({ ["-javaagent:${configurations.mockitoAgent.asPath}".toString()] } as CommandLineArgumentProvider)
+
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'short'
+        showExceptions true
+        showCauses true
+    }
+
+    finalizedBy jacocoTestReport
+
+    // MockBukkit skips a test that reaches an unimplemented method instead of failing it, which
+    // would hide the gap. Fail the build when any test is skipped. The closures use no project
+    // references so they stay configuration cache safe.
+    def skippedTests = []
+    afterTest { desc, result ->
+        if (result.resultType == TestResult.ResultType.SKIPPED) {
+            skippedTests << "${desc.className}.${desc.name}".toString()
+        }
+    }
+    afterSuite { desc, result ->
+        if (desc.parent == null) {
+            println "Tests: ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped"
+            if (!skippedTests.isEmpty()) {
+                throw new GradleException("Skipped tests are not allowed:\n" + skippedTests.join("\n"))
+            }
+        }
+    }
 }
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                // Placeholder until the real minimum is set.
+                minimum = 0.0
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
 
 shadowJar {
     enableAutoRelocation = true

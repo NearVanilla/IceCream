@@ -16,7 +16,7 @@ Run these from the repository root. On Windows use `gradlew.bat` or Git Bash.
 ./gradlew test --tests "com.nearvanilla.iceCream.modules.hat.HatModuleTest"
 ```
 
-- `./gradlew test` runs every test and then writes the coverage report.
+- `./gradlew test` runs every test and, when they all pass, writes the coverage report.
 - `./gradlew build` runs the tests, the coverage minimum, the Spotless format check and the plugin
   JAR. Run `./gradlew spotlessApply` first so the format check passes. Run `build` right before
   committing.
@@ -45,14 +45,17 @@ is configured in `build.gradle`; it is the first version that reads Java 25 clas
 ### Continuous integration
 
 The `Unit Tests` workflow (`.github/workflows/tests.yml`, job `Run Unit Tests`) runs on pushes to
-`main`, on pull requests and by hand, whenever Java files, the build files, `src/test/resources` or
-the workflow itself change. It runs the tests, the coverage report and the coverage minimum, then:
+`main`, on pull requests and by hand, whenever Java files, the build files, `src/main/resources`,
+`src/test/resources` or the workflow itself change. The tests read the plugin's own resources, such
+as `config.yml` and the data files, so a change to those runs them too. It runs the tests, the
+coverage report and the coverage minimum, then:
 
 - publishes the results as a check run with `mikepenz/action-junit-report`, listing failed tests,
 - writes the line and branch coverage to the job summary,
 - uploads the `test-reports` artifact (the HTML test report and the JaCoCo reports, kept for seven
   days),
-- comments on the pull request when the tests fail.
+- comments on the pull request when the job fails, whether the cause is a failing test, the
+  coverage minimum or a build error.
 
 Pull requests from forks get a read-only token, so for them the check run and the comment are
 skipped. The tests still run, and the log, summary and artifact are still there. The separate
@@ -75,20 +78,21 @@ skipped. The tests still run, and the log, summary and artifact are still there.
   only the parts that do not depend on the clock, or use generous offsets. Never assert on
   sub-second wall-clock tolerances.
 - **Keep the coverage minimum.** `build.gradle` sets a minimum line coverage in
-  `jacocoTestCoverageVerification`, currently 75 percent. The build fails below it. Raise it, rounded
-  down to the nearest 5 percent, when coverage rises well above it. Do not lower it to get a change
-  through; add the missing tests.
+  `jacocoTestCoverageVerification` (see the `minimum` there). The build fails below it. Raise it,
+  rounded down to the nearest 5 percent, when coverage rises well above it. Do not lower it to get
+  a change through; add the missing tests.
 - **Test behaviour, not mocks.** Assert the outcome a player or server would see: an event
   cancelled or not, items, blocks, messages, persistent data. A test that only checks that a mock
   returned what it was told to return proves nothing.
 - **Keep the output clean.** A test that makes production code log a warning or an error runs
   inside `LogCapture`, and asserts the record when the log is part of the behaviour.
-- **Production code stays as it is.** Do not change behaviour to make a test easier. When a class
-  cannot be tested otherwise, widening a `private` helper to package-private, or extracting a pure
-  method from an event handler, is acceptable. If a test shows that production code is wrong, do not
-  write a test that pins the wrong behaviour; fix the code or report it.
+- **Do not bend production code to fit a test.** Do not change behaviour to make a test easier.
+  When a class cannot be tested otherwise, widening a `private` helper to package-private, or
+  extracting a pure method from an event handler, is acceptable. If a test shows that production
+  code is wrong, do not write a test that pins the wrong behaviour; fix the code or report it.
 - **Layout.** A test lives in the same package as the class it tests, is named `ClassNameTest`, is
-  package-private and uses JUnit Jupiter only.
+  package-private and uses JUnit Jupiter only. A large class may split its tests by topic into
+  `ClassNameTopicTest` classes, for example `WorldTourCommandTakeoverTest`.
 
 ### Checking that a test can fail
 
@@ -151,10 +155,10 @@ Construct the real event and either call the handler or register the listener an
 through the plugin manager. Assert the outcome. A listener declared with `ignoreCancelled = true`
 needs a test that fires an already cancelled event through the plugin manager. See
 `modules/bonemealableSporeBlossoms/events/SporeBlossomBonemealEventTest.java` and
-`modules/spectator/events/SpectatorAdvancementCriterionGrantEventTest.java`.
+`modules/hat/events/HatInventoryListenerTest.java` (`ignoresAClickAnotherPluginAlreadyCancelled`).
 
 When a handler checks a permission, grant it with
-`player.addAttachment(IceCream.instance, PERMISSION, true)`, as
+`player.addAttachment(IceCream.instance, HatCommand.PERMISSION, true)`, as
 `modules/hat/events/HatInventoryListenerTest.java` does.
 
 ### Commands
@@ -239,8 +243,8 @@ dialog.click("Create", dialog.responseWithInitialValues().text("label", "Home"),
 
 ## Test classpath notes
 
-Two lines in the `dependencies` block of `build.gradle` exist only for the tests. Re-check both when
-you bump `paperApi` or DiscordSRV.
+Two lines in the `dependencies` block of `build.gradle` are classpath workarounds. Re-check both
+when you bump `paperApi` or DiscordSRV.
 
 - `org.yaml:snakeyaml:2.2` is declared before the DiscordSRV jar, because that jar bundles an old
   SnakeYAML that breaks Bukkit's `YamlConfiguration`. Declaring it first puts Paper's version ahead

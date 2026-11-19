@@ -155,6 +155,11 @@ modules:
     messages:
       stopped: '<gray>Vine growth <red>stopped</red></gray>'
       growing: '<gray>Vine growth <green>resumed</green></gray>'
+  growthfreeze:
+    enabled: true
+    messages:
+      frozen: '<gray>Growth <aqua>frozen</aqua></gray>'
+      resumed: '<gray>Growth <green>resumed</green></gray>'
   maptools:
     enabled: true
     layer-label: 'Claims'

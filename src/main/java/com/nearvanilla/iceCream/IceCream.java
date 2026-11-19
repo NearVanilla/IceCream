@@ -8,6 +8,7 @@ import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
 import com.nearvanilla.iceCream.modules.example.ExampleModule;
 import com.nearvanilla.iceCream.modules.firstJoinMessage.FirstJoinMessageModule;
 import com.nearvanilla.iceCream.modules.flight.FlightModule;
+import com.nearvanilla.iceCream.modules.growthFreeze.GrowthFreezeModule;
 import com.nearvanilla.iceCream.modules.hat.HatModule;
 import com.nearvanilla.iceCream.modules.info.InfoModule;
 import com.nearvanilla.iceCream.modules.isSlimeChunk.isSlimeChunkModule;
@@ -88,6 +89,7 @@ public final class IceCream extends JavaPlugin {
       new LootContainerProtectionModule();
   private final TrialVaultResetModule trialVaultResetModule = new TrialVaultResetModule();
   private final VineGrowthModule vineGrowthModule = new VineGrowthModule();
+  private final GrowthFreezeModule growthFreezeModule = new GrowthFreezeModule();
   private final MapToolsModule mapToolsModule = new MapToolsModule();
 
   @Override
@@ -132,6 +134,7 @@ public final class IceCream extends JavaPlugin {
     lootContainerProtectionModule.register();
     trialVaultResetModule.register();
     vineGrowthModule.register();
+    growthFreezeModule.register();
     mapToolsModule.register();
   }
 

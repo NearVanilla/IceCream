@@ -12,7 +12,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRules;
@@ -37,6 +36,7 @@ public class OnePlayerSleepModule implements Module {
   private OnePlayerSleepListener listener;
   private boolean enabled;
   private double multiplier;
+  private WakeButton wakeButton;
   private boolean ownTimeWrite;
   private boolean coolingDown;
   private long cooldownStartedNanos;
@@ -90,6 +90,7 @@ public class OnePlayerSleepModule implements Module {
       return;
     }
     multiplier = number.doubleValue();
+    wakeButton = WakeButton.fromConfig(IceCream.config);
     try {
       registerCommands();
       registerEvents();
@@ -194,13 +195,7 @@ public class OnePlayerSleepModule implements Module {
       if (session.sleepers.containsKey(entry.getKey())) continue;
       String token = UUID.randomUUID().toString();
       session.sleepers.put(entry.getKey(), token);
-      Bukkit.broadcast(
-          Component.text(player.getName() + " has gone to sleep", NamedTextColor.YELLOW)
-              .append(Component.space())
-              .append(
-                  Component.text("[Wake up]", NamedTextColor.RED)
-                      .clickEvent(ClickEvent.runCommand("/oneplayersleep wake " + token))
-                      .hoverEvent(Component.text("Wake all sleepers and keep the night."))));
+      Bukkit.broadcast(wakeButton.sleepAnnouncement(player.getName(), token));
     }
   }
 
@@ -318,6 +313,11 @@ public class OnePlayerSleepModule implements Module {
   public void requestWakeUp(Player clicker, String token) {
     if (!enabled || isCoolingDown() || !clicker.isOnline()) {
       clicker.sendMessage(INACTIVE_REQUEST);
+      return;
+    }
+    // Links from announcements sent before a restart still run this command.
+    if (!wakeButton.enabled()) {
+      clicker.sendMessage(wakeButton.disabledMessage());
       return;
     }
     boolean valid = false;

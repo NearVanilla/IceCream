@@ -60,6 +60,11 @@ modules:
     enabled: true
     # Total night speed while sleeping; fractions are supported, minimum 1.0.
     multiplier: 10.0
+    wake-button:
+      # Show the [Wake up] button that lets anyone cancel a sleep and keep the night.
+      enabled: true
+      # MiniMessage text shown in place of the button while it is off. Leave empty for none.
+      disabled-reason: ''
   playerheaddrops:
     enabled: true
     drop-chance: 1.0

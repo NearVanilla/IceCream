@@ -61,9 +61,9 @@ modules:
     # Total night speed while sleeping; fractions are supported, minimum 1.0.
     multiplier: 10.0
     wake-button:
-      # Show the [Wake up] button that lets anyone cancel a sleep and keep the night.
+      # Let anyone click [Wake up] to cancel a sleep and keep the night. When off it is struck through.
       enabled: true
-      # MiniMessage text shown in place of the button while it is off. Leave empty for none.
+      # MiniMessage text shown on hovering or clicking the struck-through button. Empty uses a default.
       disabled-reason: ''
   playerheaddrops:
     enabled: true

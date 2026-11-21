@@ -311,13 +311,17 @@ public class OnePlayerSleepModule implements Module {
   }
 
   public void requestWakeUp(Player clicker, String token) {
-    if (!enabled || isCoolingDown() || !clicker.isOnline()) {
+    if (!enabled || !clicker.isOnline()) {
       clicker.sendMessage(INACTIVE_REQUEST);
       return;
     }
-    // Links from announcements sent before a restart still run this command.
+    // The struck-through button, and links from before a restart, still run this command.
     if (!wakeButton.enabled()) {
       clicker.sendMessage(wakeButton.disabledMessage());
+      return;
+    }
+    if (isCoolingDown()) {
+      clicker.sendMessage(INACTIVE_REQUEST);
       return;
     }
     boolean valid = false;

@@ -32,8 +32,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * In-game forms (Paper dialogs) to save a new area, manage an existing one, pick a color and
- * confirm leaving or deleting. When a value is invalid the form reopens with what was typed.
+ * In-game forms (Paper dialogs) to create an area from typed coordinates, manage an existing one,
+ * pick a color and confirm deleting. When a value is invalid the form reopens with what was typed.
  *
  * @author Dynant
  * @version 1.0
@@ -53,9 +53,10 @@ public final class AreaForms {
 
   /**
    * The values typed into a form, used to fill it in again. {@code typed} is the shape whose
-   * coordinates are typed into the form, or null when the shape was drawn in game.
+   * coordinates are typed into the form, or null for a polygon, whose points can be too long for a
+   * field.
    */
-  private record Values(
+  record Values(
       boolean marker,
       String id,
       String label,
@@ -64,9 +65,9 @@ public final class AreaForms {
       String description,
       int opacity,
       String icon,
-      EditSession.Mode typed,
+      AreaShape typed,
       List<String> coordinates,
-      boolean hidden) {
+      boolean allowNearby) {
 
     static Values of(MapArea area) {
       return new Values(
@@ -78,22 +79,24 @@ public final class AreaForms {
           area.description(),
           toPercent(MapToolsUtils.fillOpacity(area)),
           area.icon(),
-          area.isMarker() || MapArea.POLYGON.equals(area.shape())
-              ? null
-              : EditSession.Mode.of(area),
+          shapeOf(area),
           MapToolsUtils.shapeFields(area),
-          area.isHidden());
+          area.allowsNearby());
+    }
+
+    private static AreaShape shapeOf(MapArea area) {
+      if (area.isMarker()) return AreaShape.MARKER;
+      if (area.isCircle()) return AreaShape.CIRCLE;
+      return MapArea.RECT.equals(area.shape()) ? AreaShape.RECT : null;
     }
 
     /**
-     * Reads what was typed. The color and icon come from their pickers, markers have no opacity and
-     * only claims being managed have the hide checkbox, so those come from the values the form was
-     * opened with.
+     * Reads what was typed. The color and icon come from their pickers and markers have no opacity
+     * or nearby checkbox, so those come from the values the form was opened with.
      */
     static Values of(DialogResponseView response, Values opened) {
       Float opacity = response.getFloat("opacity");
-      // Only the manage form of a claim has the checkbox.
-      Boolean hidden = response.getBoolean("hidden");
+      Boolean allowNearby = response.getBoolean("nearby");
       List<String> coordinates = new ArrayList<>();
       for (int i = 0; i < opened.coordinates().size(); i++) {
         coordinates.add(trimmed(response.getText("coordinate" + i)));
@@ -109,17 +112,37 @@ public final class AreaForms {
           opened.icon(),
           opened.typed(),
           coordinates,
-          hidden == null ? opened.hidden() : hidden);
+          allowNearby == null ? opened.allowNearby() : allowNearby);
     }
 
     Values withColor(String color) {
       return new Values(
-          marker, id, label, color, owner, description, opacity, icon, typed, coordinates, hidden);
+          marker,
+          id,
+          label,
+          color,
+          owner,
+          description,
+          opacity,
+          icon,
+          typed,
+          coordinates,
+          allowNearby);
     }
 
     Values withIcon(String icon) {
       return new Values(
-          marker, id, label, color, owner, description, opacity, icon, typed, coordinates, hidden);
+          marker,
+          id,
+          label,
+          color,
+          owner,
+          description,
+          opacity,
+          icon,
+          typed,
+          coordinates,
+          allowNearby);
     }
 
     String kind() {
@@ -132,33 +155,21 @@ public final class AreaForms {
   }
 
   /**
-   * Opens the form that saves the shape the player drew as a new area.
-   *
-   * @param player the player who drew the shape
+   * Opens the form that creates a claim or marker from typed coordinates, filled in with where the
+   * player stands.
    */
-  public static void openCreate(Player player) {
-    openCreate(player, newValues(isDrawingMarker(player), null, List.of()), null);
-  }
-
-  /**
-   * Opens the form that creates a claim from typed coordinates, filled in with where the player
-   * stands.
-   *
-   * @param shape the shape to create, not a marker
-   */
-  public static void openCreate(Player player, EditSession.Mode shape) {
+  public static void openCreate(Player player, AreaShape shape) {
     String here = player.getLocation().getBlockX() + " " + player.getLocation().getBlockZ();
     List<String> coordinates =
         switch (shape) {
           case RECT -> List.of(here, here);
           case CIRCLE -> List.of(here, "10");
-          default -> throw new IllegalArgumentException("Only rectangles and circles are typed");
+          case MARKER -> List.of(here);
         };
-    openCreate(player, newValues(false, shape, coordinates), null);
+    openCreate(player, newValues(shape == AreaShape.MARKER, shape, coordinates), null);
   }
 
-  private static Values newValues(
-      boolean marker, EditSession.Mode typed, List<String> coordinates) {
+  private static Values newValues(boolean marker, AreaShape typed, List<String> coordinates) {
     return new Values(
         marker,
         "",
@@ -171,11 +182,6 @@ public final class AreaForms {
         typed,
         coordinates,
         false);
-  }
-
-  private static boolean isDrawingMarker(Player player) {
-    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    return session != null && session.getMode() == EditSession.Mode.MARKER;
   }
 
   /**
@@ -197,20 +203,10 @@ public final class AreaForms {
         customClick(
             (response, clicker) -> {
               Values entered = Values.of(response, values);
-              AreaGeometry geometry;
-              if (entered.typed() != null) {
-                geometry = typedGeometry(entered);
-                if (geometry == null) {
-                  openCreate(clicker, entered, coordinatesProblem(entered.typed()));
-                  return;
-                }
-              } else {
-                EditSession session = MapToolsModule.sessions.get(clicker.getUniqueId());
-                geometry = session == null || !session.isNew() ? null : session.toGeometry();
-                if (geometry == null) {
-                  clicker.sendMessage(MM.deserialize("<red>Your shape is no longer there.</red>"));
-                  return;
-                }
+              AreaGeometry geometry = typedGeometry(entered);
+              if (geometry == null) {
+                openCreate(clicker, entered, coordinatesProblem(entered.typed()));
+                return;
               }
               String problem =
                   MapToolsUtils.validate(entered.id(), entered.color(), entered.label(), true);
@@ -218,34 +214,19 @@ public final class AreaForms {
                 openCreate(clicker, entered, problem);
                 return;
               }
-              // A typed claim replaces whatever the player was drawing or editing.
-              if (entered.typed() != null
-                  && !MapToolsUtils.confirmLeave(
-                      clicker, () -> openCreate(clicker, entered, null))) {
-                return;
-              }
               Runnable create =
-                  () -> {
-                    boolean created =
-                        MapToolsUtils.createArea(
-                            clicker,
-                            entered.id(),
-                            geometry,
-                            entered.color(),
-                            entered.label(),
-                            MapAreasStore.parseOwners(entered.owner()),
-                            entered.description(),
-                            toStored(entered.opacity()),
-                            entered.icon());
-                    if (!created) return;
-                    if (entered.typed() == null) {
-                      // A drawn shape stays shown for editing.
-                      MapToolsUtils.tryEditing(clicker, MapToolsModule.store.getArea(entered.id()));
-                    } else if (MapToolsUtils.isEditing(clicker)) {
-                      // A typed one is done once created, so leave the shape that was being drawn.
-                      MapToolsUtils.stopEditing(clicker);
-                    }
-                  };
+                  () ->
+                      MapToolsUtils.createArea(
+                          clicker,
+                          entered.id(),
+                          geometry,
+                          entered.color(),
+                          entered.label(),
+                          MapAreasStore.parseOwners(entered.owner()),
+                          entered.description(),
+                          toStored(entered.opacity()),
+                          entered.icon(),
+                          !entered.marker() && entered.allowNearby());
               if (entered.marker()) {
                 create.run();
               } else {
@@ -273,15 +254,14 @@ public final class AreaForms {
         DialogType.multiAction(
             buttons, ActionButton.create(Component.text("Cancel"), null, 150, null), 2);
     String title =
-        values.typed() == null
-            ? "New " + values.kind()
+        values.marker()
+            ? "New marker"
             : "New " + values.typed().label().toLowerCase(Locale.ROOT) + " claim";
     show(player, title, body(values, error), inputs, type);
   }
 
   /** The area with the fields the player changed in the manage form, and the new shape if any. */
-  private static MapArea changed(
-      MapArea area, Values entered, Values shown, AreaGeometry newShape) {
+  static MapArea changed(MapArea area, Values entered, Values shown, AreaGeometry newShape) {
     MapArea updated = area;
     if (!Objects.equals(entered.label(), shown.label())) {
       updated = updated.withLabel(entered.label());
@@ -301,19 +281,20 @@ public final class AreaForms {
     if (!Objects.equals(entered.icon(), shown.icon())) {
       updated = updated.withIcon(entered.icon());
     }
-    if (entered.hidden() != shown.hidden()) {
-      updated = updated.withHidden(entered.hidden());
+    if (entered.allowNearby() != shown.allowNearby()) {
+      updated = updated.withAllowNearby(entered.allowNearby());
     }
     return newShape == null ? updated : updated.withGeometry(newShape);
   }
 
-  /** The shape fields of a new or managed claim, with x and z on one line. */
+  /** The shape fields of a new or managed claim or marker, with x and z on one line. */
   private static List<DialogInput> shapeInputs(Values values) {
     if (values.typed() == null) return List.of();
     List<String> labels =
         switch (values.typed()) {
           case RECT -> List.of("Corner 1, x z", "Corner 2, x z");
-          default -> List.of("Center, x z", "Radius");
+          case CIRCLE -> List.of("Center, x z", "Radius");
+          case MARKER -> List.of("Spot, x z");
         };
     List<DialogInput> inputs = new ArrayList<>();
     for (int i = 0; i < labels.size() && i < values.coordinates().size(); i++) {
@@ -322,14 +303,14 @@ public final class AreaForms {
     return inputs;
   }
 
-  /** Reads the shape fields of a claim being managed, or returns null if they are invalid. */
+  /** Reads the shape fields of an area being managed, or returns null if they are invalid. */
   private static AreaGeometry managedGeometry(MapArea area, Values shown, Values values) {
     List<String> fields = values.coordinates();
     String world = area.world();
     switch (values.typed()) {
       case CIRCLE -> {
         // The form shows a rounded center and radius, so a part that was not edited is kept as it
-        // is, and a radius drawn in game can be above the typed limit.
+        // is, and an older radius can be above the typed limit.
         MapPoint center = area.center();
         if (!Objects.equals(fields.getFirst(), shown.coordinates().getFirst())) {
           int[] typed = parseBlock(fields.getFirst());
@@ -359,10 +340,19 @@ public final class AreaForms {
             null,
             null);
       }
+      case MARKER -> {
+        int[] spot = parseBlock(fields.getFirst());
+        return spot == null ? null : markerShape(world, spot);
+      }
       default -> {
         return null;
       }
     }
+  }
+
+  private static AreaGeometry markerShape(String world, int[] spot) {
+    MapPoint point = MapToolsUtils.blockCenter(spot[0], spot[1]);
+    return new AreaGeometry(world, List.of(point), MapArea.MARKER, point, null);
   }
 
   /** Parses {@code x z}, with a space or comma between, or returns null. */
@@ -406,17 +396,34 @@ public final class AreaForms {
         yield MapToolsUtils.circleShape(
             world, MapToolsUtils.blockCenter(center[0], center[1]), radius);
       }
-      default -> null;
+      case MARKER -> {
+        int[] spot = parseBlock(typed.get(0));
+        yield spot == null ? null : markerShape(world, spot);
+      }
     };
   }
 
-  private static String coordinatesProblem(EditSession.Mode shape) {
+  /**
+   * Says the claim or marker is gone.
+   *
+   * @param kind {@code claim} or {@code marker}
+   */
+  private static Component noLongerExists(String kind) {
+    return MM.deserialize(
+        "<red>This <kind> no longer exists.</red>", Placeholder.unparsed("kind", kind));
+  }
+
+  private static String coordinatesProblem(AreaShape shape) {
     int max = MapToolsUtils.MAX_TYPED_SIZE;
-    return shape == EditSession.Mode.RECT
-        ? "Use whole numbers like 100 -200 for each corner, and a rectangle at most "
-            + max
-            + " blocks wide and long."
-        : "Use whole numbers like 100 -200 for the center, and a radius from 1 to " + max + ".";
+    return switch (shape) {
+      case RECT ->
+          "Use whole numbers like 100 -200 for each corner, and a rectangle at most "
+              + max
+              + " blocks wide and long.";
+      case CIRCLE ->
+          "Use whole numbers like 100 -200 for the center, and a radius from 1 to " + max + ".";
+      case MARKER -> "Use whole numbers like 100 -200 for the spot.";
+    };
   }
 
   /**
@@ -432,7 +439,7 @@ public final class AreaForms {
               Values entered = Values.of(response, values);
               MapArea area = MapToolsModule.store.getArea(id);
               if (area == null) {
-                clicker.sendMessage(MM.deserialize("<red>This claim no longer exists.</red>"));
+                MapToolsUtils.error(clicker, noLongerExists(shown.kind()));
                 return;
               }
               boolean renaming = !id.equals(entered.id());
@@ -455,7 +462,6 @@ public final class AreaForms {
               if (!renaming && !reshaping && changed(area, entered, shown, null).equals(area)) {
                 return;
               }
-              if ((renaming || reshaping) && MapToolsUtils.blockedByEditor(clicker, id)) return;
               AreaGeometry reshaped = newShape;
               // Changes are applied to the claim as it is once confirmed, in case it changed while
               // the confirmation was open.
@@ -463,8 +469,7 @@ public final class AreaForms {
                   () -> {
                     MapArea current = MapToolsModule.store.getArea(id);
                     if (current == null) {
-                      clicker.sendMessage(
-                          MM.deserialize("<red>This claim no longer exists.</red>"));
+                      MapToolsUtils.error(clicker, noLongerExists(shown.kind()));
                       return;
                     }
                     MapArea result = changed(current, entered, shown, reshaped);
@@ -478,7 +483,8 @@ public final class AreaForms {
                             "<green>Updated <id>.</green>",
                             Placeholder.unparsed("id", entered.id())));
                   };
-              if (reshaping) {
+              // Only claims are checked for others nearby; a marker just moves.
+              if (reshaping && !entered.marker()) {
                 confirmNearby(
                     clicker,
                     reshaped,
@@ -520,12 +526,6 @@ public final class AreaForms {
     inputs.add(idInput(values));
     inputs.addAll(shapeInputs(values));
     inputs.addAll(detailInputs(values));
-    if (!values.marker()) {
-      inputs.add(
-          DialogInput.bool("hidden", Component.text("Hide in edit mode"))
-              .initial(values.hidden())
-              .build());
-    }
     show(player, "Manage " + values.kind() + " " + id, body(values, error), inputs, type);
   }
 
@@ -586,9 +586,11 @@ public final class AreaForms {
                       claim.owners().isEmpty() ? "none" : String.join(", ", claim.owners())),
                   Placeholder.unparsed(
                       "away",
-                      near.distance() == 0
+                      near.overlaps()
                           ? "overlaps"
-                          : Math.round(near.distance()) + " blocks away"))));
+                          : near.distance() == 0
+                              ? "touches it"
+                              : Math.round(near.distance()) + " blocks away"))));
     }
     if (nearby.size() > NEARBY_SHOWN) {
       body.add(
@@ -616,41 +618,6 @@ public final class AreaForms {
     show(player, "Claims nearby", body, List.of(), type);
   }
 
-  /**
-   * Asks a player with unsaved shape changes whether to save or discard them before continuing.
-   * Cancel keeps them editing with their changes.
-   *
-   * @param then what the player was doing, run after saving or discarding
-   */
-  public static void confirmLeave(Player player, EditSession session, Runnable then) {
-    DialogAction save =
-        customClick(
-            (response, clicker) -> {
-              EditActions.apply(clicker, false);
-              then.run();
-            });
-    DialogAction discard =
-        customClick(
-            (response, clicker) -> {
-              session.setChanged(false);
-              then.run();
-            });
-    DialogType type =
-        DialogType.multiAction(
-            List.of(
-                ActionButton.create(Component.text("Save", NamedTextColor.GREEN), null, 100, save),
-                ActionButton.create(
-                    Component.text("Discard", NamedTextColor.RED), null, 100, discard)),
-            ActionButton.create(Component.text("Cancel"), null, 100, null),
-            2);
-    show(
-        player,
-        "Unsaved changes to " + session.getAreaId(),
-        List.of(DialogBody.plainMessage(Component.text("Save or discard your shape changes?"))),
-        List.of(),
-        type);
-  }
-
   /** Asks the player to confirm deleting an area. Cancel just closes the dialog. */
   public static void confirmDelete(Player player, String id) {
     confirmDelete(player, id, null);
@@ -660,12 +627,14 @@ public final class AreaForms {
    * @param shown the manage form values to go back to on cancel, or null to just close
    */
   private static void confirmDelete(Player player, String id, Values shown) {
+    MapArea area = MapToolsModule.store.getArea(id);
+    String kind = area != null && area.isMarker() ? "marker" : "claim";
     DialogAction delete =
         customClick(
             (response, clicker) -> {
               MapArea deleted = MapToolsUtils.deleteArea(id);
               if (deleted == null) {
-                clicker.sendMessage(MM.deserialize("<red>This claim no longer exists.</red>"));
+                MapToolsUtils.error(clicker, noLongerExists(kind));
                 return;
               }
               clicker.sendMessage(MapToolsUtils.deletedMessage(deleted));
@@ -673,14 +642,13 @@ public final class AreaForms {
     DialogAction back =
         customClick(
             (response, clicker) -> {
-              MapArea area = MapToolsModule.store.getArea(id);
-              if (area != null) openManage(clicker, id, shown, Values.of(area), null);
+              MapArea current = MapToolsModule.store.getArea(id);
+              if (current != null) openManage(clicker, id, shown, Values.of(current), null);
             });
     DialogType type =
         DialogType.confirmation(
             ActionButton.create(Component.text("Delete", NamedTextColor.RED), null, 100, delete),
             ActionButton.create(Component.text("Cancel"), null, 100, shown == null ? null : back));
-    MapArea area = MapToolsModule.store.getArea(id);
     String label = area == null ? id : area.label();
     String shape = area == null ? "" : MapToolsUtils.shapeText(area);
     show(
@@ -701,7 +669,18 @@ public final class AreaForms {
   private static List<DialogInput> detailInputs(Values values) {
     List<DialogInput> inputs = new ArrayList<>();
     inputs.add(text("label", "Label", values.label(), MapToolsUtils.LABEL_MAX_LENGTH));
-    if (!values.marker()) inputs.add(opacityInput(values));
+    if (!values.marker()) {
+      inputs.add(opacityInput(values));
+      inputs.add(
+          DialogInput.bool(
+                  "nearby",
+                  MM.deserialize(
+                      "Others may claim within <distance> blocks",
+                      Placeholder.unparsed(
+                          "distance", String.valueOf(MapToolsUtils.nearbyClaimDistance()))))
+              .initial(values.allowNearby())
+              .build());
+    }
     inputs.add(
         text(
             "owner",
@@ -770,7 +749,7 @@ public final class AreaForms {
                 (response, clicker) -> {
                   String hex = MapToolsUtils.normalizeColor(trimmed(response.getText("hex")));
                   if (hex == null) {
-                    clicker.sendMessage(INVALID_HEX);
+                    MapToolsUtils.error(clicker, INVALID_HEX);
                     pickColor(clicker, current, onPick);
                     return;
                   }

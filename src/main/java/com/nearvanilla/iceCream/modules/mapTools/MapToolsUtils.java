@@ -5,6 +5,9 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.AreaGeometry;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
+import com.nearvanilla.iceCream.modules.mapTools.events.MapAreaChangeEvent;
+import com.nearvanilla.iceCream.modules.mapTools.events.MapAreaChangeEvent.Change;
+import com.nearvanilla.iceCream.modules.mapTools.events.MapToolsErrorEvent;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
@@ -21,15 +24,10 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
-import org.bukkit.HeightMap;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Tag;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import xyz.jpenilla.squaremap.api.BukkitAdapter;
 import xyz.jpenilla.squaremap.api.Key;
 import xyz.jpenilla.squaremap.api.MapWorld;
@@ -39,8 +37,7 @@ import xyz.jpenilla.squaremap.api.marker.Marker;
 import xyz.jpenilla.squaremap.api.marker.MarkerOptions;
 
 /**
- * Shared map tools logic: the squaremap layer, saving and deleting areas, edit sessions, colors and
- * validation.
+ * Shared map tools logic: the squaremap layer, saving and deleting areas, colors and validation.
  *
  * @author Dynant
  * @version 1.0
@@ -48,7 +45,7 @@ import xyz.jpenilla.squaremap.api.marker.MarkerOptions;
  */
 public final class MapToolsUtils {
 
-  /** Permission required for all area commands and for area edit mode. */
+  /** Permission required for all area commands. */
   public static final String PERMISSION = "icecream.modules.maptools.manage";
 
   /** Permission for teleporting to claims; the [TP] buttons only show for players who have it. */
@@ -84,7 +81,24 @@ public final class MapToolsUtils {
   public static void init(Squaremap api) {
     squaremap = api;
     MapIcons.load(api, new File(IceCream.instance.getDataFolder(), "map-icons"));
-    Bukkit.getWorlds().forEach(MapToolsUtils::registerWorld);
+    // One export for all worlds, rather than one per world.
+    Bukkit.getWorlds().forEach(world -> addWorld(world, false));
+    exportForWeb();
+  }
+
+  /**
+   * Rewrites the public file that websites read the areas from. Only areas in worlds shown on the
+   * web map are written, so claims in worlds hidden from squaremap stay private. The data is taken
+   * now; the file is written off the main thread.
+   */
+  private static void exportForWeb() {
+    if (squaremap == null) return;
+    ClaimsExport.writeLater(
+        squaremap.webDir(),
+        MapToolsModule.store.getAreas().stream()
+            .filter(area -> layers.containsKey(area.world()))
+            .toList(),
+        iconNames());
   }
 
   /** Removes all layers this module added to squaremap. */
@@ -101,6 +115,7 @@ public final class MapToolsUtils {
     }
     layers.clear();
     markerLayers.clear();
+    ClaimsExport.finishWrites();
     MapIcons.unload(squaremap);
     squaremap = null;
   }
@@ -112,6 +127,10 @@ public final class MapToolsUtils {
    * @param world the world to register
    */
   public static void registerWorld(World world) {
+    addWorld(world, true);
+  }
+
+  private static void addWorld(World world, boolean export) {
     String worldKey = world.getKey().asString();
     if (squaremap == null || layers.containsKey(worldKey)) return;
 
@@ -131,6 +150,7 @@ public final class MapToolsUtils {
     for (MapArea area : MapToolsModule.store.getAreas()) {
       if (area.world().equals(worldKey)) renderArea(area);
     }
+    if (export) exportForWeb();
   }
 
   /**
@@ -152,7 +172,7 @@ public final class MapToolsUtils {
             .hoverTooltip(escapeHtml(area.label()))
             .clickTooltip(tooltip(area))
             .build();
-    // Circles keep their points for in-game outlines, but the map draws them as true circles.
+    // Circles keep their points for sizes and distances, but the map draws them as true circles.
     // Markers without a known icon show as a small dot in their color.
     Marker marker;
     if (area.isMarker()) {
@@ -174,20 +194,34 @@ public final class MapToolsUtils {
     }
   }
 
+  /** Tells listeners, such as the mod channel, that an area changed. */
+  private static void fireChange(Change change, MapArea area, String previousId) {
+    Bukkit.getPluginManager().callEvent(new MapAreaChangeEvent(change, area, previousId));
+  }
+
   /**
-   * Saves an area to the file, redraws it on the map and refreshes the outlines of everyone in edit
-   * mode.
+   * Tells the sender why a map tools command or form failed, in chat, and lets listeners such as
+   * the mod channel know.
+   *
+   * @param message the reason, usually in red
+   */
+  public static void error(CommandSender sender, Component message) {
+    sender.sendMessage(message);
+    Bukkit.getPluginManager().callEvent(new MapToolsErrorEvent(sender, message));
+  }
+
+  /**
+   * Saves an area to the file and redraws it on the map.
    *
    * @param area the area to save
    */
   public static void saveArea(MapArea area) {
     saveArea(area, area.id());
+    fireChange(Change.UPDATED, area, null);
   }
 
   /**
-   * Saves an area, possibly under a new id. Open edits of the area without unsaved changes are
-   * reloaded so they show the saved version; callers check {@link #blockedByEditor} first where an
-   * edit with changes would be overwritten.
+   * Saves an area, possibly under a new id.
    *
    * @param previousId the id the area was stored under
    */
@@ -199,12 +233,7 @@ public final class MapToolsUtils {
       removeFromMap(area.world(), previousId);
     }
     renderArea(area);
-    editorsOf(previousId)
-        .forEach(
-            (editor, session) -> {
-              if (!session.hasChanges()) startEditing(editor, EditSession.edit(area));
-            });
-    AreaDisplays.refreshAllAreas();
+    exportForWeb();
   }
 
   /**
@@ -320,7 +349,7 @@ public final class MapToolsUtils {
         || Math.abs((long) z1 - z2) + 1 > MAX_TYPED_SIZE;
   }
 
-  /** Claims made from typed coordinates are always in the overworld, the server's main world. */
+  /** Claims and markers made from typed coordinates are always in the overworld. */
   public static String overworld() {
     return Bukkit.getWorlds().getFirst().getKey().asString();
   }
@@ -336,15 +365,21 @@ public final class MapToolsUtils {
         world, circle(center.x(), center.z(), radius), MapArea.CIRCLE, center, radius);
   }
 
+  /** The most points a polygon may have. */
+  public static final int MAX_POINTS = 200;
+
   /**
    * Parses polygon points typed as block coordinates, such as {@code 0 0; 10 0; 10 10}.
    *
-   * @return the shape, or null if there are fewer than 3 valid points or they enclose no area
+   * @return the shape, or null if there are fewer than 3 or more than {@link #MAX_POINTS} valid
+   *     points, or they enclose no area
    */
   public static AreaGeometry parsePoints(String world, String value) {
     if (value == null) return null;
+    String[] typed = value.split(";");
+    if (typed.length > MAX_POINTS) return null;
     List<MapPoint> points = new ArrayList<>();
-    for (String point : value.split(";")) {
+    for (String point : typed) {
       String[] xz = point.trim().split("\\s+");
       Integer x = xz.length == 2 ? Ints.tryParse(xz[0]) : null;
       Integer z = xz.length == 2 ? Ints.tryParse(xz[1]) : null;
@@ -360,12 +395,15 @@ public final class MapToolsUtils {
     return Math.max(0, IceCream.config.getInt("modules.maptools.nearby-claim-distance", 300));
   }
 
-  /** An existing claim near a new shape; a distance of 0 means they overlap. */
-  public record NearbyClaim(MapArea claim, double distance) {}
+  /**
+   * An existing claim near a new shape. Claims that only touch the shape are 0 blocks away without
+   * overlapping it.
+   */
+  public record NearbyClaim(MapArea claim, double distance, boolean overlaps) {}
 
   /**
    * Finds the claims in the same world that are within {@link #nearbyClaimDistance()} blocks of a
-   * shape, or overlap it.
+   * shape, or overlap it. Claims whose owners let others claim nearby only count when they overlap.
    *
    * @param editingId the id of the claim the shape belongs to when it is being edited, or null for
    *     a new claim
@@ -380,10 +418,18 @@ public final class MapToolsUtils {
                     && area.world().equals(geometry.world())
                     && !area.id().equals(editingId)
                     && ShapeDistance.boxesWithin(geometry.points(), area.points(), range))
-        .map(area -> new NearbyClaim(area, ShapeDistance.between(geometry.points(), area.points())))
+        .map(area -> nearbyClaim(geometry.points(), area))
         .filter(nearby -> nearby.distance() <= range)
+        .filter(nearby -> nearby.overlaps() || !nearby.claim().allowsNearby())
         .sorted(Comparator.comparingDouble(NearbyClaim::distance))
         .toList();
+  }
+
+  private static NearbyClaim nearbyClaim(List<MapPoint> shape, MapArea area) {
+    double distance = ShapeDistance.between(shape, area.points());
+    // Only shapes 0 blocks apart can overlap; the full test is only needed for those.
+    boolean overlaps = distance == 0 && ShapeDistance.overlaps(shape, area.points());
+    return new NearbyClaim(area, distance, overlaps);
   }
 
   /** The area of a polygon by the shoelace formula, 0 when its points are all in one line. */
@@ -418,75 +464,7 @@ public final class MapToolsUtils {
   }
 
   /**
-   * Puts a player in edit mode with the given session, replacing any session they had.
-   *
-   * @param player the player
-   * @param session the shape to draw or the area to edit
-   */
-  public static void startEditing(Player player, EditSession session) {
-    warnDiscarded(player, MapToolsModule.sessions.put(player.getUniqueId(), session));
-    AreaDisplays.refresh(player);
-  }
-
-  /**
-   * Takes a player out of area edit mode.
-   *
-   * @param player the player
-   */
-  public static void stopEditing(Player player) {
-    warnDiscarded(player, MapToolsModule.sessions.remove(player.getUniqueId()));
-    AreaDisplays.refresh(player);
-  }
-
-  /**
-   * Checks whether the player may leave their current session. With unsaved changes, a form asks
-   * whether to save or discard them first; picking either then continues with {@code then}.
-   *
-   * @param then what the player was doing, run after they choose
-   * @return true if there is nothing to save and the caller can go ahead right away
-   */
-  public static boolean confirmLeave(Player player, Runnable then) {
-    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    if (session == null || !session.hasChanges()) return true;
-    AreaForms.confirmLeave(player, session, then);
-    return false;
-  }
-
-  /**
-   * Starts editing an area unless someone else is already editing it.
-   *
-   * @return true if the player is now editing the area
-   */
-  public static boolean tryEditing(Player player, MapArea area) {
-    // The claim may change while the player answers the form, so look it up again afterwards.
-    Runnable retry =
-        () -> {
-          MapArea current = MapToolsModule.store.getArea(area.id());
-          if (current != null) tryEditing(player, current);
-        };
-    if (!confirmLeave(player, retry)) return false;
-    // Only one person edits a claim at a time, so nobody overwrites someone else's changes.
-    Player other =
-        editorsOf(area.id()).keySet().stream()
-            .filter(editor -> !editor.equals(player))
-            .findFirst()
-            .orElse(null);
-    if (other != null) {
-      player.sendMessage(
-          MiniMessage.miniMessage()
-              .deserialize(
-                  "<red><player> is already editing <id>.</red>",
-                  Placeholder.unparsed("player", other.getName()),
-                  Placeholder.unparsed("id", area.id())));
-      return false;
-    }
-    startEditing(player, EditSession.edit(area));
-    return true;
-  }
-
-  /**
-   * Deletes an area from the file and the map, and takes anyone editing it back to view mode so its
-   * outline disappears in game too.
+   * Deletes an area from the file and the map.
    *
    * @return the deleted area, or null if it did not exist
    */
@@ -495,20 +473,13 @@ public final class MapToolsUtils {
     if (area == null) return null;
 
     removeFromMap(area.world(), area.id());
-    editorsOf(id)
-        .forEach(
-            (editor, session) -> {
-              // The area is gone, so its unsaved changes are too; skip the discard warning.
-              session.setChanged(false);
-              startEditing(editor, EditSession.view());
-            });
-    AreaDisplays.refreshAllAreas();
+    exportForWeb();
+    fireChange(Change.DELETED, area, null);
     return area;
   }
 
   /**
-   * Saves an area under a new id in the file and on the map. Callers check {@link #blockedByEditor}
-   * first; an open edit without unsaved changes continues under the new id.
+   * Saves an area under a new id in the file and on the map.
    *
    * @param area the area to save, still with its old id
    * @return the renamed area
@@ -516,67 +487,8 @@ public final class MapToolsUtils {
   public static MapArea renameArea(MapArea area, String newId) {
     MapArea renamed = area.withId(newId);
     saveArea(renamed, area.id());
+    fireChange(Change.RENAMED, renamed, area.id());
     return renamed;
-  }
-
-  /** The online players editing the area with this id, with their sessions. */
-  private static Map<Player, EditSession> editorsOf(String id) {
-    Map<Player, EditSession> editors = new HashMap<>();
-    MapToolsModule.sessions.forEach(
-        (uuid, session) -> {
-          Player editor = Bukkit.getPlayer(uuid);
-          if (editor != null && id.equals(session.getAreaId())) editors.put(editor, session);
-        });
-    return editors;
-  }
-
-  /**
-   * Returns the area containing a spot, skipping one area and the areas hidden in edit mode.
-   *
-   * @param skipId the id of an area to skip, or null
-   * @return the first area containing the spot, or null
-   */
-  public static MapArea areaAt(String world, double x, double z, String skipId) {
-    MapArea found = null;
-    for (MapArea area : MapToolsModule.store.getAreas()) {
-      if (!area.world().equals(world) || area.id().equals(skipId) || area.isHidden()) continue;
-      // A marker is hit on its own block, and wins over a claim around it.
-      if (area.isMarker()) {
-        if (block(area.center().x()) == block(x) && block(area.center().z()) == block(z)) {
-          return area;
-        }
-      } else if (found == null && contains(area.points(), x, z)) {
-        found = area;
-      }
-    }
-    return found;
-  }
-
-  /**
-   * Whether someone else is editing the claim in game, which would overwrite a change when they
-   * save. The sender's own edit does not count unless it has unsaved changes; it is reloaded after
-   * the change instead.
-   *
-   * @return true if the change must not be made; the sender has been told why
-   */
-  public static boolean blockedByEditor(CommandSender sender, String id) {
-    for (Map.Entry<Player, EditSession> entry : editorsOf(id).entrySet()) {
-      Player editor = entry.getKey();
-      if (editor.equals(sender)) {
-        if (!entry.getValue().hasChanges()) continue;
-        sender.sendMessage(
-            MiniMessage.miniMessage()
-                .deserialize("<red>Save or stop your own changes to this claim first.</red>"));
-        return true;
-      }
-      sender.sendMessage(
-          MiniMessage.miniMessage()
-              .deserialize(
-                  "<red><player> is editing this claim right now.</red>",
-                  Placeholder.unparsed("player", editor.getName())));
-      return true;
-    }
-    return false;
   }
 
   /** The message shown after deleting an area, with its shape so it can be recreated. */
@@ -607,13 +519,16 @@ public final class MapToolsUtils {
   }
 
   /**
-   * A claim's shape as the manage form's text fields: a circle's center and radius, or a
-   * rectangle's two corners. Coordinates are written as {@code x z}.
+   * An area's shape as the manage form's text fields: a circle's center and radius, a rectangle's
+   * two corners, or a marker's spot. Coordinates are written as {@code x z}.
    *
-   * @return the fields, empty for a polygon, whose points can be too long for a field, and a marker
+   * @return the fields, empty for a polygon, whose points can be too long for a field
    */
   public static List<String> shapeFields(MapArea area) {
-    if (area.isMarker() || MapArea.POLYGON.equals(area.shape())) return List.of();
+    if (area.isMarker()) {
+      return List.of(block(area.center().x()) + " " + block(area.center().z()));
+    }
+    if (MapArea.POLYGON.equals(area.shape())) return List.of();
     if (area.isCircle()) {
       return List.of(
           block(area.center().x()) + " " + block(area.center().z()),
@@ -657,36 +572,13 @@ public final class MapToolsUtils {
   }
 
   /**
-   * @return the ground block at the spot, ignoring trees, or null if its chunk is not loaded
-   */
-  public static Location groundBlock(World world, double x, double z) {
-    int blockX = (int) Math.floor(x);
-    int blockZ = (int) Math.floor(z);
-    if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) return null;
-    int y = world.getHighestBlockYAt(blockX, blockZ, HeightMap.MOTION_BLOCKING_NO_LEAVES);
-    // The height map skips leaves but not logs, so walk down tree trunks to the ground. Below a
-    // branch, keep going through the air under it.
-    boolean inTree = false;
-    while (y > world.getMinHeight()) {
-      Block block = world.getBlockAt(blockX, y, blockZ);
-      Material type = block.getType();
-      if (Tag.LOGS.isTagged(type) || Tag.LEAVES.isTagged(type)) {
-        inTree = true;
-      } else if (!inTree || !block.isPassable() || block.isLiquid()) {
-        break;
-      }
-      y--;
-    }
-    return new Location(world, blockX, y, blockZ);
-  }
-
-  /**
    * Validates and saves a new area, telling the sender what went wrong if it cannot be created.
    *
    * @param owners the owners shown in the map popup, possibly empty
    * @param description the description shown in the map popup, or null
    * @param opacity how solid the fill is on the map, 0 to 1, or null for the default
    * @param icon the icon of a marker, or null
+   * @param allowNearby whether others may claim close to this claim
    * @return true if the area was created
    */
   public static boolean createArea(
@@ -698,10 +590,14 @@ public final class MapToolsUtils {
       List<String> owners,
       String description,
       Double opacity,
-      String icon) {
+      String icon,
+      boolean allowNearby) {
     String error = validate(id, color, label, true);
     if (error != null) {
-      sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>" + error + "</red>"));
+      error(
+          sender,
+          MiniMessage.miniMessage()
+              .deserialize("<red><error></red>", Placeholder.unparsed("error", error)));
       return false;
     }
 
@@ -720,8 +616,10 @@ public final class MapToolsUtils {
                 opacity,
                 icon,
                 null)
-            .withGeometry(geometry);
-    saveArea(area);
+            .withGeometry(geometry)
+            .withAllowNearby(allowNearby);
+    saveArea(area, id);
+    fireChange(Change.CREATED, area, null);
     sender.sendMessage(
         MiniMessage.miniMessage()
             .deserialize(
@@ -762,45 +660,6 @@ public final class MapToolsUtils {
     return null;
   }
 
-  /** Tells the player when leaving a session threw away unsaved changes. */
-  private static void warnDiscarded(Player player, EditSession previous) {
-    if (previous == null || !previous.hasChanges() || !player.isOnline()) return;
-    player.sendMessage(
-        MiniMessage.miniMessage()
-            .deserialize(
-                "<yellow>Discarded the unsaved changes to <id>.</yellow>",
-                Placeholder.unparsed("id", previous.getAreaId())));
-  }
-
-  /**
-   * Returns whether a point lies inside an area, using an even-odd ray cast so polygons of any
-   * shape work.
-   *
-   * @param points the outline of the area
-   * @param x the block x coordinate
-   * @param z the block z coordinate
-   * @return true if the point is inside the outline
-   */
-  public static boolean contains(List<MapPoint> points, double x, double z) {
-    boolean inside = false;
-    for (int i = 0, j = points.size() - 1; i < points.size(); j = i++) {
-      MapPoint a = points.get(i);
-      MapPoint b = points.get(j);
-      if ((a.z() > z) != (b.z() > z)
-          && x < (b.x() - a.x()) * (z - a.z()) / (b.z() - a.z()) + a.x()) {
-        inside = !inside;
-      }
-    }
-    return inside;
-  }
-
-  /**
-   * @return true if the player is in edit mode, which shows areas and turns clicks into edits
-   */
-  public static boolean isEditing(Player player) {
-    return MapToolsModule.sessions.containsKey(player.getUniqueId());
-  }
-
   private static Optional<MapWorld> mapWorld(String worldKey) {
     NamespacedKey key = NamespacedKey.fromString(worldKey);
     World world = key == null ? null : Bukkit.getWorld(key);
@@ -808,11 +667,13 @@ public final class MapToolsUtils {
     return squaremap.getWorldIfEnabled(BukkitAdapter.worldIdentifier(world));
   }
 
-  private static String tooltip(MapArea area) {
+  /** The popup shown when an area is clicked on the web map, as HTML with all text escaped. */
+  static String tooltip(MapArea area) {
     StringBuilder html = new StringBuilder("<b>").append(escapeHtml(area.label())).append("</b>");
     if (!area.owners().isEmpty()) {
       html.append("<br>Owner(s): ").append(escapeHtml(String.join(", ", area.owners())));
     }
+    if (area.allowsNearby()) html.append("<br>").append(nearbyAllowedText());
     if (area.description() != null && !area.description().isBlank()) {
       // Descriptions can be multiline from the details form; HTML needs explicit line breaks.
       html.append("<br>").append(escapeHtml(area.description()).replaceAll("\\R", "<br>"));
@@ -820,7 +681,12 @@ public final class MapToolsUtils {
     return html.toString();
   }
 
-  private static String escapeHtml(String text) {
+  /** The popup line of a claim whose owners let others claim nearby. */
+  public static String nearbyAllowedText() {
+    return "Others may claim within " + nearbyClaimDistance() + " blocks";
+  }
+
+  static String escapeHtml(String text) {
     return text.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")

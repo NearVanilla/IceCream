@@ -4,20 +4,19 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.integrations.SquaremapIntegration;
 import com.nearvanilla.iceCream.modules.mapTools.commands.MapToolsCommand;
+import com.nearvanilla.iceCream.modules.mapTools.events.MapToolsChannel;
 import com.nearvanilla.iceCream.modules.mapTools.events.MapToolsListener;
+import com.nearvanilla.iceCream.modules.mapTools.events.MapToolsReplies;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
 import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitTask;
 import xyz.jpenilla.squaremap.api.Squaremap;
 
 /**
- * Lets players with the manage permission draw named areas (claims) on squaremap. Areas are stored
- * in {@code map-areas.json} and drawn on one layer per world. They are visual only and do not
- * protect blocks.
+ * Lets players with the manage permission put named areas (claims) and markers on squaremap, from
+ * typed coordinates or forms. Areas are stored in {@code map-areas.json} and drawn on one layer per
+ * world. They are visual only and do not protect blocks. The NearVanilla Tools mod draws claims on
+ * its own map and sends the commands over {@link MapToolsChannel}.
  *
  * @author Dynant
  * @version 1.0
@@ -30,11 +29,7 @@ public class MapToolsModule implements Module {
   /** The stored areas. */
   public static MapAreasStore store;
 
-  /** Edit mode sessions, keyed by player. A player is in edit mode while they have one. */
-  public static final Map<UUID, EditSession> sessions = new HashMap<>();
-
   private boolean enabled;
-  private BukkitTask borderTask;
 
   @Override
   public boolean shouldEnable() {
@@ -57,6 +52,16 @@ public class MapToolsModule implements Module {
         .getServer()
         .getPluginManager()
         .registerEvents(new MapToolsListener(), IceCream.instance);
+    Bukkit.getMessenger()
+        .registerIncomingPluginChannel(
+            IceCream.instance, MapToolsChannel.CHANNEL, new MapToolsChannel());
+    Bukkit.getMessenger().registerOutgoingPluginChannel(IceCream.instance, MapToolsChannel.CHANNEL);
+    // Everything the mod is told goes through this listener; map tools itself only fires events.
+    IceCream.instance
+        .getServer()
+        .getPluginManager()
+        .registerEvents(new MapToolsReplies(), IceCream.instance);
+    MapToolsReplies.helloAll();
   }
 
   @Override
@@ -76,9 +81,6 @@ public class MapToolsModule implements Module {
       MapToolsUtils.init(squaremap);
       registerCommands();
       registerEvents();
-      // Every half second: redraw outlines when needed and update the action bar.
-      borderTask =
-          Bukkit.getScheduler().runTaskTimer(IceCream.instance, new AreaBorderTask(), 10, 10);
       enabled = true;
     } catch (Exception e) {
       IceCream.logger.log(Level.SEVERE, "Failed to register MapTools module", e);
@@ -89,15 +91,15 @@ public class MapToolsModule implements Module {
   }
 
   /**
-   * Removes the module's layers from squaremap and its displays from the world. Safe to call when
-   * the module was never enabled, or failed halfway through enabling.
+   * Removes the module's layers from squaremap and stops talking to the mod. Safe to call when the
+   * module was never enabled, or failed halfway through enabling.
    */
   public void unregister() {
-    if (borderTask != null) borderTask.cancel();
-    borderTask = null;
-    AreaDisplays.clearAll();
+    Bukkit.getMessenger()
+        .unregisterIncomingPluginChannel(IceCream.instance, MapToolsChannel.CHANNEL);
+    Bukkit.getMessenger()
+        .unregisterOutgoingPluginChannel(IceCream.instance, MapToolsChannel.CHANNEL);
     MapToolsUtils.shutdown();
-    sessions.clear();
     enabled = false;
   }
 }

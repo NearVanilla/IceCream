@@ -2,9 +2,7 @@ package com.nearvanilla.iceCream.modules.mapTools.commands;
 
 import com.google.common.primitives.Ints;
 import com.nearvanilla.iceCream.modules.mapTools.AreaForms;
-import com.nearvanilla.iceCream.modules.mapTools.EditActions;
-import com.nearvanilla.iceCream.modules.mapTools.EditSession;
-import com.nearvanilla.iceCream.modules.mapTools.EditSession.Mode;
+import com.nearvanilla.iceCream.modules.mapTools.AreaShape;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.AreaGeometry;
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapArea;
@@ -42,14 +40,13 @@ import org.incendo.cloud.context.CommandInput;
 
 /**
  * Commands for claims and markers on squaremap. Each command names the kind after the action, such
- * as {@code /maptools tp claim <id>}. Shapes are drawn and edited in game with {@code /maptools
- * create} and {@code /maptools editmode}; rectangles can also be made from typed coordinates.
+ * as {@code /maptools tp claim <id>}. Shapes are typed as coordinates, in the command or in a form.
+ * The NearVanilla Tools mod draws them on its map and sends these same commands.
  *
  * @author Dynant
  * @version 1.0
  * @since 2026-10-18
  * @see MapToolsModule
- * @see EditSession
  */
 @SuppressWarnings("unused")
 public class MapToolsCommand {
@@ -69,27 +66,22 @@ public class MapToolsCommand {
   }
 
   private static final String PERMISSION = MapToolsUtils.PERMISSION;
+
+  /** The icon argument for a marker shown as a dot in its color. */
+  private static final String NO_ICON = "none";
+
   private static final MiniMessage MM = MiniMessage.miniMessage();
 
   private static final Component PLAYERS_ONLY =
       MM.deserialize("<red>This command can only be used by players.</red>");
-  private static final Component NOTHING_TO_SAVE =
-      MM.deserialize(
-          "<red>Nothing to save. Draw with /maptools create claim or create marker, or edit in"
-              + " /maptools editmode.</red>");
-  private static final Component EDIT_MODE_OFF = MM.deserialize("<red>Stopped.</red>");
-  private static final Component EDIT_USAGE =
-      MM.deserialize(
-          "<gray>Use /maptools create claim or create marker to draw something new, or"
-              + " /maptools editmode to change it.</gray>");
 
   /** How many entries {@code /maptools list} shows without a search. */
   private static final int LIST_LIMIT = 10;
 
   private static final Component POINTS_USAGE =
       MM.deserialize(
-          "<red>Use points \\<x z; x z; x z> with at least 3 points that are not in one"
-              + " line.</red>");
+          "<red>Use points \\<x z; x z; x z>: 3 to <max> points that are not in one line.</red>",
+          Placeholder.unparsed("max", String.valueOf(MapToolsUtils.MAX_POINTS)));
   private static final String RECT_TOO_LARGE_TEXT =
       "A rectangle can be at most " + MapToolsUtils.MAX_TYPED_SIZE + " blocks wide and long.";
   private static final Component RECT_TOO_LARGE =
@@ -99,7 +91,7 @@ public class MapToolsCommand {
 
   // Shapes and positions typed as coordinates have their own set commands.
   private static final List<String> CLAIM_FIELDS =
-      List.of("id", "label", "color", "owners", "description", "opacity", "points");
+      List.of("id", "label", "color", "owners", "description", "opacity", "nearby", "points");
   private static final List<String> MARKER_FIELDS =
       List.of("id", "label", "color", "owners", "description", "icon");
 
@@ -128,6 +120,18 @@ public class MapToolsCommand {
   @Suggestions("map_colors")
   public List<String> suggestColors(CommandContext<CommandSourceStack> ctx, CommandInput input) {
     return colorSuggestions(null);
+  }
+
+  @Suggestions("marker_icons")
+  public List<String> suggestIcons(CommandContext<CommandSourceStack> ctx, CommandInput input) {
+    return iconSuggestions();
+  }
+
+  /** The icon names, and {@code none} for a plain dot. */
+  private static List<String> iconSuggestions() {
+    List<String> icons = new ArrayList<>(MapToolsUtils.iconNames());
+    icons.add(NO_ICON);
+    return icons;
   }
 
   /** The block the player stands on, instead of the default 0 to 9 number suggestions. */
@@ -161,7 +165,8 @@ public class MapToolsCommand {
       case "owners" ->
           area.owners().isEmpty() ? List.of() : List.of(String.join(", ", area.owners()));
       case "description" -> area.description() == null ? List.of() : List.of(area.description());
-      case "icon" -> MapToolsUtils.iconNames();
+      case "icon" -> iconSuggestions();
+      case "nearby" -> List.of("yes", "no");
       case "points" ->
           MapArea.POLYGON.equals(area.shape())
               ? List.of(MapToolsUtils.pointsText(area))
@@ -170,122 +175,25 @@ public class MapToolsCommand {
     };
   }
 
-  @Command("maptools stop")
-  @CommandDescription("Leave create or edit mode.")
-  @Permission(PERMISSION)
-  public void stop(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-    if (!MapToolsUtils.confirmLeave(player, () -> stop(stack))) return;
-
-    if (!MapToolsUtils.isEditing(player)) {
-      player.sendMessage(EDIT_USAGE);
-      return;
-    }
-    MapToolsUtils.stopEditing(player);
-    player.sendMessage(EDIT_MODE_OFF);
-  }
-
-  @Command("maptools editmode")
-  @CommandDescription("Toggle edit mode: show all claims, left click inside one to edit it.")
-  @Permission(PERMISSION)
-  public void editMode(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-    // Leaving an edited claim through editmode means going back to viewing, not toggling off.
-    Runnable toViewing = () -> MapToolsUtils.startEditing(player, EditSession.view());
-    if (!MapToolsUtils.confirmLeave(player, toViewing)) return;
-
-    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    if (session != null && session.isViewing()) {
-      MapToolsUtils.stopEditing(player);
-      player.sendMessage(EDIT_MODE_OFF);
-      return;
-    }
-    MapToolsUtils.startEditing(player, EditSession.view());
-  }
-
   @Command("maptools create claim rect")
   @CommandDescription("Open a form to create a rectangular claim from coordinates.")
   @Permission(PERMISSION)
   public void createRectangle(CommandSourceStack stack) {
-    openCreateForm(stack, Mode.RECT);
-  }
-
-  @Command("maptools create claim polygon")
-  @CommandDescription("Draw a polygon claim in game, then save it with /maptools save.")
-  @Permission(PERMISSION)
-  public void createPolygon(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player != null) startNew(player, Mode.POLYGON);
+    openCreateForm(stack, AreaShape.RECT);
   }
 
   @Command("maptools create claim circle")
   @CommandDescription("Open a form to create a circular claim from coordinates.")
   @Permission(PERMISSION)
   public void createCircle(CommandSourceStack stack) {
-    openCreateForm(stack, Mode.CIRCLE);
+    openCreateForm(stack, AreaShape.CIRCLE);
   }
 
   @Command("maptools create marker")
-  @CommandDescription("Place a new marker with an icon.")
+  @CommandDescription("Open a form to place a new marker with an icon.")
   @Permission(PERMISSION)
   public void createMarker(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player != null) startNew(player, Mode.MARKER);
-  }
-
-  @Command("maptools save")
-  @CommandDescription("Save what you are doing: a new shape opens a form, edits are saved.")
-  @Permission(PERMISSION)
-  public void save(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-
-    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    if (session != null && session.isEditingArea()) {
-      EditActions.apply(player);
-    } else if (session != null && session.isNew() && session.toGeometry() != null) {
-      AreaForms.openCreate(player);
-    } else {
-      player.sendMessage(NOTHING_TO_SAVE);
-    }
-  }
-
-  @Command("maptools undo")
-  @CommandDescription("Undo the last change to the shape you are drawing or editing.")
-  @Permission(PERMISSION)
-  public void undo(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-    EditActions.undo(player);
-  }
-
-  @Command("maptools redo")
-  @CommandDescription("Redo the last change you undid.")
-  @Permission(PERMISSION)
-  public void redo(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-    EditActions.redo(player);
-  }
-
-  @Command("maptools manage")
-  @CommandDescription("Open the form of the claim or marker you are editing.")
-  @Permission(PERMISSION)
-  public void manageEdited(CommandSourceStack stack) {
-    Player player = requirePlayer(stack);
-    if (player == null) return;
-
-    String id = sessionAreaId(player);
-    MapArea area = id == null ? null : MapToolsModule.store.getArea(id);
-    if (area == null) {
-      player.sendMessage(
-          MM.deserialize(
-              "<red>Use /maptools manage claim|marker \\<id>, or run this while editing.</red>"));
-      return;
-    }
-    AreaForms.openManage(player, area);
+    openCreateForm(stack, AreaShape.MARKER);
   }
 
   @Command("maptools manage <kind> <id>")
@@ -315,7 +223,7 @@ public class MapToolsCommand {
       @Argument(value = "color", suggestions = "map_colors") String color,
       @Argument("label") @Greedy String label) {
     if (MapToolsUtils.rectangleTooLarge(x1, z1, x2, z2)) {
-      stack.getSender().sendMessage(RECT_TOO_LARGE);
+      MapToolsUtils.error(stack.getSender(), RECT_TOO_LARGE);
       return;
     }
     AreaGeometry geometry =
@@ -356,15 +264,52 @@ public class MapToolsCommand {
       @Argument("label") @Greedy String label) {
     AreaGeometry geometry = MapToolsUtils.parsePoints(MapToolsUtils.overworld(), points);
     if (geometry == null) {
-      stack
-          .getSender()
-          .sendMessage(
-              MM.deserialize(
-                  "<red>Use points in quotes, such as \"0 0; 10 0; 10 10\", with at least 3"
-                      + " points that are not in one line.</red>"));
+      MapToolsUtils.error(
+          stack.getSender(),
+          MM.deserialize(
+              "<red>Use points in quotes, such as \"0 0; 10 0; 10 10\": 3 to <max> points that"
+                  + " are not in one line.</red>",
+              Placeholder.unparsed("max", String.valueOf(MapToolsUtils.MAX_POINTS))));
       return;
     }
     createClaim(stack.getSender(), id, geometry, color, label);
+  }
+
+  @Command("maptools create marker <x> <z> <id> <icon> <label>")
+  @CommandDescription("Place a marker at a block, with an icon (or none for a dot).")
+  @Permission(PERMISSION)
+  public void createMarker(
+      CommandSourceStack stack,
+      @Argument(value = "x", suggestions = "block_x") int x,
+      @Argument(value = "z", suggestions = "block_z") int z,
+      @Argument("id") String id,
+      @Argument(value = "icon", suggestions = "marker_icons") String icon,
+      @Argument("label") @Greedy String label) {
+    CommandSender sender = stack.getSender();
+    String chosen = NO_ICON.equalsIgnoreCase(icon) ? null : icon;
+    if (chosen != null && !MapToolsUtils.iconExists(chosen)) {
+      MapToolsUtils.error(
+          sender,
+          MM.deserialize(
+              "<red>There is no icon called <icon>. Use none, or one of the PNG files in"
+                  + " plugins/IceCream/map-icons.</red>",
+              Placeholder.unparsed("icon", icon)));
+      return;
+    }
+    MapPoint spot = MapToolsUtils.blockCenter(x, z);
+    AreaGeometry geometry =
+        new AreaGeometry(MapToolsUtils.overworld(), List.of(spot), MapArea.MARKER, spot, null);
+    MapToolsUtils.createArea(
+        sender,
+        id,
+        geometry,
+        MapToolsUtils.defaultColor(),
+        label,
+        List.of(),
+        null,
+        null,
+        chosen,
+        false);
   }
 
   @Command("maptools set <kind> <id> rect <x1> <z1> <x2> <z2>")
@@ -491,7 +436,8 @@ public class MapToolsCommand {
     String lowerField = field.toLowerCase(Locale.ROOT);
     List<String> fields = kind == Kind.MARKER ? MARKER_FIELDS : CLAIM_FIELDS;
     if (!fields.contains(lowerField)) {
-      sender.sendMessage(
+      MapToolsUtils.error(
+          sender,
           MM.deserialize(
               "<red>Use <fields>.</red>",
               Placeholder.unparsed("fields", String.join(", ", fields))));
@@ -504,7 +450,8 @@ public class MapToolsCommand {
     if ((isLabel || field.equalsIgnoreCase("owners") || field.equalsIgnoreCase("description"))
         && value != null
         && value.length() > maxLength) {
-      sender.sendMessage(
+      MapToolsUtils.error(
+          sender,
           MM.deserialize(
               "<red>That is too long; use up to <max> characters.</red>",
               Placeholder.unparsed("max", String.valueOf(maxLength))));
@@ -520,14 +467,14 @@ public class MapToolsCommand {
     switch (lowerField) {
       case "label" -> {
         if (value == null || value.isBlank()) {
-          sender.sendMessage(MM.deserialize("<red>The label cannot be empty.</red>"));
+          MapToolsUtils.error(sender, MM.deserialize("<red>The label cannot be empty.</red>"));
           return;
         }
         updated = area.withLabel(value);
       }
       case "color" -> {
         if (MapToolsUtils.parseColor(value) == null) {
-          sender.sendMessage(INVALID_COLOR);
+          MapToolsUtils.error(sender, INVALID_COLOR);
           return;
         }
         updated = area.withColor(value);
@@ -538,29 +485,41 @@ public class MapToolsCommand {
         // A percentage from 0 to 100; leaving it out goes back to the configured default.
         Integer percent = value == null ? null : Ints.tryParse(value.replace("%", "").trim());
         if (value != null && (percent == null || percent < 0 || percent > 100)) {
-          sender.sendMessage(MM.deserialize("<red>Use a percentage from 0 to 100.</red>"));
+          MapToolsUtils.error(sender, MM.deserialize("<red>Use a percentage from 0 to 100.</red>"));
           return;
         }
         updated = area.withOpacity(percent == null ? null : percent / 100.0);
       }
       case "icon" -> {
-        if (value != null && !MapToolsUtils.iconExists(value)) {
-          sender.sendMessage(
+        // none, like leaving it out, gives a plain dot, as in create marker.
+        String trimmed = value == null ? null : value.trim();
+        String icon = trimmed == null || NO_ICON.equalsIgnoreCase(trimmed) ? null : trimmed;
+        if (icon != null && !MapToolsUtils.iconExists(icon)) {
+          MapToolsUtils.error(
+              sender,
               MM.deserialize(
-                  "<red>There is no icon called <icon>. Icons are the PNG files in"
+                  "<red>There is no icon called <icon>. Use none, or one of the PNG files in"
                       + " plugins/IceCream/map-icons.</red>",
-                  Placeholder.unparsed("icon", value)));
+                  Placeholder.unparsed("icon", icon)));
           return;
         }
-        updated = area.withIcon(value);
+        updated = area.withIcon(icon);
+      }
+      case "nearby" -> {
+        // Whether others may claim close to this claim; leaving it out means no.
+        String answer = value == null ? "no" : value.trim().toLowerCase(Locale.ROOT);
+        if (!answer.equals("yes") && !answer.equals("no")) {
+          MapToolsUtils.error(sender, MM.deserialize("<red>Use yes or no.</red>"));
+          return;
+        }
+        updated = area.withAllowNearby(answer.equals("yes"));
       }
       case "points" -> {
         AreaGeometry geometry = MapToolsUtils.parsePoints(area.world(), value);
         if (geometry == null) {
-          sender.sendMessage(POINTS_USAGE);
+          MapToolsUtils.error(sender, POINTS_USAGE);
           return;
         }
-        if (MapToolsUtils.blockedByEditor(sender, id)) return;
         AreaForms.confirmNearby(
             sender,
             geometry,
@@ -709,7 +668,7 @@ public class MapToolsCommand {
     if (area == null) return;
     World world = Bukkit.getWorld(NamespacedKey.fromString(area.world()));
     if (world == null) {
-      player.sendMessage(MM.deserialize("<red>That world is not loaded.</red>"));
+      MapToolsUtils.error(player, MM.deserialize("<red>That world is not loaded.</red>"));
       return;
     }
     // The middle of the outline: a circle's center, otherwise the average of its corners.
@@ -724,8 +683,8 @@ public class MapToolsCommand {
       CommandSender sender, String id, AreaGeometry geometry, String color, String label) {
     String problem = MapToolsUtils.validate(id, color, label, true);
     if (problem != null) {
-      sender.sendMessage(
-          MM.deserialize("<red><problem></red>", Placeholder.unparsed("problem", problem)));
+      MapToolsUtils.error(
+          sender, MM.deserialize("<red><problem></red>", Placeholder.unparsed("problem", problem)));
       return;
     }
     AreaForms.confirmNearby(
@@ -734,32 +693,12 @@ public class MapToolsCommand {
         null,
         () ->
             MapToolsUtils.createArea(
-                sender, id, geometry, color, label, List.of(), null, null, null));
+                sender, id, geometry, color, label, List.of(), null, null, null, false));
   }
 
-  private static void openCreateForm(CommandSourceStack stack, Mode mode) {
+  private static void openCreateForm(CommandSourceStack stack, AreaShape shape) {
     Player player = requirePlayer(stack);
-    if (player != null) AreaForms.openCreate(player, mode);
-  }
-
-  /** Starts drawing a new shape in game. */
-  private static void startNew(Player player, Mode mode) {
-    if (!MapToolsUtils.confirmLeave(player, () -> startNew(player, mode))) return;
-
-    String controls =
-        switch (mode) {
-          case RECT -> "click corner 1, shift + click corner 2";
-          case POLYGON ->
-              "click to add points, click a point to move it, shift + click to remove or insert";
-          case CIRCLE -> "click the center, shift + click sets the radius";
-          case MARKER -> "click where the marker goes";
-        };
-    MapToolsUtils.startEditing(player, EditSession.create(mode));
-    player.sendMessage(
-        MM.deserialize(
-            "<gray><shape>: <controls>. /maptools save when done.</gray>",
-            Placeholder.unparsed("shape", mode.label()),
-            Placeholder.unparsed("controls", controls)));
+    if (player != null) AreaForms.openCreate(player, shape);
   }
 
   /**
@@ -779,7 +718,8 @@ public class MapToolsCommand {
     MapArea area = find(sender, kind, id);
     if (area == null) return;
     if (kind != expected) {
-      sender.sendMessage(
+      MapToolsUtils.error(
+          sender,
           MM.deserialize(
               "<red>That only works for <kind>s.</red>",
               Placeholder.unparsed("kind", expected.label())));
@@ -787,10 +727,9 @@ public class MapToolsCommand {
     }
     AreaGeometry geometry = shape.apply(area);
     if (geometry == null) {
-      sender.sendMessage(MM.deserialize("<red>" + notApplicable + "</red>"));
+      MapToolsUtils.error(sender, MM.deserialize("<red>" + notApplicable + "</red>"));
       return;
     }
-    if (MapToolsUtils.blockedByEditor(sender, id)) return;
     Runnable save =
         () -> {
           MapArea current = find(sender, kind, id);
@@ -812,7 +751,8 @@ public class MapToolsCommand {
   /** Gives a claim or marker a new id, keeping everything else. */
   private static void rename(CommandSender sender, Kind kind, MapArea area, String newId) {
     if (newId == null) {
-      sender.sendMessage(
+      MapToolsUtils.error(
+          sender,
           MM.deserialize(
               "<red>Use /maptools set <kind> \\<id> id \\<new id>.</red>",
               Placeholder.unparsed("kind", kind.label())));
@@ -820,12 +760,10 @@ public class MapToolsCommand {
     }
     String problem = MapToolsUtils.validate(newId, area.color(), area.label(), true);
     if (problem != null) {
-      sender.sendMessage(
-          MM.deserialize("<red><problem></red>", Placeholder.unparsed("problem", problem)));
+      MapToolsUtils.error(
+          sender, MM.deserialize("<red><problem></red>", Placeholder.unparsed("problem", problem)));
       return;
     }
-    if (MapToolsUtils.blockedByEditor(sender, area.id())) return;
-
     MapToolsUtils.renameArea(area, newId);
     sender.sendMessage(
         MM.deserialize(
@@ -879,7 +817,8 @@ public class MapToolsCommand {
   private static MapArea find(CommandSender sender, Kind kind, String id) {
     MapArea area = MapToolsModule.store.getArea(id);
     if (area != null && kind.matches(area)) return area;
-    sender.sendMessage(
+    MapToolsUtils.error(
+        sender,
         MM.deserialize(
             "<red>There is no <kind> called <id>.</red>",
             Placeholder.unparsed("kind", kind.label()),
@@ -887,14 +826,9 @@ public class MapToolsCommand {
     return null;
   }
 
-  private static String sessionAreaId(Player player) {
-    EditSession session = MapToolsModule.sessions.get(player.getUniqueId());
-    return session == null ? null : session.getAreaId();
-  }
-
   private static Player requirePlayer(CommandSourceStack stack) {
     if (stack.getSender() instanceof Player player) return player;
-    stack.getSender().sendMessage(PLAYERS_ONLY);
+    MapToolsUtils.error(stack.getSender(), PLAYERS_ONLY);
     return null;
   }
 }

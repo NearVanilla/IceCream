@@ -47,6 +47,7 @@ dependencies {
     testImplementation(paperApi)
     testImplementation(mockito)
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.3:4.119.0")
+    testImplementation("xyz.jpenilla:squaremap-api:1.4.3")
     mockitoAgent(mockito) {
         transitive = false
     }

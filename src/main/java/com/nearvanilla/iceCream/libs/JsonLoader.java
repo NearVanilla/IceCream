@@ -72,4 +72,14 @@ public final class JsonLoader {
   public static void save(File file, Object value) throws IOException {
     MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, value);
   }
+
+  /**
+   * Converts a Java object to compact JSON.
+   *
+   * @param value The object to serialize.
+   * @return The JSON as UTF-8 bytes.
+   */
+  public static byte[] toBytes(Object value) {
+    return MAPPER.writeValueAsBytes(value);
+  }
 }

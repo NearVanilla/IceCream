@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream.modules.mapTools;
 
 import com.nearvanilla.iceCream.modules.mapTools.MapAreasStore.MapPoint;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -53,6 +54,66 @@ final class ShapeDistance {
       shortest = Math.min(shortest, distanceToEdges(b.get(i), a));
     }
     return shortest;
+  }
+
+  /** How far a test point is moved off a corner or edge, in blocks. */
+  private static final double NUDGE = 0.01;
+
+  /** Closer than this to an edge counts as on it, in blocks. */
+  private static final double ON_EDGE = 1e-6;
+
+  /**
+   * Whether two polygons share some area. Polygons that only touch along an edge or at a corner,
+   * such as two neighbouring claims, do not overlap.
+   *
+   * <p>Where the polygons overlap, the shared region is a polygon whose corners are corners of
+   * either polygon or points where their edges meet. So the test looks just next to each of those
+   * points, in eight directions, for a spot that is inside both.
+   */
+  static boolean overlaps(List<MapPoint> a, List<MapPoint> b) {
+    if (a.size() < 3 || b.size() < 3 || !boxesWithin(a, b, 0)) return false;
+    if (edgesCross(a, b)) return true;
+    List<MapPoint> candidates = new ArrayList<>(a);
+    candidates.addAll(b);
+    addEdgeMeetings(a, b, candidates);
+    for (MapPoint point : candidates) {
+      for (int i = 0; i < 8; i++) {
+        double angle = Math.PI / 4 * i + Math.PI / 8;
+        MapPoint spot =
+            new MapPoint(point.x() + NUDGE * Math.cos(angle), point.z() + NUDGE * Math.sin(angle));
+        if (strictlyInside(a, spot) && strictlyInside(b, spot)) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Inside the polygon and not on its edge. */
+  private static boolean strictlyInside(List<MapPoint> polygon, MapPoint point) {
+    return contains(polygon, point) && distanceToEdges(point, polygon) > ON_EDGE;
+  }
+
+  /** Adds the points where an edge of one polygon meets an edge of the other. */
+  private static void addEdgeMeetings(List<MapPoint> a, List<MapPoint> b, List<MapPoint> into) {
+    for (int i = 0; i < a.size(); i++) {
+      MapPoint a1 = a.get(i);
+      MapPoint a2 = a.get((i + 1) % a.size());
+      for (int j = 0; j < b.size(); j++) {
+        MapPoint b1 = b.get(j);
+        MapPoint b2 = b.get((j + 1) % b.size());
+        double dax = a2.x() - a1.x();
+        double daz = a2.z() - a1.z();
+        double dbx = b2.x() - b1.x();
+        double dbz = b2.z() - b1.z();
+        double cross = dax * dbz - daz * dbx;
+        // Parallel edges meet only at corners, which are already candidates.
+        if (cross == 0) continue;
+        double t = ((b1.x() - a1.x()) * dbz - (b1.z() - a1.z()) * dbx) / cross;
+        double u = ((b1.x() - a1.x()) * daz - (b1.z() - a1.z()) * dax) / cross;
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+          into.add(new MapPoint(a1.x() + t * dax, a1.z() + t * daz));
+        }
+      }
+    }
   }
 
   private static double distanceToEdges(MapPoint point, List<MapPoint> polygon) {

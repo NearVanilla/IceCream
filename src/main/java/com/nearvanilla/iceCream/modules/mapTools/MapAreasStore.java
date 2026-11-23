@@ -33,8 +33,8 @@ public class MapAreasStore {
    * #RECT} keeps its four corners square, a {@value #POLYGON} has free points, a {@value #CIRCLE}
    * is defined by its {@code center} and {@code radius}, and a {@value #MARKER} is a single spot at
    * its {@code center} shown with an {@code icon}. Circle and marker points are built from the
-   * center when loading and are not written to disk. A {@code hidden} area is not drawn or clicked
-   * in edit mode.
+   * center when loading and are not written to disk. A claim with {@code allowNearby} lets others
+   * claim close to it (within {@code nearby-claim-distance}), as long as they do not overlap it.
    */
   public record MapArea(
       String id,
@@ -49,7 +49,7 @@ public class MapAreasStore {
       Double radius,
       Double opacity,
       String icon,
-      Boolean hidden) {
+      Boolean allowNearby) {
 
     public MapArea {
       // Older or hand-edited files may leave owners out.
@@ -68,9 +68,29 @@ public class MapAreasStore {
       return CIRCLE.equals(shape);
     }
 
-    /** Whether the area is left out of edit mode, so it does not get in the way or get clicked. */
-    public boolean isHidden() {
-      return Boolean.TRUE.equals(hidden);
+    /** Whether the owners let others claim close to this claim, short of overlapping it. */
+    public boolean allowsNearby() {
+      return Boolean.TRUE.equals(allowNearby);
+    }
+
+    /**
+     * @param allow whether others may claim close to this claim; stored only when true
+     */
+    public MapArea withAllowNearby(boolean allow) {
+      return new MapArea(
+          id,
+          world,
+          points,
+          label,
+          description,
+          owners,
+          color,
+          shape,
+          center,
+          radius,
+          opacity,
+          icon,
+          allow ? true : null);
     }
 
     public boolean isMarker() {
@@ -91,7 +111,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     public MapArea withLabel(String label) {
@@ -108,7 +128,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     public MapArea withDescription(String description) {
@@ -125,7 +145,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     public MapArea withOwners(List<String> owners) {
@@ -142,7 +162,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     public MapArea withColor(String color) {
@@ -159,27 +179,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
-    }
-
-    /**
-     * @param hidden whether to leave the area out of edit mode; stored only when true
-     */
-    public MapArea withHidden(boolean hidden) {
-      return new MapArea(
-          id,
-          world,
-          points,
-          label,
-          description,
-          owners,
-          color,
-          shape,
-          center,
-          radius,
-          opacity,
-          icon,
-          hidden ? true : null);
+          allowNearby);
     }
 
     /**
@@ -199,7 +199,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     public MapArea withGeometry(AreaGeometry geometry) {
@@ -216,7 +216,7 @@ public class MapAreasStore {
           geometry.radius(),
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     /**
@@ -236,7 +236,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     /** Circles and markers are saved without points; rebuild them from the center. */
@@ -262,7 +262,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
 
     /** The area as written to disk: circles and markers leave out their points. */
@@ -281,7 +281,7 @@ public class MapAreasStore {
           radius,
           opacity,
           icon,
-          hidden);
+          allowNearby);
     }
   }
 
@@ -299,7 +299,7 @@ public class MapAreasStore {
         .toList();
   }
 
-  /** The shape part of an area, as built by an edit session. */
+  /** The shape part of an area: where it is and how it is drawn. */
   public record AreaGeometry(
       String world, List<MapPoint> points, String shape, MapPoint center, Double radius) {}
 

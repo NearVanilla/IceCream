@@ -64,6 +64,8 @@ modules:
     enabled: true
     drop-chance: 1.0
     require-player-kill: true
+  persistentheads:
+    enabled: true
   isslimechunk:
     enabled: true
   info:

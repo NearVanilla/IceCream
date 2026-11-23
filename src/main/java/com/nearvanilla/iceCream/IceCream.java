@@ -17,6 +17,7 @@ import com.nearvanilla.iceCream.modules.lootContainerProtection.LootContainerPro
 import com.nearvanilla.iceCream.modules.mapTools.MapToolsModule;
 import com.nearvanilla.iceCream.modules.muteDeaths.MuteDeathsModule;
 import com.nearvanilla.iceCream.modules.onePlayerSleep.OnePlayerSleepModule;
+import com.nearvanilla.iceCream.modules.persistentHeads.PersistentHeadsModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
 import com.nearvanilla.iceCream.modules.playerHeadDrops.PlayerHeadDropsModule;
 import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
@@ -74,6 +75,7 @@ public final class IceCream extends JavaPlugin {
   private final LocatorBarModule locatorBarModule = new LocatorBarModule();
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
+  private final PersistentHeadsModule persistentHeadsModule = new PersistentHeadsModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderfulModule wanderfulModule = new WanderfulModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
@@ -116,6 +118,7 @@ public final class IceCream extends JavaPlugin {
     locatorBarModule.register();
     muteDeathsModule.register();
     playerHeadDropsModule.register();
+    persistentHeadsModule.register();
     isSlimeChunkModule.register();
     wanderfulModule.register();
     wanderingTradesModule.register();
@@ -144,6 +147,7 @@ public final class IceCream extends JavaPlugin {
     lootContainerProtectionModule.unregister();
     trialVaultResetModule.unregister();
     onePlayerSleepModule.unregister();
+    persistentHeadsModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();
     wanderingTradesModule.unregister();

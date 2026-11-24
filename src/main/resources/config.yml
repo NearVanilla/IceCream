@@ -32,6 +32,11 @@ modules:
     enabled: true
   bonemealablesporeblossoms:
     enabled: true
+  bannerlayers:
+    enabled: true
+    # The most layers the loom can put on a banner (6 to 16). Vanilla stops at 6, and the client
+    # draws at most 16.
+    max-layers: 16
   firstjoinmessage:
     enabled: true
     announcement: '<yellow>Welcome our new player <gold><player></gold>!</yellow>'

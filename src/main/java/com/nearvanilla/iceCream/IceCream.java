@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkModule;
+import com.nearvanilla.iceCream.modules.bannerLayers.BannerLayersModule;
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
 import com.nearvanilla.iceCream.modules.deathDb.DeathDbModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
@@ -61,6 +62,7 @@ public final class IceCream extends JavaPlugin {
   public static AnnotationParser<CommandSourceStack> annotationParser;
   // Modules
   private final AntiAfkModule antiAfkModule = new AntiAfkModule();
+  private final BannerLayersModule bannerLayersModule = new BannerLayersModule();
   private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
       new BonemealableSporeBlossomsModule();
   private final DeathDbModule deathDbModule = new DeathDbModule();
@@ -106,6 +108,7 @@ public final class IceCream extends JavaPlugin {
     config = ConfigUtils.addMissingDefaults(this);
     ConfigUtils.warnUnknownModules(this);
     // Register modules
+    bannerLayersModule.register();
     bonemealableSporeBlossomsModule.register();
     deathDbModule.register();
     deathLocationModule.register();
@@ -141,6 +144,7 @@ public final class IceCream extends JavaPlugin {
   @Override
   public void onDisable() {
     antiAfkModule.unregister();
+    bannerLayersModule.unregister();
     deathDbModule.unregister();
     flightModule.unregister();
     mapToolsModule.unregister();

@@ -22,6 +22,7 @@ import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
 import com.nearvanilla.iceCream.modules.playerHeadDrops.PlayerHeadDropsModule;
 import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
 import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
+import com.nearvanilla.iceCream.modules.silenceMobs.SilenceMobsModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
 import com.nearvanilla.iceCream.modules.trialVaultReset.TrialVaultResetModule;
@@ -76,6 +77,7 @@ public final class IceCream extends JavaPlugin {
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
   private final PersistentHeadsModule persistentHeadsModule = new PersistentHeadsModule();
+  private final SilenceMobsModule silenceMobsModule = new SilenceMobsModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderfulModule wanderfulModule = new WanderfulModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
@@ -119,6 +121,7 @@ public final class IceCream extends JavaPlugin {
     muteDeathsModule.register();
     playerHeadDropsModule.register();
     persistentHeadsModule.register();
+    silenceMobsModule.register();
     isSlimeChunkModule.register();
     wanderfulModule.register();
     wanderingTradesModule.register();
@@ -148,6 +151,7 @@ public final class IceCream extends JavaPlugin {
     trialVaultResetModule.unregister();
     onePlayerSleepModule.unregister();
     persistentHeadsModule.unregister();
+    silenceMobsModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();
     wanderingTradesModule.unregister();

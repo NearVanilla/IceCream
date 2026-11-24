@@ -71,6 +71,14 @@ modules:
     require-player-kill: true
   persistentheads:
     enabled: true
+  silencemobs:
+    enabled: true
+    # Name tag names that silence the mob they are used on. Not case sensitive.
+    trigger-names:
+      - 'silence me'
+      - 'silence_me'
+    # MiniMessage name given to a mob once it is silenced. Leave empty to keep the name tag's name.
+    silenced-name: 'silenced'
   isslimechunk:
     enabled: true
   info:

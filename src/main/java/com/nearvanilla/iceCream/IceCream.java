@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkModule;
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
+import com.nearvanilla.iceCream.modules.commandTracker.CommandTrackerModule;
 import com.nearvanilla.iceCream.modules.deathDb.DeathDbModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
@@ -63,6 +64,7 @@ public final class IceCream extends JavaPlugin {
   private final AntiAfkModule antiAfkModule = new AntiAfkModule();
   private final BonemealableSporeBlossomsModule bonemealableSporeBlossomsModule =
       new BonemealableSporeBlossomsModule();
+  private final CommandTrackerModule commandTrackerModule = new CommandTrackerModule();
   private final DeathDbModule deathDbModule = new DeathDbModule();
   private final DeathLocationModule deathLocationModule = new DeathLocationModule();
   private final DesertMobsModule desertMobsModule = new DesertMobsModule();
@@ -107,6 +109,7 @@ public final class IceCream extends JavaPlugin {
     ConfigUtils.warnUnknownModules(this);
     // Register modules
     bonemealableSporeBlossomsModule.register();
+    commandTrackerModule.register();
     deathDbModule.register();
     deathLocationModule.register();
     desertMobsModule.register();
@@ -141,6 +144,7 @@ public final class IceCream extends JavaPlugin {
   @Override
   public void onDisable() {
     antiAfkModule.unregister();
+    commandTrackerModule.unregister();
     deathDbModule.unregister();
     flightModule.unregister();
     mapToolsModule.unregister();

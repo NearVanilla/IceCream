@@ -28,6 +28,47 @@ modules:
     enabled: true
     # Maximum stored deaths per player; the oldest are pruned first. 0 keeps everything.
     max-records-per-player: 100
+  commandtracker:
+    enabled: true
+    # Also record commands typed in the server console and sent over RCON. Command blocks are never
+    # recorded.
+    record-console: false
+    # Days to keep recorded commands before they are deleted automatically. 0 keeps everything.
+    retention-days: 30
+    # Commands shown per page of /commandlog (1 to 50).
+    page-size: 10
+    # How times are shown in /commandlog, as a Java DateTimeFormatter pattern in the server's time zone.
+    date-format: 'yyyy-MM-dd HH:mm:ss'
+    # Commands never recorded. Commands match by name or any alias, without the slash.
+    ignored-commands: []
+    # When not empty, only these commands are recorded.
+    tracked-commands: []
+    redact:
+      # Every argument is hidden, such as passwords.
+      all-arguments:
+        - login
+        - l
+        - register
+        - reg
+        - changepassword
+        - changepass
+        - unregister
+        - 2fa
+        - totp
+        - r
+        - reply
+      # The first argument (the recipient) is kept and the rest, the message, is hidden.
+      after-first-argument:
+        - msg
+        - tell
+        - w
+        - whisper
+        - m
+        - t
+        - pm
+        - dm
+        - message
+        - mail
   example:
     enabled: true
   bonemealablesporeblossoms:

@@ -77,6 +77,9 @@ modules:
     update-interval-ticks: 2
     # Show the HUD to players who have never toggled it. Players can still turn it off.
     enabled-by-default: false
+    # Seconds the HUD steps aside after another module shows an action bar message, such as the
+    # Anti-AFK countdown or Vine Growth's message. 0 never steps aside.
+    pause-seconds: 3
     # The action bar line. Placeholders: <x>, <y>, <z>, <direction> (N, NE, E...) and <time> (HH:mm).
     hud: '<gold>XYZ: <white><x> <y> <z></white>  <direction>      <time></gold>'
     messages:

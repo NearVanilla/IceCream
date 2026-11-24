@@ -69,7 +69,9 @@ public class CoordinatesHudModule implements Module {
           new CoordinatesHud(
               new HudPreference(IceCream.instance.namespace()),
               new HudLine(IceCream.config.getString(PATH + "hud", HudLine.DEFAULT_TEMPLATE)),
-              IceCream.config.getBoolean(PATH + "enabled-by-default", false));
+              IceCream.config.getBoolean(PATH + "enabled-by-default", false),
+              Math.round(
+                  Math.max(0.0, IceCream.config.getDouble(PATH + "pause-seconds", 3.0)) * 1000));
       registerCommands();
       registerEvents();
       Bukkit.getOnlinePlayers().forEach(hud::load);

@@ -1,5 +1,6 @@
 package com.nearvanilla.iceCream.modules.coordinatesHud;
 
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -13,10 +14,15 @@ import org.bukkit.entity.Player;
  * Adapted from PaperTweaks by Machine_Maker (GPL-3.0).
  * Source: https://github.com/MC-Machinations/PaperTweaks
  * Original file: me.machinemaker.papertweaks.modules.survival.coordinateshud.HUDRunnable
- * Adaptations: refreshed on the main thread rather than asynchronously.
+ * Adaptations: refreshed on the main thread rather than asynchronously, and paused while another
+ *   module uses the action bar.
  */
 /**
  * Tracks which online players see the Coordinates HUD and refreshes it in their action bar.
+ *
+ * <p>When another module shows a player an action bar message through {@link ActionBarUtils}, the
+ * HUD skips that player until the message is the given pause old, so the message can be read. A
+ * message that keeps being refreshed, such as a countdown, keeps the HUD paused until it stops.
  *
  * @author 105hua
  * @version 1.0
@@ -29,6 +35,7 @@ public final class CoordinatesHud {
   private final HudPreference preference;
   private final HudLine line;
   private final boolean enabledByDefault;
+  private final long pauseMillis;
 
   /**
    * Creates the HUD.
@@ -36,11 +43,15 @@ public final class CoordinatesHud {
    * @param preference where players' choices are stored
    * @param line the line shown in the action bar
    * @param enabledByDefault whether players with no choice stored see the HUD
+   * @param pauseMillis how long the HUD steps aside after another module's action bar message, in
+   *     milliseconds; 0 never steps aside
    */
-  public CoordinatesHud(HudPreference preference, HudLine line, boolean enabledByDefault) {
+  public CoordinatesHud(
+      HudPreference preference, HudLine line, boolean enabledByDefault, long pauseMillis) {
     this.preference = preference;
     this.line = line;
     this.enabledByDefault = enabledByDefault;
+    this.pauseMillis = pauseMillis;
   }
 
   /**
@@ -92,13 +103,19 @@ public final class CoordinatesHud {
     return show;
   }
 
-  /** Refreshes the HUD of every player who sees it, dropping players who are no longer online. */
+  /**
+   * Refreshes the HUD of every player who sees it, skipping players whose action bar another module
+   * is using and dropping players who are no longer online.
+   */
   public void tick() {
     Iterator<UUID> iterator = shown.iterator();
     while (iterator.hasNext()) {
       Player player = Bukkit.getPlayer(iterator.next());
       if (player == null) {
         iterator.remove();
+        continue;
+      }
+      if (ActionBarUtils.sentWithin(player, pauseMillis)) {
         continue;
       }
       Location location = player.getLocation();

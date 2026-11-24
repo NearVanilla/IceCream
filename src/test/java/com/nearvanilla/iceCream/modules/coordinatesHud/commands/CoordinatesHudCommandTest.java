@@ -33,7 +33,7 @@ class CoordinatesHudCommandTest {
     server = MockBukkit.mock();
     hud =
         new CoordinatesHud(
-            new HudPreference("icecream"), new HudLine(HudLine.DEFAULT_TEMPLATE), false);
+            new HudPreference("icecream"), new HudLine(HudLine.DEFAULT_TEMPLATE), false, 3000);
     command =
         new CoordinatesHudCommand(
             hud, new CoordinatesHudCommand.Messages("on", "off", "toggled for <count>"));

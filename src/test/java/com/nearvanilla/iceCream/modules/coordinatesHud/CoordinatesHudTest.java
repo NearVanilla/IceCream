@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
@@ -16,21 +17,51 @@ import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
 class CoordinatesHudTest {
+  private static final long PAUSE_MILLIS = 3000;
+  private static final Component OTHER = Component.text("Vine growth stopped");
+
   private ServerMock server;
+  private long now;
 
   @BeforeEach
   void setUp() {
     server = MockBukkit.mock();
+    now = 0;
+    ActionBarUtils.useClock(() -> now);
   }
 
   @AfterEach
   void tearDown() {
+    ActionBarUtils.resetClock();
     MockBukkit.unmock();
   }
 
   private static CoordinatesHud hud(boolean enabledByDefault) {
+    return hud(enabledByDefault, PAUSE_MILLIS);
+  }
+
+  private static CoordinatesHud hud(boolean enabledByDefault, long pauseMillis) {
     return new CoordinatesHud(
-        new HudPreference("icecream"), new HudLine(HudLine.DEFAULT_TEMPLATE), enabledByDefault);
+        new HudPreference("icecream"),
+        new HudLine(HudLine.DEFAULT_TEMPLATE),
+        enabledByDefault,
+        pauseMillis);
+  }
+
+  private PlayerMock shownPlayer(CoordinatesHud hud) {
+    PlayerMock player = server.addPlayer();
+    hud.load(player);
+    return player;
+  }
+
+  /** Drains the player's action bar, telling whether the HUD was among what they got. */
+  private static boolean gotHud(PlayerMock player) {
+    boolean got = false;
+    Component next;
+    while ((next = player.nextActionBar()) != null) {
+      if (plain(next).startsWith("XYZ: ")) got = true;
+    }
+    return got;
   }
 
   private static String plain(Component component) {
@@ -151,5 +182,85 @@ class CoordinatesHudTest {
     assertNull(player.nextActionBar());
     hud.load(player);
     assertTrue(hud.isShown(player));
+  }
+
+  @Test
+  void pausesAfterAnotherModulesMessage() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+
+    ActionBarUtils.send(player, OTHER);
+    now += PAUSE_MILLIS - 1;
+    hud.tick();
+
+    assertEquals(OTHER, player.nextActionBar());
+    assertNull(player.nextActionBar());
+  }
+
+  @Test
+  void resumesWhenPauseIsOver() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+    ActionBarUtils.send(player, OTHER);
+    player.nextActionBar();
+
+    now += PAUSE_MILLIS;
+    hud.tick();
+
+    assertTrue(gotHud(player));
+  }
+
+  @Test
+  void staysPausedWhileCountdownRefreshesAndResumesAfter() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+
+    // A 20 second countdown refreshed every second, with the HUD ticking every 100 ms.
+    for (long elapsed = 0; elapsed <= 20_000; elapsed += 100) {
+      now = elapsed;
+      if (elapsed % 1000 == 0) ActionBarUtils.send(player, Component.text(elapsed / 1000));
+      hud.tick();
+      assertFalse(gotHud(player), "HUD showed during the countdown at " + elapsed + " ms");
+    }
+
+    now = 20_000 + PAUSE_MILLIS;
+    hud.tick();
+    assertTrue(gotHud(player));
+  }
+
+  @Test
+  void resumesAtOnceWhenMessageIsCleared() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+    ActionBarUtils.send(player, OTHER);
+
+    ActionBarUtils.clear(player);
+    hud.tick();
+
+    assertTrue(gotHud(player));
+  }
+
+  @Test
+  void pauseOnlyAffectsThatPlayer() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock reading = shownPlayer(hud);
+    PlayerMock other = shownPlayer(hud);
+
+    ActionBarUtils.send(reading, OTHER);
+    hud.tick();
+
+    assertFalse(gotHud(reading));
+    assertTrue(gotHud(other));
+  }
+
+  @Test
+  void zeroPauseNeverStepsAside() {
+    CoordinatesHud hud = hud(true, 0);
+    PlayerMock player = shownPlayer(hud);
+
+    ActionBarUtils.send(player, OTHER);
+    hud.tick();
+
+    assertTrue(gotHud(player));
   }
 }

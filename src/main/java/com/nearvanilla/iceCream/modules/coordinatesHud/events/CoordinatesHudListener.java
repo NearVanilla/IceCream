@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream.modules.coordinatesHud.events;
 
 import com.nearvanilla.iceCream.modules.coordinatesHud.CoordinatesHud;
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -34,9 +35,10 @@ public class CoordinatesHudListener implements Listener {
     hud.load(event.getPlayer());
   }
 
-  /** Stops tracking a player who left. */
+  /** Stops tracking a player who left, and forgets when they last got an action bar message. */
   @EventHandler(priority = EventPriority.MONITOR)
   public void onQuit(PlayerQuitEvent event) {
     hud.forget(event.getPlayer());
+    ActionBarUtils.release(event.getPlayer());
   }
 }

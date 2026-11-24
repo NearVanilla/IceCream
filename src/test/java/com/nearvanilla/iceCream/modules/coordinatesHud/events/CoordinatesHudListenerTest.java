@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.nearvanilla.iceCream.modules.coordinatesHud.CoordinatesHud;
 import com.nearvanilla.iceCream.modules.coordinatesHud.HudLine;
 import com.nearvanilla.iceCream.modules.coordinatesHud.HudPreference;
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -26,12 +27,13 @@ class CoordinatesHudListenerTest {
     server = MockBukkit.mock();
     hud =
         new CoordinatesHud(
-            new HudPreference("icecream"), new HudLine(HudLine.DEFAULT_TEMPLATE), true);
+            new HudPreference("icecream"), new HudLine(HudLine.DEFAULT_TEMPLATE), true, 3000);
     listener = new CoordinatesHudListener(hud);
   }
 
   @AfterEach
   void tearDown() {
+    ActionBarUtils.resetClock();
     MockBukkit.unmock();
   }
 
@@ -53,5 +55,16 @@ class CoordinatesHudListenerTest {
         new PlayerQuitEvent(player, Component.empty(), PlayerQuitEvent.QuitReason.DISCONNECTED));
 
     assertFalse(hud.isShown(player));
+  }
+
+  @Test
+  void leavingForgetsLastActionBarMessage() {
+    PlayerMock player = server.addPlayer();
+    ActionBarUtils.send(player, Component.text("Vine growth stopped"));
+
+    listener.onQuit(
+        new PlayerQuitEvent(player, Component.empty(), PlayerQuitEvent.QuitReason.DISCONNECTED));
+
+    assertFalse(ActionBarUtils.sentWithin(player, 3000));
   }
 }

@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream;
 
 import com.nearvanilla.iceCream.modules.antiAfk.AntiAfkModule;
 import com.nearvanilla.iceCream.modules.bonemealableSporeBlossoms.BonemealableSporeBlossomsModule;
+import com.nearvanilla.iceCream.modules.coordinatesHud.CoordinatesHudModule;
 import com.nearvanilla.iceCream.modules.deathDb.DeathDbModule;
 import com.nearvanilla.iceCream.modules.deathLocation.DeathLocationModule;
 import com.nearvanilla.iceCream.modules.desertMobs.DesertMobsModule;
@@ -76,6 +77,7 @@ public final class IceCream extends JavaPlugin {
   private final MuteDeathsModule muteDeathsModule = new MuteDeathsModule();
   private final PlayerHeadDropsModule playerHeadDropsModule = new PlayerHeadDropsModule();
   private final PersistentHeadsModule persistentHeadsModule = new PersistentHeadsModule();
+  private final CoordinatesHudModule coordinatesHudModule = new CoordinatesHudModule();
   private final isSlimeChunkModule isSlimeChunkModule = new isSlimeChunkModule();
   private final WanderfulModule wanderfulModule = new WanderfulModule();
   private final WanderingTradesModule wanderingTradesModule = new WanderingTradesModule();
@@ -119,6 +121,7 @@ public final class IceCream extends JavaPlugin {
     muteDeathsModule.register();
     playerHeadDropsModule.register();
     persistentHeadsModule.register();
+    coordinatesHudModule.register();
     isSlimeChunkModule.register();
     wanderfulModule.register();
     wanderingTradesModule.register();
@@ -148,6 +151,7 @@ public final class IceCream extends JavaPlugin {
     trialVaultResetModule.unregister();
     onePlayerSleepModule.unregister();
     persistentHeadsModule.unregister();
+    coordinatesHudModule.unregister();
     spectatorModule.unregister();
     worldTourModule.unregister();
     wanderingTradesModule.unregister();

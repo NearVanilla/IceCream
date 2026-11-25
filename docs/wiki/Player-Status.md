@@ -28,4 +28,4 @@ How each status looks is set in bat's `status-codes`, keyed by these ids: `afk`,
 
 ## Plugin message
 
-Each message is the player's UUID (`writeUTF`), the number of statuses (`writeInt`, 0 or 1), then the status id (`writeUTF`). A count of 0 clears the player's status. A message is sent whenever a player's status changes, and when the proxy starts listening for a player after they join.
+Each message is the player's UUID (`writeUTF`), then the status id (`writeUTF`). An empty status id clears the player's status. A message is sent whenever a player's status changes, and when the proxy starts listening for a player after they join.

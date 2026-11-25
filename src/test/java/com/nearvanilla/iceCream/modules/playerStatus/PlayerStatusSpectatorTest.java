@@ -28,7 +28,7 @@ class PlayerStatusSpectatorTest {
 
   /** A player behind the proxy, recording the statuses it is sent. */
   private static class ProxiedPlayer extends PlayerMock {
-    final List<List<String>> received = new ArrayList<>();
+    final List<String> received = new ArrayList<>();
 
     ProxiedPlayer(ServerMock server) {
       super(server, "Player", UUID.randomUUID());
@@ -44,9 +44,7 @@ class PlayerStatusSpectatorTest {
         @NotNull Plugin source, @NotNull String channel, byte @NotNull [] message) {
       ByteArrayDataInput in = ByteStreams.newDataInput(message);
       in.readUTF();
-      List<String> statuses = new ArrayList<>();
-      for (int i = in.readInt(); i > 0; i--) statuses.add(in.readUTF());
-      received.add(statuses);
+      received.add(in.readUTF());
     }
   }
 
@@ -89,7 +87,7 @@ class PlayerStatusSpectatorTest {
     enterSpectatorMode();
 
     assertNull(manager.status(player));
-    assertEquals(List.of(), player.received.getLast());
+    assertEquals("", player.received.getLast());
   }
 
   @Test
@@ -116,6 +114,6 @@ class PlayerStatusSpectatorTest {
     spectate(true);
     manager.channelRegistered(player);
 
-    assertEquals(List.of(), player.received.getLast());
+    assertEquals("", player.received.getLast());
   }
 }

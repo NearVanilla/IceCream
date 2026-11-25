@@ -93,16 +93,15 @@ public final class PlayerStatusManager {
   }
 
   /**
-   * Encodes a status message for bat: the player's UUID, the number of statuses (0 or 1), then the
-   * status id.
+   * Encodes a status message for bat: the player's UUID, then the status id, or an empty string for
+   * none.
    *
    * @param status the status, or null for none
    */
   static byte[] encode(UUID playerId, PlayerStatus status) {
     ByteArrayDataOutput out = ByteStreams.newDataOutput();
     out.writeUTF(playerId.toString());
-    out.writeInt(status == null ? 0 : 1);
-    if (status != null) out.writeUTF(status.id());
+    out.writeUTF(status == null ? "" : status.id());
     return out.toByteArray();
   }
 }

@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.bukkit.entity.Player;
@@ -40,35 +39,32 @@ class PlayerStatusManagerTest {
     manager = new PlayerStatusManager();
   }
 
-  private List<String> lastSent() {
+  private String lastSent() {
     ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
     verify(player, atLeastOnce())
         .sendPluginMessage(any(), eq(PlayerStatusManager.STATUS_CHANNEL), captor.capture());
     return decode(captor.getValue());
   }
 
-  private List<String> decode(byte[] data) {
+  private String decode(byte[] data) {
     ByteArrayDataInput in = ByteStreams.newDataInput(data);
     assertEquals(playerId.toString(), in.readUTF());
-    int count = in.readInt();
-    String[] ids = new String[count];
-    for (int i = 0; i < count; i++) ids[i] = in.readUTF();
-    return List.of(ids);
+    return in.readUTF();
   }
 
   @Test
-  void encodeWritesUuidCountAndId() {
-    assertEquals(List.of("afk"), decode(PlayerStatusManager.encode(playerId, PlayerStatus.AFK)));
-    assertEquals(List.of(), decode(PlayerStatusManager.encode(playerId, null)));
+  void encodeWritesUuidAndId() {
+    assertEquals("afk", decode(PlayerStatusManager.encode(playerId, PlayerStatus.AFK)));
+    assertEquals("", decode(PlayerStatusManager.encode(playerId, null)));
   }
 
   @Test
   void setAndClearSendTheStatus() {
     assertTrue(manager.set(player, PlayerStatus.DO_NOT_DISTURB));
-    assertEquals(List.of("do_not_disturb"), lastSent());
+    assertEquals("do_not_disturb", lastSent());
 
     manager.clear(player);
-    assertEquals(List.of(), lastSent());
+    assertEquals("", lastSent());
     assertNull(manager.status(player));
   }
 
@@ -78,7 +74,7 @@ class PlayerStatusManagerTest {
     assertTrue(manager.set(player, PlayerStatus.STREAMING));
 
     assertEquals(PlayerStatus.STREAMING, manager.status(player));
-    assertEquals(List.of("streaming"), lastSent());
+    assertEquals("streaming", lastSent());
   }
 
   @Test
@@ -106,13 +102,13 @@ class PlayerStatusManagerTest {
 
     channels.add(PlayerStatusManager.STATUS_CHANNEL);
     manager.channelRegistered(player);
-    assertEquals(List.of("streaming"), lastSent());
+    assertEquals("streaming", lastSent());
   }
 
   @Test
   void sendsNoStatusWhenTheProxyStartsListeningWithoutOne() {
     manager.channelRegistered(player);
-    assertEquals(List.of(), lastSent());
+    assertEquals("", lastSent());
   }
 
   @Test

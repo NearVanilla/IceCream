@@ -183,6 +183,8 @@ modules:
     # Creating or reshaping a claim asks for confirmation when it overlaps or is within this many
     # blocks of another claim.
     nearby-claim-distance: 300
+  playerstatus:
+    enabled: true
   playerseen:
     enabled: true
     date-format: 'yyyy-MM-dd HH:mm:ss'

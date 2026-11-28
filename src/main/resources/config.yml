@@ -191,6 +191,8 @@ modules:
     cooldown-seconds: 0
     # Stop the tag item being dropped or used to rename mobs.
     prevent-tag-destruction: true
+  playerstatus:
+    enabled: true
   playerseen:
     enabled: true
     date-format: 'yyyy-MM-dd HH:mm:ss'

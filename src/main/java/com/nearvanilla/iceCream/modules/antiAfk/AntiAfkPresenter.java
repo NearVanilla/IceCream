@@ -1,6 +1,7 @@
 package com.nearvanilla.iceCream.modules.antiAfk;
 
 import com.nearvanilla.iceCream.IceCream;
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import java.time.Duration;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -76,7 +77,7 @@ public final class AntiAfkPresenter {
 
   /** Refreshes the action bar with the code and the seconds left. */
   public void countdown(Player player, String code, long seconds) {
-    player.sendActionBar(render(actionBar, code, seconds));
+    ActionBarUtils.send(player, render(actionBar, code, seconds));
   }
 
   public void remind(Player player) {
@@ -95,7 +96,7 @@ public final class AntiAfkPresenter {
   /** Removes the title and action bar of a captcha. */
   public void clear(Player player) {
     player.clearTitle();
-    player.sendActionBar(Component.empty());
+    ActionBarUtils.clear(player);
   }
 
   public Component kickReason() {

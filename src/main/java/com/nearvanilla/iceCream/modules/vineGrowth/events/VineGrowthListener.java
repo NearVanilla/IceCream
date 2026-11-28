@@ -2,6 +2,7 @@ package com.nearvanilla.iceCream.modules.vineGrowth.events;
 
 import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.vineGrowth.VineGrowthUtils;
+import com.nearvanilla.iceCream.utils.ActionBarUtils;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
@@ -91,7 +92,8 @@ public class VineGrowthListener implements Listener {
       shears.damage(TOGGLE_DURABILITY_COST, player);
     }
     showState(block, sheared);
-    player.sendActionBar(
+    ActionBarUtils.send(
+        player,
         MiniMessage.miniMessage()
             .deserialize(
                 IceCream.config.getString(

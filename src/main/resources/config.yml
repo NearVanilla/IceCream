@@ -71,6 +71,22 @@ modules:
     require-player-kill: true
   persistentheads:
     enabled: true
+  coordinateshud:
+    enabled: true
+    # Ticks between refreshes of the HUD in the action bar (at least 1). 20 ticks = 1 second.
+    update-interval-ticks: 2
+    # Show the HUD to players who have never toggled it. Players can still turn it off.
+    enabled-by-default: false
+    # Seconds the HUD steps aside after another module or the game shows an action bar message,
+    # such as the Anti-AFK countdown, Vine Growth's message, "You can sleep only at night" or the
+    # dismount hint. 0 never steps aside.
+    pause-seconds: 3
+    # The action bar line. Placeholders: <x>, <y>, <z>, <direction> (N, NE, E...) and <time> (HH:mm).
+    hud: '<gold>XYZ: <white><x> <y> <z></white>  <direction>      <time></gold>'
+    messages:
+      on: '<green>HUD toggled ON</green>'
+      off: '<green>HUD toggled OFF</green>'
+      toggled-for: '<gray><italic>HUD toggled for <count> players</italic></gray>'
   isslimechunk:
     enabled: true
   info:

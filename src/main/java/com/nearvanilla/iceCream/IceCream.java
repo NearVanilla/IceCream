@@ -22,6 +22,7 @@ import com.nearvanilla.iceCream.modules.persistentHeads.PersistentHeadsModule;
 import com.nearvanilla.iceCream.modules.phantomToggle.PhantomToggleModule;
 import com.nearvanilla.iceCream.modules.playerHeadDrops.PlayerHeadDropsModule;
 import com.nearvanilla.iceCream.modules.playerSeen.PlayerSeenModule;
+import com.nearvanilla.iceCream.modules.playerStatus.PlayerStatusModule;
 import com.nearvanilla.iceCream.modules.readOnlyLectern.ReadOnlyLecternModule;
 import com.nearvanilla.iceCream.modules.spectator.SpectatorModule;
 import com.nearvanilla.iceCream.modules.staffMode.StaffModeModule;
@@ -32,6 +33,7 @@ import com.nearvanilla.iceCream.modules.wanderingTrades.WanderingTradesModule;
 import com.nearvanilla.iceCream.modules.worldTour.WorldTourModule;
 import com.nearvanilla.iceCream.utils.ConfigUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -87,6 +89,7 @@ public final class IceCream extends JavaPlugin {
   private final WorldTourModule worldTourModule = new WorldTourModule();
   private final PhantomToggleModule phantomToggleModule = new PhantomToggleModule();
   private final PlayerSeenModule playerSeenModule = new PlayerSeenModule();
+  private final PlayerStatusModule playerStatusModule = new PlayerStatusModule();
   private final OnePlayerSleepModule onePlayerSleepModule = new OnePlayerSleepModule();
   private final LootContainerProtectionModule lootContainerProtectionModule =
       new LootContainerProtectionModule();
@@ -129,6 +132,7 @@ public final class IceCream extends JavaPlugin {
     spectatorModule.register();
     // After spectator, which creates the key used to skip spectating players.
     antiAfkModule.register();
+    playerStatusModule.register();
     flightModule.register();
     readOnlyLecternModule.register();
     worldTourModule.register();
@@ -143,17 +147,27 @@ public final class IceCream extends JavaPlugin {
 
   @Override
   public void onDisable() {
-    antiAfkModule.unregister();
-    deathDbModule.unregister();
-    flightModule.unregister();
-    mapToolsModule.unregister();
-    lootContainerProtectionModule.unregister();
-    trialVaultResetModule.unregister();
-    onePlayerSleepModule.unregister();
-    persistentHeadsModule.unregister();
-    coordinatesHudModule.unregister();
-    spectatorModule.unregister();
-    worldTourModule.unregister();
-    wanderingTradesModule.unregister();
+    unregister("playerStatusModule", () -> playerStatusModule.unregister());
+    unregister("antiAfkModule", () -> antiAfkModule.unregister());
+    unregister("deathDbModule", () -> deathDbModule.unregister());
+    unregister("flightModule", () -> flightModule.unregister());
+    unregister("mapToolsModule", () -> mapToolsModule.unregister());
+    unregister("lootContainerProtectionModule", () -> lootContainerProtectionModule.unregister());
+    unregister("trialVaultResetModule", () -> trialVaultResetModule.unregister());
+    unregister("onePlayerSleepModule", () -> onePlayerSleepModule.unregister());
+    unregister("persistentHeadsModule", () -> persistentHeadsModule.unregister());
+    unregister("coordinatesHudModule", () -> coordinatesHudModule.unregister());
+    unregister("spectatorModule", () -> spectatorModule.unregister());
+    unregister("worldTourModule", () -> worldTourModule.unregister());
+    unregister("wanderingTradesModule", () -> wanderingTradesModule.unregister());
+  }
+
+  /** Shuts down one module, logging a failure instead of stopping the rest of the shutdown. */
+  private static void unregister(String module, Runnable unregister) {
+    try {
+      unregister.run();
+    } catch (RuntimeException exception) {
+      logger.log(Level.SEVERE, "Failed to unregister " + module + ".", exception);
+    }
   }
 }

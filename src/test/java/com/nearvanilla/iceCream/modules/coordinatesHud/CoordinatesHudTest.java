@@ -198,6 +198,30 @@ class CoordinatesHudTest {
   }
 
   @Test
+  void pausesAfterGameMessage() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+
+    ActionBarUtils.claim(player);
+    now += PAUSE_MILLIS - 1;
+    hud.tick();
+
+    assertNull(player.nextActionBar());
+  }
+
+  @Test
+  void ownRefreshesNeverPause() {
+    CoordinatesHud hud = hud(true);
+    PlayerMock player = shownPlayer(hud);
+
+    for (int i = 0; i < 5; i++) {
+      now += 100;
+      hud.tick();
+      assertTrue(gotHud(player), "HUD stepped aside for itself on refresh " + i);
+    }
+  }
+
+  @Test
   void resumesWhenPauseIsOver() {
     CoordinatesHud hud = hud(true);
     PlayerMock player = shownPlayer(hud);

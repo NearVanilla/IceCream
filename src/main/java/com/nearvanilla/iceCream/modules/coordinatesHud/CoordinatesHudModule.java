@@ -4,6 +4,7 @@ import com.nearvanilla.iceCream.IceCream;
 import com.nearvanilla.iceCream.modules.Module;
 import com.nearvanilla.iceCream.modules.coordinatesHud.commands.CoordinatesHudCommand;
 import com.nearvanilla.iceCream.modules.coordinatesHud.events.CoordinatesHudListener;
+import com.nearvanilla.iceCream.modules.coordinatesHud.events.VanillaActionBarListener;
 import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
@@ -19,6 +20,7 @@ import org.bukkit.scheduler.BukkitTask;
  * @see CoordinatesHud
  * @see CoordinatesHudCommand
  * @see CoordinatesHudListener
+ * @see VanillaActionBarListener
  */
 public class CoordinatesHudModule implements Module {
   private static final String PATH = "modules.coordinateshud.";
@@ -26,6 +28,7 @@ public class CoordinatesHudModule implements Module {
   private boolean enabled;
   private CoordinatesHud hud;
   private CoordinatesHudListener listener;
+  private VanillaActionBarListener vanillaListener;
   private BukkitTask task;
 
   @Override
@@ -54,7 +57,10 @@ public class CoordinatesHudModule implements Module {
   @Override
   public void registerEvents() {
     listener = new CoordinatesHudListener(hud);
-    IceCream.instance.getServer().getPluginManager().registerEvents(listener, IceCream.instance);
+    vanillaListener = new VanillaActionBarListener();
+    var pluginManager = IceCream.instance.getServer().getPluginManager();
+    pluginManager.registerEvents(listener, IceCream.instance);
+    pluginManager.registerEvents(vanillaListener, IceCream.instance);
   }
 
   @Override
@@ -85,7 +91,7 @@ public class CoordinatesHudModule implements Module {
     }
   }
 
-  /** Stops refreshing the HUD, unregisters the listener and marks the module as disabled. */
+  /** Stops refreshing the HUD, unregisters the listeners and marks the module as disabled. */
   public void unregister() {
     if (task != null) {
       task.cancel();
@@ -94,6 +100,10 @@ public class CoordinatesHudModule implements Module {
     if (listener != null) {
       HandlerList.unregisterAll(listener);
       listener = null;
+    }
+    if (vanillaListener != null) {
+      HandlerList.unregisterAll(vanillaListener);
+      vanillaListener = null;
     }
     if (hud != null) {
       hud.clear();

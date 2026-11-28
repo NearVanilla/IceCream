@@ -105,6 +105,18 @@ class ActionBarUtilsTest {
   }
 
   @Test
+  void claimMarksInUseWithoutSending() {
+    PlayerMock player = server.addPlayer();
+
+    ActionBarUtils.claim(player);
+
+    assertEquals(null, player.nextActionBar());
+    assertTrue(ActionBarUtils.sentWithin(player, 3000));
+    now += 3000;
+    assertFalse(ActionBarUtils.sentWithin(player, 3000));
+  }
+
+  @Test
   void tracksEachPlayerSeparately() {
     PlayerMock sent = server.addPlayer();
     PlayerMock other = server.addPlayer();

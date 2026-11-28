@@ -14,7 +14,8 @@ import org.bukkit.entity.Player;
  *
  * <p>Modules showing a message in the action bar call {@link #send}. Repeating messages, like a
  * countdown, call it on every refresh, which keeps the claim fresh. A module that is done with the
- * action bar calls {@link #clear}, which empties it and gives it back straight away.
+ * action bar calls {@link #clear}, which empties it and gives it back straight away. Messages the
+ * game shows by itself are recorded with {@link #claim}.
  *
  * @author 105hua
  * @version 1.0
@@ -34,6 +35,17 @@ public final class ActionBarUtils {
    */
   public static void send(Player player, Component message) {
     player.sendActionBar(message);
+    claim(player);
+  }
+
+  /**
+   * Records that a player's action bar is in use by a message that was not sent with {@link #send},
+   * such as one the game shows by itself, so features waiting on the action bar step aside for it
+   * too.
+   *
+   * @param player the player
+   */
+  public static void claim(Player player) {
     lastSent.put(player.getUniqueId(), clock.getAsLong());
   }
 

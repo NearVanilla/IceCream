@@ -20,9 +20,11 @@ import org.bukkit.entity.Player;
 /**
  * Tracks which online players see the Coordinates HUD and refreshes it in their action bar.
  *
- * <p>When another module shows a player an action bar message through {@link ActionBarUtils}, the
- * HUD skips that player until the message is the given pause old, so the message can be read. A
- * message that keeps being refreshed, such as a countdown, keeps the HUD paused until it stops.
+ * <p>When another module shows a player an action bar message through {@link ActionBarUtils}, or
+ * the game shows one of its own (see {@link
+ * com.nearvanilla.iceCream.modules.coordinatesHud.events.VanillaActionBarListener}), the HUD skips
+ * that player until the message is the given pause old, so the message can be read. A message that
+ * keeps being refreshed, such as a countdown, keeps the HUD paused until it stops.
  *
  * @author 105hua
  * @version 1.0

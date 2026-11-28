@@ -183,6 +183,14 @@ modules:
     # Creating or reshaping a claim asks for confirmation when it overlaps or is within this many
     # blocks of another claim.
     nearby-claim-distance: 300
+  tag:
+    enabled: true
+    # Tell everyone when someone becomes "it", or stops playing while "it".
+    show-messages: true
+    # Seconds a new "it" has to wait before they can tag someone (0 to 86400).
+    cooldown-seconds: 0
+    # Stop the tag item being dropped or used to rename mobs.
+    prevent-tag-destruction: true
   playerstatus:
     enabled: true
   playerseen:
